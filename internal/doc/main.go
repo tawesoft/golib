@@ -6,28 +6,35 @@ import (
     "fmt"
     "go/ast"
     "go/doc"
+    "go/doc/comment"
     "go/parser"
     "go/token"
     "math"
     "os"
     "path/filepath"
+    "strings"
 
     cli "github.com/jawher/mow.cli"
+    "github.com/tawesoft/golib/v2/fun/slice"
+    "github.com/tawesoft/golib/v2/ks"
 )
 
 // TODO generate HTML like https://cs.opensource.google/go/x/tools/+/master:godoc/linkify.go
 
-func warnf(format string, args ... any) {
-    fmt.Fprintf(os.Stderr, format+"\n", args...)
-}
-
-func genTarget(target string, files []string) error {
+func genTarget(t string) error {
+    matches, err := filepath.Glob(filepath.FromSlash(t + "/*.go"))
+    if err != nil {
+        return fmt.Errorf("glob error: %w", err)
+    }
+    if len(matches) == 0 {
+        return fmt.Errorf("no files")
+    }
 
     fset := token.NewFileSet()
     astFiles := make([]*ast.File, 0)
     sources := make(map[string][]byte)
 
-    for _, f := range files {
+    for _, f := range matches {
         stat, err := os.Stat(f)
         if err != nil {
             return fmt.Errorf("error statting file %q: %w", f, err)
@@ -52,7 +59,7 @@ func genTarget(target string, files []string) error {
         astFiles = append(astFiles, pf)
     }
 
-    pkg, err := doc.NewFromFiles(fset, astFiles, "tawesoft.co.uk/go/"+target)
+    pkg, err := doc.NewFromFiles(fset, astFiles, "tawesoft.co.uk/go/"+t)
     if err != nil {
         return fmt.Errorf("")
     }
@@ -60,50 +67,53 @@ func genTarget(target string, files []string) error {
     // fmt.Printf(">>> %s: %+v\n", target, pkg)
     p := pkg.Parser()
     pr := pkg.Printer()
-    doc := p.Parse(pkg.Doc)
-    os.Stdout.Write(pr.HTML(doc))
-
-    if len(pkg.Examples) > 0 {
-        // file := fset.File(pkg.Examples[0].Play.Pos()).Name()
-        //fmt.Println(string(sources[file]))
-    }
-
-    return nil
-}
+        pr.DocLinkBaseURL = "https://pkg.go.dev"
 
 
-func walkTargets(targets []string, f func (t string) error) error {
-    for _, t := range targets {
-        err := f(t)
-        if err != nil {
-            return fmt.Errorf("error processing target %s: %w", t, err)
+    pr.DocLinkURL = func(link *comment.DocLink) string {
+        fmt.Printf("> %+v\n", link)
+        if link.ImportPath == "builtin" && link.Name == "" {
+            link.Name = string(link.Text[0].(comment.Plain))
+            link.Name = strings.TrimPrefix(link.Name, "builtin.")
+            fmt.Printf(">>> %+v\n", link)
         }
+        return link.DefaultURL(pr.DocLinkBaseURL)
     }
+
+    // oldLookupPackage := p.LookupPackage
+    p.LookupPackage = func(name string) (importPath string, ok bool) {
+        fmt.Println(name)
+
+        if (name == "builtin") { // e.g. builtin.IntegerType
+            return name, true
+        } else if strings.HasPrefix(name, "builtin.") { // e.g. builtin.map
+            return "builtin", true
+        } else if name == "comparable" { // or any lowercase builtin identifier...
+            // name is actual builtin
+            return "builtin", true
+        }
+        return "", false
+    }
+
+    /*
+    pr.DocLinkURL = func(link *comment.DocLink) string {
+        panic(fmt.Sprintf("got %+v", link.DefaultURL("https://example.net/")))
+    }
+     */
+
+    doc := p.Parse(pkg.Doc)
+
+    fmt.Printf("%s\n", pr.Markdown(doc))
+
     return nil
 }
 
 func gen(targets []string) error {
-
-    return walkTargets(targets, func (t string) error {
-
-        matches, err := filepath.Glob(filepath.FromSlash(t + "/*.go"))
-        if err != nil {
-            return fmt.Errorf("error globbing target %s: %w", t, err)
-        }
-
-        if len(matches) == 0 {
-            warnf("warning: no files for target %s", t)
-        }
-
-        err = genTarget(t, matches)
-        if err != nil {
-            return fmt.Errorf("error generating target %s: %w", t, err)
-        }
-
-        return nil
-    })
+    if t, err := slice.CheckedWalk(genTarget, targets); err != nil {
+        return fmt.Errorf("error generating target %s", t)
+    }
+    return nil
 }
-
 
 func main() {
 
@@ -114,14 +124,14 @@ func main() {
         targets := cmd.StringsArg("TARGETS", nil, "target names e.g. foo foo/bar")
 
         cmd.Action = func() {
-            err := gen(*targets)
+            err, perr := ks.Catch[error](func() error { return gen(*targets) })
+            if perr != nil { err = perr }
             if err != nil {
-                fmt.Fprintf(os.Stderr, "fatal error: %w\n", err)
+                fmt.Fprintf(os.Stderr, "fatal error: %v\n", err)
                 cli.Exit(1)
             }
         }
     })
 
     app.Run(os.Args)
-
 }

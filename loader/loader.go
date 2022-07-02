@@ -1,9 +1,5 @@
-// SPDX-License-Identifier: MIT
 // x-doc-short-desc: concurrent dependency graph solver
 // x-doc-stable: candidate
-// x-doc-copyright: 2022 Ben Golightly <ben@tawesoft.co.uk>
-// x-doc-copyright: 2022 Tawesoft Ltd <open-source@tawesoft.co.uk>
-// x-doc-copyright: 2022 CONTRIBUTORS
 
 // Package loader implements the ability to define a graph of tasks and
 // dependencies that produce results, and solve the graph incrementally or
@@ -19,7 +15,7 @@ package loader
 import (
     "fmt"
 
-    "github.com/tawesoft/golib/digraph"
+    "github.com/tawesoft/golib/v2/digraph"
 )
 
 type Result struct {

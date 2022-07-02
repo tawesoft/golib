@@ -1,0 +1,4 @@
+2022-06-30
+
+    * Fix: correctly parse numbers that have leading zeros in the floating
+      point portion.

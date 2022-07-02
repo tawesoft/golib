@@ -1,12 +1,33 @@
-# Security Information and Policy
+# Security Policy
 
-## Subscribe to Security Announcements
+Contact: [security@tawesoft.co.uk](mailto:security@tawesoft.co.uk)
 
-Subscribe to security announcements for this repository by
+
+## Announcements
+
+It is our policy to publicly announce security issues and fixes through the 
+GitHub "Security Advisories" feature for this repository.
+
+You can subscribe to security announcements for this repository by
 [configuring your "watching" settings](https://docs.github.com/en/account-and-profile/managing-subscriptions-and-notifications-on-github/setting-up-notifications/configuring-notifications#configuring-your-watch-settings-for-an-individual-repository)
 and subscribing to security alerts.
 
-## Reporting a Vulnerability
+On a case-by-case basis, we are prepared to pre-announce security issues and 
+fixes to any downstream consumer of this repository who can evidence a high 
+impact, such as operators of a service with a large volume of users.
+
+
+## Backporting fixes
+
+Applicable security fixes will always be backported to legacy 
+packages, to the previous two major versions of normal packages, and the 
+previous one major version of candidate packages.
+
+Security fixes may not always be backwards compatible, even between minor 
+versions.
+
+
+## Reporting a vulnerability
 
 Please disclose responsibly so that we can notify the users of our software
 with a fix and/or instructions, including a pre-announcement where appropriate.

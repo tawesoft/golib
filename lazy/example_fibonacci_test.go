@@ -2,36 +2,25 @@ package lazy_test
 
 import (
     "fmt"
-    "math"
 
-    "github.com/tawesoft/golib/lazy"
+    "github.com/tawesoft/golib/v2/lazy"
 )
 
-// Implement the [lazy.Generator] interface by implementing the
-// [lazy.Generator.Next] method.
-type Fibonacci struct {
-    pre1 int
-    pre2 int
+// FibFunc lazily generates a sequence of fibonacci numbers.
+func FibFunc() lazy.It[int] {
+    // if you prefer,
+    //     func FibFunc() func() func() (int, bool) { ...
+    pre1 := 0
+    pre2 := 1
+    return func() (int, bool) {
+        result := pre1 + pre2
+        pre1 = pre2
+        pre2 = result
+        return result, true
+    }
 }
 
-// Generate the next fibonacci number up to the highest fibonacci number that
-// fits in an integer.
-func (g *Fibonacci) Next() (int, bool) {
-
-    // (not quite infinite...)
-    if g.pre1 >= math.MaxInt / 2 { return 0, false }
-
-    result := g.pre1 + g.pre2
-    g.pre1 = g.pre2
-    g.pre2 = result
-    return result, true
-}
-
-func NewFibonacciGenerator() lazy.Generator[int] {
-    return &Fibonacci{0, 1}
-}
-
-func Example() {
+func ExampleFibonacci() {
     // return a new generator of fibonacci numbers
     isOdd := func(x int) bool { return x % 2 != 0 }
 
@@ -40,8 +29,7 @@ func Example() {
         Reduce: func (a int, b int) int { return a + b },
     }
 
-    // create multiple generators from a single source
-    fib := lazy.Tee(4, NewFibonacciGenerator())
+    fib := lazy.Tee[int](4, lazy.Func(FibFunc()))
 
     fmt.Printf("First ten Fibonacci numbers are:\n    %v\n",
         lazy.ToSlice(
@@ -61,7 +49,7 @@ func Example() {
             lazy.TakeN(10,
                 fib[2])))
 
-    average := func(n int, xs lazy.Generator[int]) float64 {
+    average := func(n int, xs lazy.It[int]) float64 {
         total := lazy.Reduce(sum, lazy.TakeN(n, xs))
         return float64(total) / float64(n)
     }

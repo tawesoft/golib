@@ -2,135 +2,80 @@ package lazy_test
 
 import (
     "fmt"
-    "strconv"
+    "sort"
+    "strings"
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/lazy"
+    "github.com/tawesoft/golib/v2/lazy"
 )
 
-func ExampleFunction() {
-    // generate an infinite sequence of integers with a function
-    integers := func() (func() (int, bool)) {
-        i := 0
-        return func() (int, bool) {
-            result := i
-            i = i + 1
-            return result, true
-        }
-    }
+// CONTRIBUTORS: keep tests in alphabetical order, but with examples grouped
+// first.
 
-    integerGenerator := lazy.Function(integers())
-    firstFour := lazy.TakeN(4, integerGenerator)
-
-    fmt.Printf("First four integers are: %v\n", lazy.ToSlice(firstFour))
-
-    // Output:
-    // First four integers are: [0 1 2 3]
+func TestAll(t *testing.T) {
+    isEven := func(x int) bool { return x % 2 == 0 }
+    assert.True (t, lazy.All(isEven, lazy.FromSlice([]int{})))
+    assert.True (t, lazy.All(isEven, lazy.FromSlice([]int{2})))
+    assert.True (t, lazy.All(isEven, lazy.FromSlice([]int{2, 4, 6})))
+    assert.False(t, lazy.All(isEven, lazy.FromSlice([]int{2, 3, 6})))
 }
 
-func ExampleToDict() {
-    type Person struct {
-        name string
-        age int
-    }
-    type ID string
-
-    // a map of people
-    people := lazy.FromDict(map[ID]Person{
-        "ATUR001": {name: "Alice Turing", age: 23},
-        "GHOP001": {name: "George Hopper", age: 60},
-        "FKAH001": {name: "Freddy Kahlo", age: 29},
-    })
-
-    // this filter function returns true for people under thirty
-    underThirty := func(kv lazy.Item[ID, Person]) bool {
-        return kv.Value.age < 30
-    }
-
-    // apply the filter and finally generate a dict
-    peopleUnderThirty := lazy.ToDict(lazy.Filter(underThirty, people))
-
-    // printer function
-    p := func(lookup map[ID]Person, id ID) {
-        if person, ok := lookup[id]; ok {
-            fmt.Printf("%s: %+v\n", id, person)
-        } else {
-            fmt.Printf("%s: NOT FOUND\n", id)
-        }
-    }
-
-    p(peopleUnderThirty, "ATUR001")
-    p(peopleUnderThirty, "GHOP001") // missing!
-    p(peopleUnderThirty, "FKAH001")
-
-    // Output:
-    // ATUR001: {name:Alice Turing age:23}
-    // GHOP001: NOT FOUND
-    // FKAH001: {name:Freddy Kahlo age:29}
+func TestAny(t *testing.T) {
+    isEven := func(x int) bool { return x % 2 == 0 }
+    assert.False(t, lazy.Any(isEven, lazy.FromSlice([]int{})))
+    assert.True (t, lazy.Any(isEven, lazy.FromSlice([]int{2})))
+    assert.False(t, lazy.Any(isEven, lazy.FromSlice([]int{3})))
+    assert.True (t, lazy.Any(isEven, lazy.FromSlice([]int{2, 4, 6})))
+    assert.True (t, lazy.Any(isEven, lazy.FromSlice([]int{2, 3, 6})))
+    assert.False(t, lazy.Any(isEven, lazy.FromSlice([]int{1, 3, 5})))
 }
 
-func ExampleMap() {
-    numbersAsStrings := lazy.FromSlice([]string{"1", "2", "3", "4"})
-
-    // atoi returns the integer x from the string "x"
-    atoi := func (s string) int {
-        i, _ := strconv.Atoi(s)
-        return i
+func TestAppendToSlice(t *testing.T) {
+    {
+        xs := []int{1, 2, 3}
+        ys := lazy.FromSlice([]int{4, 5, 6})
+        expected := []int{1, 2, 3, 4, 5, 6}
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
     }
-
-    doubler := func (i int) int {
-        return i * 2
+    {
+        xs := []int{}
+        ys := lazy.FromSlice([]int{4, 5, 6})
+        expected := []int{4, 5, 6}
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
     }
-
-    fmt.Printf("%v\n", lazy.ToSlice(
-        lazy.Map[int, int](doubler,     // =>  [2 4 6 8]
-            lazy.Map[string, int](atoi, // => [1 2 3 4]
-                numbersAsStrings))))    // => ["1" "2" "3" "4"]
-
-    // Output:
-    // [2 4 6 8]
-}
-
-func ExampleMap_dict() {
-    type ID string
-    type Person struct {
-        id   ID
-        name string
-        age  int
+    {
+        xs := []int{1, 2, 3}
+        ys := lazy.FromSlice([]int{})
+        expected := []int{1, 2, 3}
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
     }
-
-    // given a list of people, we want a map (id -> person)
-    people := lazy.FromSlice([]Person{
-        {id: "ATUR001", name: "Alice Turing",  age: 23},
-        {id: "GHOP001", name: "George Hopper", age: 60},
-        {id: "FKAH001", name: "Freddy Kahlo",  age: 29},
-    })
-
-    // for a person input, this function returns (id, person)
-    personToTuple := func (person Person) lazy.Item[ID, Person] {
-        return lazy.Item[ID, Person]{person.id, person}
+    {
+        xs := []int{}
+        ys := lazy.FromSlice([]int{})
+        expected := []int{}
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
     }
-
-    // apply the function over all people (lazily...)
-    peopleTuples := lazy.Map(personToTuple, people)
-
-    // finally generate a dict
-    peopleByID := lazy.ToDict(peopleTuples)
-
-    // printer function
-    p := func(lookup map[ID]Person, id ID) {
-        if person, ok := lookup[id]; ok {
-            fmt.Printf("%s: %+v\n", id, person)
-        } else {
-            fmt.Printf("%s: NOT FOUND\n", id)
-        }
+    {
+        var xs []int = nil
+        ys := lazy.FromSlice([]int{4, 5, 6})
+        expected := []int{4, 5, 6}
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
     }
-
-    p(peopleByID, "ATUR001")
-
-    // Output:
-    // ATUR001: {id:ATUR001 name:Alice Turing age:23}
+    {
+        // appending nothing to a nil slice should leave it as a nil slice
+        var xs []int = nil
+        var nilInts []int = nil
+        ys := lazy.FromSlice(nilInts)
+        var expected []int = nil
+        xs = lazy.AppendToSlice(xs, ys)
+        assert.Equal(t, expected, xs)
+    }
 }
 
 func TestCat(t *testing.T) {
@@ -141,13 +86,303 @@ func TestCat(t *testing.T) {
     assert.Equal(t, []rune("abcdef"), lazy.ToSlice(abcdef))
 }
 
+func TestCheck(t *testing.T) {
+    errorIfOdd := func (x int) error {
+        if x % 2 != 0 {
+            return fmt.Errorf("got odd number %d", x)
+        }
+        return nil
+    }
+
+    type row struct {
+        input []int
+        expectedValue int
+        expectedError error
+    }
+    rows := []row{
+        {
+            input: []int{},
+            expectedValue: 0,
+            expectedError: nil,
+        },
+        {
+            input: []int{2, 4, 8, 10},
+            expectedValue: 0,
+            expectedError: nil,
+        },
+        {
+            input: []int{2, 4, 7, 10},
+            expectedValue: 7,
+            expectedError: fmt.Errorf("got odd number 7"),
+        },
+    }
+
+    for i, r := range rows {
+        x, err := lazy.Check(errorIfOdd, lazy.FromSlice(r.input))
+        assert.Equal(t,   x, r.expectedValue, "test %i expected value", i)
+        assert.Equal(t, err, r.expectedError, "test %i expected error", i)
+    }
+}
+
+func TestEnumerate(t *testing.T) {
+    abc := lazy.FromSlice([]rune("abc"))
+
+    expected := []lazy.Item[int, rune]{
+        {0, 'a'},
+        {1, 'b'},
+        {2, 'c'},
+    }
+
+    result := lazy.ToSlice(lazy.Enumerate(abc))
+
+    assert.Equal(t, expected, result)
+}
+
+func TestFilter(t *testing.T) {
+    isOdd := func(x int) bool { return x % 2 == 1 }
+
+    assert.Equal(t, []int{1, 3},
+        lazy.ToSlice(lazy.Filter(isOdd, lazy.FromSlice([]int{1, 2, 3}))))
+
+    assert.Equal(t, []int{},
+        lazy.ToSlice(lazy.Filter(isOdd, lazy.FromSlice([]int{}))))
+}
+
+func TestFinal(t *testing.T) {
+    abc := lazy.FromSlice([]int{1, 2, 3})
+
+    expected := []lazy.FinalValue[int]{
+        {1, false},
+        {2, false},
+        {3,  true},
+    }
+
+    assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
+}
+
+func TestFromMap(t *testing.T) {
+    original := map[string]string{
+        "cat": "meow",
+        "dog": "woof",
+        "cow": "moo",
+    }
+    kvs := lazy.ToSlice(lazy.FromMap(original))
+
+    sort.Slice(kvs, func(i int, j int) bool {
+        return kvs[i].Key < kvs[j].Key
+    })
+
+    expected := []lazy.Item[string, string]{
+        {Key: "cat", Value: "meow"},
+        {Key: "cow", Value: "moo"},
+        {Key: "dog", Value: "woof"},
+    }
+
+    assert.Equal(t, expected, kvs)
+}
+
+func TestFromSlice(t *testing.T) {
+    it := lazy.FromSlice([]int{1, 2, 3})
+
+    x, ok := it(); assert.Equal(t, 1, x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t, 2, x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t, 3, x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t, 0, x); assert.Equal(t, false, ok)
+    x, ok  = it(); assert.Equal(t, 0, x); assert.Equal(t, false, ok)
+
+    it = lazy.FromSlice([]int(nil))
+    x, ok  = it(); assert.Equal(t, 0, x); assert.Equal(t, false, ok)
+}
+
+func TestFromString(t *testing.T) {
+    abc := lazy.FromString("abc")
+    assert.Equal(t, []rune{'a', 'b', 'c'}, lazy.ToSlice(abc))
+}
+
+func TestFunc(t *testing.T) {
+    it := func () lazy.It[int] {
+        var i int
+        return func() (int, bool) {
+            if i == 3 { return 0, false }
+            i++
+            return i, true
+        }
+    }
+
+    f := lazy.Func(it())
+
+    x, ok := f(); assert.Equal(t, 1, x); assert.Equal(t,  true, ok)
+    x, ok  = f(); assert.Equal(t, 2, x); assert.Equal(t,  true, ok)
+    x, ok  = f(); assert.Equal(t, 3, x); assert.Equal(t,  true, ok)
+    x, ok  = f(); assert.Equal(t, 0, x); assert.Equal(t, false, ok)
+    x, ok  = f(); assert.Equal(t, 0, x); assert.Equal(t, false, ok)
+}
+
+func TestInsertToMap(t *testing.T) {
+    {
+        base := map[string]string{
+            "cat": "meow",
+            "dog": "woof",
+            "cow": "moo",
+        }
+        extras := lazy.FromMap(map[string]string{
+            "sheep": "baa",
+            "dog": "bark",
+        })
+
+        lazy.InsertToMap(base, nil, extras)
+
+        expected := map[string]string{
+            "cat": "meow",
+            "dog": "bark",
+            "cow": "moo",
+            "sheep": "baa",
+        }
+
+        assert.Equal(t, expected, base)
+    }
+
+    {
+        base := map[string]string{
+            "cat": "meow",
+            "dog": "woof",
+            "cow": "moo",
+        }
+        extras := lazy.FromMap(map[string]string{
+            "sheep": "baa",
+            "dog": "bark",
+        })
+
+        choose := func(key string, original string, new string) string {
+            return original
+        }
+
+        lazy.InsertToMap(base, choose, extras)
+
+        expected := map[string]string{
+            "cat": "meow",
+            "dog": "woof",
+            "cow": "moo",
+            "sheep": "baa",
+        }
+
+        assert.Equal(t, expected, base)
+    }
+}
+
+func TestJoin(t *testing.T) {
+    sum := func(a int, b int) int { return a + b }
+
+    assert.Equal(t, 0, lazy.Join(sum, lazy.FromSlice([]int(nil))))
+    assert.Equal(t, 0, lazy.Join(sum, lazy.FromSlice([]int{})))
+    assert.Equal(t, 5, lazy.Join(sum, lazy.FromSlice([]int{5})))
+    assert.Equal(t, 6, lazy.Join(sum, lazy.FromSlice([]int{1, 2, 3})))
+
+}
+
+func TestMap(t *testing.T) {
+    {
+        double := func(a int) int { return a + a }
+        xs := lazy.FromSlice([]int{1, 2, 3})
+        assert.Equal(t, []int{2, 4, 6}, lazy.ToSlice(lazy.Map(double, xs)))
+    }
+    {
+        toString := func(a int) string { return fmt.Sprintf("%d", a) }
+        xs := lazy.FromSlice([]int{1, 2, 3})
+        assert.Equal(t, []string{"1", "2", "3"}, lazy.ToSlice(lazy.Map(toString, xs)))
+    }
+    {
+        double := func(a int) int { return a + a }
+        xs := lazy.FromSlice([]int{})
+        assert.Equal(t, []int{}, lazy.ToSlice(lazy.Map(double, xs)))
+    }
+    {
+        double := func(a int) int { return a + a }
+        xs := lazy.FromSlice([]int(nil))
+        assert.Equal(t, []int{}, lazy.ToSlice(lazy.Map(double, xs)))
+    }
+}
+
+func TestPairwise(t *testing.T) {
+    {
+        abcd := lazy.FromSlice([]rune("abcd"))
+
+        expected := [][2]rune{
+            {'a', 'b'},
+            {'b', 'c'},
+            {'c', 'd'},
+        }
+
+        result := lazy.ToSlice(lazy.Pairwise(abcd))
+
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int(nil)
+        expected := [][2]int{}
+        result := lazy.ToSlice(lazy.Pairwise(lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int{}
+        expected := [][2]int{}
+        result := lazy.ToSlice(lazy.Pairwise(lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int{1}
+        expected := [][2]int{}
+        result := lazy.ToSlice(lazy.Pairwise(lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+}
+
+func TestPairwiseFill(t *testing.T) {
+    {
+        abcd := lazy.FromSlice([]rune("abcd"))
+
+        expected := [][2]rune{
+            {'a', 'b'},
+            {'b', 'c'},
+            {'c', 'd'},
+            {'d', 0xFFFF},
+        }
+
+        result := lazy.ToSlice(lazy.PairwiseEnd(0xFFFF, abcd))
+
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int(nil)
+        expected := [][2]int{}
+        result := lazy.ToSlice(lazy.PairwiseEnd(999, lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int{}
+        expected := [][2]int{}
+        result := lazy.ToSlice(lazy.PairwiseEnd(999, lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+    {
+        in := []int{1}
+        expected := [][2]int{
+            {1, 999},
+        }
+        result := lazy.ToSlice(lazy.PairwiseEnd(999, lazy.FromSlice(in)))
+        assert.Equal(t, expected, result)
+    }
+}
+
+// TODO tests from here (alphabetical order)
+
 func TestTee(t *testing.T) {
     abc := lazy.FromSlice([]rune("abc"))
 
     gs := lazy.Tee(3, abc)
 
     type row struct{
-        generator    lazy.Generator[rune]
+        generator    lazy.It[rune]
         expectedRune rune
         expectedOk   bool
     }
@@ -170,68 +405,58 @@ func TestTee(t *testing.T) {
     }
 
     for i, row := range rows {
-        r, ok := row.generator.Next()
+        r, ok := row.generator()
         assert.Equal(t, row.expectedOk, ok, "test %d", i)
         assert.Equal(t, string(row.expectedRune), string(r), "test %d", i)
     }
 }
 
-func TestZip(t *testing.T) {
-    abc := lazy.FromSlice([]rune("abc"))
-    def := lazy.FromSlice([]rune("def"))
-    wxyz := lazy.FromSlice([]rune("wxyz"))
+func TestToString(t *testing.T) {
+    abc := lazy.FromSlice([]rune{'a', 'b', 'c'})
+    assert.Equal(t, "abc", lazy.ToString(abc))
+}
 
-    expected := []string{
+func TestWalk_stringBuilder(t *testing.T) {
+    var sb strings.Builder
+    strings := lazy.FromSlice([]string{"one", "two", "three"})
+    write := func(x string) { sb.WriteString(x) }
+    lazy.Walk(write, strings)
+    assert.Equal(t, "onetwothree", sb.String())
+}
+
+func TestZip(t *testing.T) {
+    a := lazy.FromSlice([]int{  1,   2,   3})
+    b := lazy.FromSlice([]int{ 10,  20,  30})
+    c := lazy.FromSlice([]int{100, 200, 300, 400})
+
+    expected := [][]int{{1, 10, 100}, {2, 20, 200}, {3, 30, 300}}
+
+    assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a, b, c)))
+}
+
+func TestZip_withStrings(t *testing.T) {
+    abc := lazy.FromString("abc")
+    def := lazy.FromString("def")
+    wxyz := lazy.FromString("wxyz")
+
+    expectedStrings := []string{
         "adw", "bex", "cfy",
     }
 
-    runesToString := func (xs []rune) string { return string(xs) }
-
-    result := lazy.ToSlice(lazy.Map(runesToString, lazy.Zip(abc, def, wxyz)))
-
-    assert.Equal(t, expected, result)
-}
-
-func TestPairwise(t *testing.T) {
-    abcd := lazy.FromSlice([]rune("abcd"))
-
-    expected := [][2]rune{
-        {'a', 'b'},
-        {'b', 'c'},
-        {'c', 'd'},
+    runes2string := func (x []rune) string {
+        return string(x)
     }
 
-    result := lazy.ToSlice(lazy.Pairwise(abcd))
-
-    assert.Equal(t, expected, result)
+    zippedToStrings := lazy.ToSlice(lazy.Map(runes2string, lazy.Zip(abc, def, wxyz)))
+    assert.Equal(t, expectedStrings, zippedToStrings)
 }
 
+func TestZipFlat(t *testing.T) {
+    abc := lazy.FromString("abc")
+    def := lazy.FromString("def")
+    wxyz := lazy.FromString("wxyz")
 
-func TestPairwiseFill(t *testing.T) {
-    abcd := lazy.FromSlice([]rune("abcd"))
+    result := lazy.ToString(lazy.ZipFlat(abc, def, wxyz))
 
-    expected := [][2]rune{
-        {'a', 'b'},
-        {'b', 'c'},
-        {'c', 'd'},
-        {'d', 0xFFFF},
-    }
-
-    result := lazy.ToSlice(lazy.PairwiseFill(0xFFFF, abcd))
-
-    assert.Equal(t, expected, result)
-}
-
-func TestEnumerate(t *testing.T) {
-    abc := lazy.FromSlice([]rune("abc"))
-
-    expected := []lazy.Item[int, rune]{
-        {0, 'a'},
-        {1, 'b'},
-        {2, 'c'},
-    }
-
-    result := lazy.ToSlice(lazy.Enumerate(abc))
-
-    assert.Equal(t, expected, result)
+    assert.Equal(t, "adwbexcfy", result)
 }
