@@ -1,3 +1,4 @@
 .idea
 .git
-
+/coverage.out
+/coverage.html

@@ -107,7 +107,7 @@ func TestCheck(t *testing.T) {
         },
         {
             input: []int{2, 4, 8, 10},
-            expectedValue: 0,
+                expectedValue: 0,
             expectedError: nil,
         },
         {
@@ -149,15 +149,32 @@ func TestFilter(t *testing.T) {
 }
 
 func TestFinal(t *testing.T) {
-    abc := lazy.FromSlice([]int{1, 2, 3})
+    {
+        abc := lazy.FromSlice([]int{1, 2, 3})
 
-    expected := []lazy.FinalValue[int]{
-        {1, false},
-        {2, false},
-        {3,  true},
+        expected := []lazy.FinalValue[int]{
+            {1, false},
+            {2, false},
+            {3,  true},
+        }
+
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
     }
-
-    assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
+    {
+        abc := lazy.FromSlice([]int{1})
+        expected := []lazy.FinalValue[int]{{1, true}}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
+    }
+    {
+        abc := lazy.FromSlice([]int{})
+        expected := []lazy.FinalValue[int]{}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
+    }
+    {
+        abc := lazy.FromSlice([]int(nil))
+        expected := []lazy.FinalValue[int]{}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Final(abc)))
+    }
 }
 
 func TestFromMap(t *testing.T) {
@@ -425,13 +442,38 @@ func TestWalk_stringBuilder(t *testing.T) {
 }
 
 func TestZip(t *testing.T) {
-    a := lazy.FromSlice([]int{  1,   2,   3})
-    b := lazy.FromSlice([]int{ 10,  20,  30})
-    c := lazy.FromSlice([]int{100, 200, 300, 400})
-
-    expected := [][]int{{1, 10, 100}, {2, 20, 200}, {3, 30, 300}}
-
-    assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a, b, c)))
+    {
+        a := lazy.FromSlice([]int{  1,   2,   3})
+        b := lazy.FromSlice([]int{ 10,  20,  30})
+        c := lazy.FromSlice([]int{100, 200, 300, 400})
+        expected := [][]int{{1, 10, 100}, {2, 20, 200}, {3, 30, 300}}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a, b, c)))
+    }
+    {
+        a := lazy.FromSlice([]int{  1,   2,   3})
+        expected := [][]int{{1}, {2}, {3}}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a)))
+    }
+    {
+        a := lazy.FromSlice([]int{  1,   2,   3})
+        b := lazy.FromSlice([]int{})
+        expected := [][]int{}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a, b)))
+    }
+    {
+        a := lazy.FromSlice([]int(nil))
+        b := lazy.FromSlice([]int(nil))
+        expected := [][]int{}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a, b)))
+    }
+    {
+        a := lazy.FromSlice([]int(nil))
+        expected := [][]int{}
+        assert.Equal(t, expected, lazy.ToSlice(lazy.Zip(a)))
+    }
+    {
+        assert.Equal(t, [][]any{}, lazy.ToSlice(lazy.Zip[any]()))
+    }
 }
 
 func TestZip_withStrings(t *testing.T) {

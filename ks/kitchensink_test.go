@@ -56,6 +56,73 @@ func TestCatch(t *testing.T) {
     }
 }
 
+func TestCheckedRange(t *testing.T) {
+    errBar := fmt.Errorf("some error")
+
+    {
+        xs := []string{"foo", "bar", "baz"}
+        failer := func(k int, v string) error {
+            result := ks.IfThenElse(v == "bar", errBar, nil)
+            fmt.Printf("failer(%d, %q) => %v\n", k, v, result)
+            return result
+        }
+        k, v, err := ks.CheckedRange(failer, xs)
+        assert.Equal(t, 1, k)
+        assert.Equal(t, "bar", v)
+        assert.Equal(t, errBar, err)
+    }
+    {
+        xs := []string{}
+        failer := func(k int, v string) error {
+            return ks.IfThenElse(v == "bar", errBar, nil)
+        }
+        k, v, err := ks.CheckedRange(failer, xs)
+        assert.Equal(t, 0, k)
+        assert.Equal(t, "", v)
+        assert.Equal(t, nil, err)
+    }
+    {
+        var xs []string = nil
+        failer := func(k int, v string) error {
+            return ks.IfThenElse(v == "bar", errBar, nil)
+        }
+        k, v, err := ks.CheckedRange(failer, xs)
+        assert.Equal(t, 0, k)
+        assert.Equal(t, "", v)
+        assert.Equal(t, nil, err)
+    }
+
+    {
+        xs := map[string]string{"FOO": "foo", "BAR": "bar", "BAZ": "baz"}
+        failer := func(k string, v string) error {
+            return ks.IfThenElse(v == "bar", errBar, nil)
+        }
+        k, v, err := ks.CheckedRange(failer, xs)
+        assert.Equal(t, "BAR", k)
+        assert.Equal(t, "bar", v)
+        assert.Equal(t, errBar, err)
+    }
+
+    {
+        xchan := make(chan string)
+        go func() {
+            xchan <- "foo"
+            xchan <- "bar"
+            xchan <- "baz"
+            close(xchan)
+        }()
+
+        failer := func(k int, v string) error {
+            return ks.IfThenElse(v == "bar", errBar, nil)
+        }
+
+        k, v, err := ks.CheckedRange(failer, xchan)
+        assert.Equal(t, 0, k) // always zero for a channel
+        assert.Equal(t, "bar", v)
+        assert.Equal(t, errBar, err)
+    }
+}
+
 func TestMust(t *testing.T) {
     successfulFunction := func() (string, error) {
         return "success", nil
@@ -81,7 +148,7 @@ func TestMustFunc(t *testing.T) {
     })
 
     successfulFunction := func(input int) (string, error) {
-        return fmt.Sprintf("%d\n", input), nil
+        return fmt.Sprintf("%d", input), nil
     }
 
     f := ks.MustFunc(successfulFunction)

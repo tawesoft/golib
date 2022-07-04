@@ -15,7 +15,6 @@ import (
     "strings"
 
     cli "github.com/jawher/mow.cli"
-    "github.com/tawesoft/golib/v2/fun/slice"
     "github.com/tawesoft/golib/v2/ks"
 )
 
@@ -109,7 +108,7 @@ func genTarget(t string) error {
 }
 
 func gen(targets []string) error {
-    if t, err := slice.CheckedWalk(genTarget, targets); err != nil {
+    if t, err := ks.CheckedRangeValue(genTarget, targets); err != nil {
         return fmt.Errorf("error generating target %s", t)
     }
     return nil

@@ -9,6 +9,7 @@ package ks
 
 import (
     "fmt"
+    "reflect"
 )
 
 // Catch calls the input function f. If successful, Catch passes on the return
@@ -17,6 +18,8 @@ import (
 //
 // If the panic raised by f contains is of type error, the returned error
 // is wrapped once.
+//
+// The opposite of Catch is [Must]: Catch(Must(os.Open(""))
 func Catch[X any](f func() X) (x X, err error) {
     defer func() {
         if r := recover(); r != nil {
@@ -29,6 +32,96 @@ func Catch[X any](f func() X) (x X, err error) {
     }()
 
     return f(), nil
+}
+
+// initsh casts an int to comparable. If the comparable is not an integer type,
+// this will panic.
+func intish[T comparable](i int) T {
+    var t T
+    ref := reflect.ValueOf(&t).Elem()
+    ref.SetInt(int64(i))
+    return t
+}
+
+// Range calls some function f(k, v) => bool over any [Rangeable]. If the
+// return value of f is false, the iteration stops.
+//
+// This is roughly equivalent to "k, v := range(x); if !f(x) { break }".
+//
+// Caution: invalid key types will panic at runtime. The key type must be int
+// for any type other than a map. See [Rangeable] for details. In a channel,
+// the key is always zero.
+func Range[K comparable, V any, R Rangeable[K, V]](
+    f func(K, V) bool,
+    r R,
+) {
+    switch ref := reflect.ValueOf(r); ref.Kind() {
+        case reflect.Array:
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](i)
+                v := ref.Index(i).Interface().(V)
+                if !f(k, v) { break }
+            }
+        case reflect.Chan:
+            for {
+                x, ok := ref.Recv()
+                if !ok { break }
+                v := x.Interface().(V)
+                if !f(intish[K](0), v) { break }
+            }
+        case reflect.Map:
+            iter := ref.MapRange()
+            for iter.Next() {
+                k, v := iter.Key().Interface().(K), iter.Value().Interface().(V)
+                if !f(k, v) { break }
+            }
+        case reflect.Slice:
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](i)
+                v := ref.Index(i).Interface().(V)
+                if !f(k, v) { break }
+            }
+        case reflect.String:
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](i)
+                v := ref.Index(i).Interface().(V)
+                if !f(k, v) { break }
+            }
+    }
+}
+
+// CheckedRange calls fn(k, v) => error for each key, value in the input slice,
+// but halts if an error is returned at any point. If so, it returns the key
+// and value being examined at the time of the error, and the encountered
+// error, or a nil error otherwise.
+func CheckedRange[K comparable, V any, R Rangeable[K, V]](
+    fn func(k K, v V) error,
+    r R,
+) (K, V, error) {
+    var (k K; v V; err error)
+    f := func(k2 K, v2 V) bool {
+        k, v = k2, v2
+        err = fn(k, v);
+        return err == nil
+    }
+    Range(f, r)
+    return k, v, err
+}
+
+// CheckedRangeValue is like [CheckedRange], but calls fn(value), not fn(key,
+// value), and returns only (value, error), not (key, value, error).
+func CheckedRangeValue[K comparable, V any, R Rangeable[K, V]](
+    fn func(v V) error,
+    r R,
+) (V, error) {
+    var (v V; err error)
+    f := func(_ K, v2 V) bool {
+        v = v2
+        err = fn(v)
+        return err == nil
+    }
+    Range(f, r)
+    return v, err
 }
 
 // IfThenElse returns a value based on a boolean condition, q. Iff q is true,
@@ -56,7 +149,7 @@ func IfThenElse[X any] (
 // KeyType in a Go [builtin.map].
 //
 // A downstream package should use this to define its own number type (e.g.
-// type Item[K comparable, V any] = ks.Item[K, V]) rather than use the type
+// type Item[K comparable, V any] ks.Item[K, V]) rather than use the type
 // directly from here in its exported interface.
 type Item[K comparable, V any] struct {
     Key   K
@@ -71,6 +164,8 @@ type Item[K comparable, V any] struct {
 // "unexpected error in Must[*os.File]: open doesnotexist: no such file or
 // directory". Must(os.Open("filethatexists")) returns a pointer to an
 // [os.File].
+//
+// The opposite of Must is [Catch]: Catch(Must(os.Open(""))
 func Must[T any](t T, err error) T {
     if err != nil {
         panic(fmt.Errorf("unexpected error in Must[%T]: %w", t, err))
@@ -111,4 +206,12 @@ type Number interface {
 func Zero[T any]() T {
     var t T
     return t
+}
+
+// Rangeable defines any type of value x where it is possible to range over
+// using "for k, v := range x" or "v := range x" (in the case of a channel,
+// only "v := range x" is permitted). For every Rangeable other than a map,
+// K must always be int.
+type Rangeable[K comparable, V any] interface {
+    ~string | ~map[K]V | ~[]V | chan V
 }
