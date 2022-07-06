@@ -10,14 +10,22 @@ jobs:
           - ubuntu-latest
           - windows-latest
         go:
-          - '1.18' # want 1.19.beta1
+          - '1.19.0-beta.1'
 
     steps:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
+
       - uses: actions/checkout@v3
-      - run: mkdir -p .tmp/coverage; go test -d 1m -v -race -coverprofile=.tmp/coverage/profile.cov $(go list ./... | grep -v /internal | grep -v /legacy )
+
+      - name: Get targets
+        run: |
+          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy )\n"
+        id: test_targets
+
+      - run: mkdir -p .tmp/coverage
+      - run: go test -d 1m -v -race -coverprofile=.tmp/coverage/profile.cov ${{ steps.test_targets.list }}
 
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
