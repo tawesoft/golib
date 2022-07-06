@@ -10,7 +10,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
         go:
-          - '1.19beta1'
+          - '1.19'
 
     steps:
       - uses: actions/setup-go@v3
