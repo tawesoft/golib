@@ -18,10 +18,12 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - uses: actions/checkout@v3
+      - run: go mod tidy
 
       - name: Get targets
         run: |
-          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy )\n"
+          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy )"
+          go list ./... | grep -v /internal | grep -v /legacy
         id: test_targets
 
       - run: mkdir -p .tmp/coverage
