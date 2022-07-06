@@ -13,8 +13,11 @@ You can subscribe to security announcements for this repository by
 and subscribing to security alerts.
 
 On a case-by-case basis, we are prepared to pre-announce security issues and 
-fixes to any downstream consumer of this repository who can evidence a high 
-impact, such as operators of a service with a large volume of users.
+fixes to any downstream consumer of this repository who can provide evidence 
+that any security issues would have a particularly high impact on their 
+services, such as operators of a service that processes personal data or is 
+used by a large volume of users. Email us with the subject
+"join golib security-preannounce list" for details.
 
 
 ## Backporting fixes

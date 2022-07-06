@@ -8,20 +8,13 @@
 // package.
 package lazy
 
-// CONTRIBUTORS: keep definitions in alphabetical order, but with types
-// grouped first.
-
 import (
+    "strings"
+
     "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/numbers"
     "golang.org/x/exp/maps"
 )
-
-// FinalValue is a value returned by the [Final] function. Iff IsFinal.IsFinal
-// is true, Value is the last value produced and the iterator is now exhausted.
-type FinalValue[X any] struct {
-    Value X
-    IsFinal bool
-}
 
 // Item is any Key, Value pair. Type K is any type that would be suitable as a
 // KeyType in a Go [builtin.map].
@@ -48,28 +41,10 @@ type Item[K comparable, V any] ks.Item[K, V]
 // true) and is said to have produced the value 3, the fourth call to it()
 // returns (0, false) and the iterator is said to be exhausted, and successive
 // calls to it() while exhausted continue to always return (0, false). A second
-// iterator, e.g. it2 := It.TakeN(5, it1), is an example of an iterator that
+// iterator, e.g. it2 := It.Take(5, it1), is an example of an iterator that
 // consumes a production of the input iterator (in this case, it1) whenever it2
 // produces values.
 type It[X any] func()(X, bool)
-
-// Reducer is a function and an identity value for reducing a sequence of
-// values into a single value by calling v = Reduce(v, x) for each x of an
-// input sequence from left to right.
-//
-// The first argument to the first invocation of the Reduce function is always
-// the provided Identity value which is defined so that Reduce(Identity, x)
-// always returns x.
-//
-// Simple example Reducers:
-//
-//     sum := Reducer{Reduce: func(a int, b int) { return a + b }, Identity: 0}
-//     mul := Reducer{Reduce: func(a int, b int) { return a * b }, Identity: 1}
-//
-type Reducer[X any] struct {
-    Reduce func(a X, b X) X
-    Identity X
-}
 
 // All calls function f for each value x produced by an iterator until either f
 // returns false, or the iterator is exhausted. All returns true iff f(x) was
@@ -116,6 +91,33 @@ func AppendToSlice[X any](
     return dest
 }
 
+// Averageable is any number type. It is used as the input type for an
+// [AverageJoiner].
+type Averagable interface { numbers.Real }
+
+// AverageJoiner returns a [Joiner] for calculating the average of a sequence.
+func AverageJoiner[In Averagable]() Joiner[In, float64] {
+    return &averageJoiner[In]{}
+}
+
+type averageJoiner[In Averagable] struct {
+    count int
+    mean float64
+}
+
+func (j *averageJoiner[In]) Join(x In, isFinal bool) {
+    j.count ++
+    f := float64(x)
+    j.mean += (f - j.mean) / float64(j.count)
+}
+
+func (j *averageJoiner[In]) End() float64 {
+    result := j.mean
+    j.count = 0
+    j.mean = 0
+    return result
+}
+
 // Cat (for "concatenate") returns an iterator that merges several input
 // iterators, consuming an input iterator in its entirety to produce values
 // before moving on to the next input iterator. The input iterators should not
@@ -148,6 +150,8 @@ func Cat[X any](its ... It[X]) It[X] {
 // a non-nil error is returned by f, and immediately returns the value being
 // examined at the time and the error. Otherwise, returns a zero value and a
 // nil error.
+//
+// See also [Walk], which is similar but does not check for errors.
 func Check[X any](
     f func(X) error,
     it It[X],
@@ -159,6 +163,24 @@ func Check[X any](
         if err := f(x); err != nil { return x, err }
     }
     return zero, nil
+}
+
+// Counter returns an iterator that produces a series of integers (between
+// [math.MinInt] and [math.MaxInt]), starting at a given number, and increasing
+// by step each time.
+func Counter(start int, step int) It[int] {
+    done := false
+    return func() (int, bool) {
+        if done { return 0, false }
+        if x, ok := numbers.Int.CheckedAdd(start, step); ok {
+            result := start
+            start = x
+            return result, true
+        } else {
+            done = true
+            return start, true
+        }
+    }
 }
 
 // Enumerate produces an [Item] for each value produced by the input iterator,
@@ -239,6 +261,13 @@ func Final[X any](it It[X]) It[FinalValue[X]] {
     }
 }
 
+// FinalValue is a value returned by the [Final] function. Iff IsFinal.IsFinal
+// is true, Value is the last value produced and the iterator is now exhausted.
+type FinalValue[X any] struct {
+    Value X
+    IsFinal bool
+}
+
 // FromMap returns an iterator that produces each (key, value) pair from the
 // input [builtin.Map] (of Go type map[X]Y, not to be confused with the higher
 // order function [Map]) as an Item. Do not modify the underlying map's keys
@@ -316,37 +345,18 @@ func InsertToMap[X comparable, Y any](
     }
 }
 
-// Join is similar to [Reduce], but without using an identity value. It applies
-// an operation between successive productions of an iterator.
-//
-// An empty iterator joins to the zero value, an iterator of length one joins
-// to the single value produced, and an iterator of length greater than one
-// joins v = f(v, x) for each value x it produces after the first, where v is
-// the first value.
-//
-// For example,
-//
-//     sum := func(a int, b int) int { return a + b }
-//     Join(sum, FromSlice([]int{}) // returns 0
-//     Join(sum, FromSlice([]int{123}) // returns 123
-//     Join(sum, FromSlice([]int{1, 2, 3})
-//     // calculates ((1 + 2) + 3) and returns 6
-//
-// Note, this is a terrible way to join strings!
-func Join[X any](
-    f func(a X, b X) X,
-    it It[X],
-) X {
-    zero := ks.Zero[X]()
+// Join uses a [Joiner] to build a result by walking over an iterator.
+func Join[In any, Out any](j Joiner[In, Out], it It[In]) Out {
+    WalkFinal(j.Join, it)
+    return j.End()
+}
 
-    v, ok := it()
-    if !ok { return zero }
-
-    for {
-        x, ok := it()
-        if !ok { return v }
-        v = f(v, x)
-    }
+// Joiner is a type for something that can build a result by walking over
+// an iterator using [Join]. It must be possible for a Joiner to be used
+// multiple times (although not concurrently) from multiple calls to [Join].
+type Joiner[In any, Out any] interface {
+    Join(x In, isFinal bool)
+    End() Out
 }
 
 // Map returns an iterator that consumes an input iterator (of type X) and
@@ -419,9 +429,9 @@ func PairwiseEnd[X any, Y [2]X](
 //
 // For example,
 //
-//     sum := func(a int, b int) { return a + b }
-//     summer := Reducer{Reduce: sum, Identity: 0}
-//     Reduce(summer, FromSlice([]int{1, 2, 3})
+//     sum := func(a int, b int) int { return a + b }
+//     summer := Reducer[int]{Reduce: sum, Identity: 0}
+//     Reduce(summer, FromSlice([]int{1, 2, 3}))
 //     // calculates (((0 + 1) + 2) + 3) and returns 6
 //
 func Reduce[X any](
@@ -434,6 +444,24 @@ func Reduce[X any](
         if !ok { return v }
         v = reducer.Reduce(v, x)
     }
+}
+
+// Reducer is a function and an identity value for reducing a sequence of
+// values into a single value by calling v = Reduce(v, x) for each x of an
+// input sequence from left to right.
+//
+// The first argument to the first invocation of the Reduce function is always
+// the provided Identity value which is defined so that Reduce(Identity, x)
+// always returns x.
+//
+// Simple example Reducers:
+//
+//     sum := Reducer{Reduce: func(a int, b int) { return a + b }, Identity: 0}
+//     mul := Reducer{Reduce: func(a int, b int) { return a * b }, Identity: 1}
+//
+type Reducer[X any] struct {
+    Reduce func(a X, b X) X
+    Identity X
 }
 
 // Repeat produces the value x, with n repetitions. If n is negative, it
@@ -453,9 +481,31 @@ func Repeat[X any](
     }
 }
 
-// TakeN returns an iterator that produces only (up to) the first n items of
+// StringJoiner returns a [Joiner] for concatenating strings with a (possibly
+// empty) separator.
+func StringJoiner(sep string) Joiner[string, string] {
+    return &stringJoiner{sep: sep}
+}
+
+type stringJoiner struct {
+    sb strings.Builder
+    sep string
+}
+
+func (j *stringJoiner) Join(x string, isFinal bool) {
+    j.sb.WriteString(x)
+    if !isFinal { j.sb.WriteString(j.sep) }
+}
+
+func (j *stringJoiner) End() string {
+    result := j.sb.String()
+    j.sb.Reset()
+    return result
+}
+
+// Take returns an iterator that produces only (up to) the first n items of
 // the input iterator.
-func TakeN[X any](
+func Take[X any](
     n int,
     xs It[X],
 ) It[X] {
@@ -555,7 +605,10 @@ func ToString(it It[rune]) string {
     return string(ToSlice[rune](it))
 }
 
-// Walk calls function f for each value produced by an iterator.
+// Walk calls a visitor function f for each value produced by an iterator.
+//
+// See also [Check], which is like Walk but aborts on error, and [WalkFinal], which
+// is like Walk but the last item produced by the input iterator is detected.
 func Walk[X any](
     f func (X),
     it It[X],
@@ -564,6 +617,20 @@ func Walk[X any](
         x, ok := it()
         if !ok { break }
         f(x)
+    }
+}
+
+// WalkFinal is like [Walk], but the second argument to the visitor function is
+// true if x is the last item to be produced by an iterator.
+func WalkFinal[X any](
+    f func(X, bool),
+    it It[X],
+) {
+    final := Final(it)
+    for {
+        x, ok := final()
+        if !ok { break }
+        f(x.Value, x.IsFinal)
     }
 }
 

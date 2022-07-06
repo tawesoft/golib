@@ -1,4 +1,4 @@
-// x-doc-short-desc: locale aware number parsing
+// x-doc-short-desc: locale-aware number parsing
 // x-doc-stable: yes
 
 // Package localize is an attempt at implementing locale-aware parsing of

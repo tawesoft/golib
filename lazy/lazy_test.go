@@ -2,12 +2,14 @@ package lazy_test
 
 import (
     "fmt"
+    "math"
     "sort"
     "strings"
     "testing"
 
     "github.com/stretchr/testify/assert"
     "github.com/tawesoft/golib/v2/lazy"
+    "golang.org/x/exp/maps"
 )
 
 // CONTRIBUTORS: keep tests in alphabetical order, but with examples grouped
@@ -124,6 +126,46 @@ func TestCheck(t *testing.T) {
     }
 }
 
+func TestCounter(t *testing.T) {
+    min := math.MinInt
+    max := math.MaxInt
+
+    type row struct {
+        expected []int
+        inputStart int
+        inputStep  int
+        take       int
+    }
+
+    rows := []row{
+        { // row 0
+            expected: []int{2, 4, 6, 8, 10},
+            inputStart: 2,
+            inputStep:  2,
+            take:       5,
+        },
+        { // row 1
+            expected: []int{max - 1, max + 0},
+            inputStart: max - 1,
+            inputStep:  1,
+            take:       5,
+        },
+        { // row 2
+            expected: []int{min + 1, min + 0},
+            inputStart: min + 1,
+            inputStep:  -1,
+            take:       5,
+        },
+    }
+
+    for i, r := range rows {
+        expected := r.expected
+        input := lazy.Counter(r.inputStart, r.inputStep)
+        actual := lazy.ToSlice(lazy.Take(r.take, input))
+        assert.Equalf(t, expected, actual, "row %d", i)
+    }
+}
+
 func TestEnumerate(t *testing.T) {
     abc := lazy.FromSlice([]rune("abc"))
 
@@ -212,8 +254,13 @@ func TestFromSlice(t *testing.T) {
 }
 
 func TestFromString(t *testing.T) {
-    abc := lazy.FromString("abc")
-    assert.Equal(t, []rune{'a', 'b', 'c'}, lazy.ToSlice(abc))
+    it := lazy.FromString("abc")
+    z := rune(0)
+    x, ok := it(); assert.Equal(t, 'a', x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t, 'b', x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t, 'c', x); assert.Equal(t,  true, ok)
+    x, ok  = it(); assert.Equal(t,  z,  x); assert.Equal(t, false, ok)
+    x, ok  = it(); assert.Equal(t,  z,  x); assert.Equal(t, false, ok)
 }
 
 func TestFunc(t *testing.T) {
@@ -287,14 +334,33 @@ func TestInsertToMap(t *testing.T) {
     }
 }
 
-func TestJoin(t *testing.T) {
-    sum := func(a int, b int) int { return a + b }
+func TestJoin_string(t *testing.T) {
+    j := lazy.StringJoiner(", ") // can be reused
 
-    assert.Equal(t, 0, lazy.Join(sum, lazy.FromSlice([]int(nil))))
-    assert.Equal(t, 0, lazy.Join(sum, lazy.FromSlice([]int{})))
-    assert.Equal(t, 5, lazy.Join(sum, lazy.FromSlice([]int{5})))
-    assert.Equal(t, 6, lazy.Join(sum, lazy.FromSlice([]int{1, 2, 3})))
+    assert.Equal(t, "a, b, c", lazy.Join(j, lazy.FromSlice([]string{"a", "b", "c"})))
+    assert.Equal(t, "a, b, c", lazy.Join(j, lazy.FromSlice([]string{"a", "b", "c"}))) // reuse j
+    assert.Equal(t, "a",       lazy.Join(j, lazy.FromSlice([]string{"a"})))
+    assert.Equal(t, "",        lazy.Join(j, lazy.FromSlice([]string{""})))
+    assert.Equal(t, "",        lazy.Join(j, lazy.FromSlice([]string(nil))))
+}
 
+func TestJoin_average(t *testing.T) {
+    j := lazy.AverageJoiner[int]() // can be reused
+
+    epsilon := 0.01
+
+    {
+        avg := lazy.Join(j, lazy.FromSlice([]int{2, 4, 6, 8}))
+        assert.InDelta(t, 5.0, avg, epsilon)
+    }
+    {
+        avg := lazy.Join(j, lazy.FromSlice([]int{2}))
+        assert.InDelta(t, 2.0, avg, epsilon)
+    }
+    {
+        avg := lazy.Join(j, lazy.FromSlice([]int{}))
+        assert.InDelta(t, 0.0, avg, epsilon)
+    }
 }
 
 func TestMap(t *testing.T) {
@@ -354,7 +420,7 @@ func TestPairwise(t *testing.T) {
     }
 }
 
-func TestPairwiseFill(t *testing.T) {
+func TestPairwiseEnd(t *testing.T) {
     {
         abcd := lazy.FromSlice([]rune("abcd"))
 
@@ -391,18 +457,93 @@ func TestPairwiseFill(t *testing.T) {
     }
 }
 
-// TODO tests from here (alphabetical order)
+func TestReduce(t *testing.T) {
+    mul := func(a int, b int) int { return a * b }
+    multiplier := lazy.Reducer[int]{Reduce: mul, Identity: 1}
+    {
+        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{1, 2, 3, 4}))
+        // 1 * 2 * 3 * 4 = 24
+        assert.Equal(t, 24, x)
+    }
+    {
+        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{4}))
+        assert.Equal(t, 4, x)
+    }
+    {
+        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{}))
+        assert.Equal(t, 1, x)
+    }
+    {
+        x := lazy.Reduce(multiplier, lazy.FromSlice([]int(nil)))
+        assert.Equal(t, 1, x)
+    }
+}
+
+func TestRepeat(t *testing.T) {
+    {
+        input := lazy.Repeat(3, [2]int{1, 2})
+        expected := [][2]int{{1, 2}, {1, 2}, {1, 2}}
+        assert.Equal(t, expected, lazy.ToSlice(input))
+    }
+    {
+        input := lazy.Repeat(5, "foo")
+        expected := []string{"foo", "foo", "foo", "foo", "foo"}
+        assert.Equal(t, expected, lazy.ToSlice(input))
+    }
+    {
+        input := lazy.Repeat(1, "foo")
+        expected := []string{"foo"}
+        assert.Equal(t, expected, lazy.ToSlice(input))
+    }
+    {
+        input := lazy.Repeat(0, "foo")
+        expected := []string{}
+        assert.Equal(t, expected, lazy.ToSlice(input))
+    }
+}
+
+func TestTake(t *testing.T) {
+    {
+        input := lazy.FromSlice([]int{1, 2, 3, 4, 5, 6})
+        expected := []int{1, 2, 3}
+        taken := lazy.Take(3, input)
+        assert.Equal(t, expected, lazy.ToSlice(taken))
+    }
+    {
+        input := lazy.FromSlice([]int{1, 2, 3})
+        expected := []int{1, 2, 3}
+        taken := lazy.Take(5, input)
+        assert.Equal(t, expected, lazy.ToSlice(taken))
+    }
+    {
+        input := lazy.FromSlice([]int{})
+        expected := []int{}
+        taken := lazy.Take(3, input)
+        assert.Equal(t, expected, lazy.ToSlice(taken))
+    }
+    {
+        input := lazy.FromSlice([]int(nil))
+        expected := []int{}
+        taken := lazy.Take(3, input)
+        assert.Equal(t, expected, lazy.ToSlice(taken))
+    }
+}
 
 func TestTee(t *testing.T) {
     abc := lazy.FromSlice([]rune("abc"))
 
     gs := lazy.Tee(3, abc)
+    // gs[0] produces 'a', 'b', 'c'
+    // gs[1] produces 'a', 'b', 'c'
+    // gs[2] produces 'a', 'b', 'c'
 
     type row struct{
         generator    lazy.It[rune]
         expectedRune rune
         expectedOk   bool
     }
+
+    // the iterators must produce their sequence, even if iterated out-of-order
     rows := []row{
         {gs[0], 'a',  true},
         {gs[1], 'a',  true},
@@ -428,9 +569,91 @@ func TestTee(t *testing.T) {
     }
 }
 
+func TestToMap(t *testing.T) {
+    f := func() lazy.It[lazy.Item[string, int]] {
+        i := 0
+        return func() (lazy.Item[string, int], bool) {
+            i++
+            switch i {
+                case 1: return lazy.Item[string, int]{"foo", 1}, true
+                case 2: return lazy.Item[string, int]{"bar", 2}, true
+                case 3: return lazy.Item[string, int]{"baz", 3}, true
+                case 4: return lazy.Item[string, int]{"baz", 4}, true
+                default: return lazy.Item[string, int]{}, false
+            }
+        }
+    }
+
+    // nil chooser means that on key collision, last added wins by default
+    choose := (func(string, int, int) int)(nil)
+
+    m := lazy.ToMap(choose, f())
+
+    expected := map[string]int{
+        "foo": 1,
+        "bar": 2,
+        "baz": 4,
+    }
+    assert.True(t, maps.Equal(expected, m))
+}
+
+func TestToMap_empty(t *testing.T) {
+    f := func() (lazy.Item[string, int], bool) {
+        return lazy.Item[string, int]{}, false
+    }
+    assert.Equal(t, map[string]int{}, lazy.ToMap(nil, f))
+}
+
+func TestToSlice(t *testing.T) {
+    f := func() lazy.It[int] {
+        i := 0
+        return func() (int, bool) {
+            i++
+            switch i {
+                case 1: return 1, true
+                case 2: return 2, true
+                case 3: return 3, true
+                case 4: return 4, true
+                default: return 0, false
+            }
+        }
+    }
+
+    s := lazy.ToSlice(f())
+
+    expected := []int{1, 2, 3, 4}
+    assert.Equal(t, expected, s)
+}
+
+func TestToSlice_empty(t *testing.T) {
+    f := func() (int, bool) {
+        return 0, false
+    }
+    assert.Equal(t, []int{}, lazy.ToSlice(f))
+}
+
 func TestToString(t *testing.T) {
-    abc := lazy.FromSlice([]rune{'a', 'b', 'c'})
-    assert.Equal(t, "abc", lazy.ToString(abc))
+    f := func() lazy.It[rune] {
+        i := 0
+        return func() (rune, bool) {
+            i++
+            switch i {
+                case 1: return 'a', true
+                case 2: return 'b', true
+                case 3: return 'c', true
+                default: return 0, false
+            }
+        }
+    }
+
+    assert.Equal(t, "abc", lazy.ToString(f()))
+}
+
+func TestToString_empty(t *testing.T) {
+    f := func() (rune, bool) {
+        return 0, false
+    }
+    assert.Equal(t, "", lazy.ToString(f))
 }
 
 func TestWalk_stringBuilder(t *testing.T) {
@@ -439,6 +662,17 @@ func TestWalk_stringBuilder(t *testing.T) {
     write := func(x string) { sb.WriteString(x) }
     lazy.Walk(write, strings)
     assert.Equal(t, "onetwothree", sb.String())
+}
+
+func TestWalkFinal_stringBuilder(t *testing.T) {
+    var sb strings.Builder
+    strings := lazy.FromSlice([]string{"one", "two", "three"})
+    write := func(x string, final bool) {
+        sb.WriteString(x)
+        if !final { sb.WriteString(", ") }
+    }
+    lazy.WalkFinal(write, strings)
+    assert.Equal(t, "one, two, three", sb.String())
 }
 
 func TestZip(t *testing.T) {

@@ -1,8 +1,5 @@
 package ks_test
 
-// CONTRIBUTORS: keep tests in alphabetical order, but with examples grouped
-// first.
-
 import (
     "errors"
     "fmt"

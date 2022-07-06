@@ -29,33 +29,38 @@ func ExampleFibonacci() {
         Reduce: func (a int, b int) int { return a + b },
     }
 
+    // create four iterators
     fib := lazy.Tee[int](4, lazy.Func(FibFunc()))
 
     fmt.Printf("First ten Fibonacci numbers are:\n    %v\n",
         lazy.ToSlice(
             lazy.Enumerate(
-                lazy.TakeN(10,
+                lazy.Take(10,
                     fib[0]))))
 
     fmt.Printf("First five odd Fibonacci numbers are:\n    %v\n",
         lazy.ToSlice(
             lazy.Enumerate(
-                lazy.TakeN(5,
+                lazy.Take(5,
                     lazy.Filter(isOdd,
                         fib[1])))))
 
     fmt.Printf("Sum of the first 10 Fibonacci numbers is: %d\n",
         lazy.Reduce(sum,
-            lazy.TakeN(10,
+            lazy.Take(10,
                 fib[2])))
 
     average := func(n int, xs lazy.It[int]) float64 {
-        total := lazy.Reduce(sum, lazy.TakeN(n, xs))
+        total := lazy.Reduce(sum, lazy.Take(n, xs))
         return float64(total) / float64(n)
     }
 
     fmt.Printf("Average of the first 5 Fibonacci numbers is: %.2f\n",
         average(5, fib[3]))
+
+    // or...
+    // fmt.Printf("Average of the first 5 Fibonacci numbers is: %.2f\n",
+    //    lazy.Join(lazy.AverageJoiner[int](), lazy.Take(5, fib[3])))
 
     // Output:
     // First ten Fibonacci numbers are:

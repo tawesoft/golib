@@ -1,0 +1,36 @@
+on: [push, pull_request]
+jobs:
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        go:
+          - '1.19beta1'
+
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v3
+      - run: mkdir -p .tmp/coverage; go test -d 1m -v -race -coverprofile=.tmp/coverage/profile.cov $(go list ./... | grep -v /internal | grep -v /legacy )
+
+      - name: Send coverage
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: .tmp/coverage/profile.cov
+          flag-name: Go-${{ matrix.go }}
+          parallel: true
+
+  # notifies that all test jobs are finished.
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true
