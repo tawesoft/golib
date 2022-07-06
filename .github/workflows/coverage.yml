@@ -1,3 +1,5 @@
+name: "Coveralls.io"
+
 on:
   push:
     branches: [ "v2" ]
