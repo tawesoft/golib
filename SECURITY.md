@@ -35,8 +35,7 @@ versions.
 Please disclose responsibly so that we can notify the users of our software
 with a fix and/or instructions, including a pre-announcement where appropriate.
 Do not report security issues through the public issue tracker in the first
-instance, unless there it a serious vulnerability being actively exploited in 
-the wild.
+instance, unless it is being actively exploited in the wild.
 
 Instead, please email information about vulnerabilities to
 [security@tawesoft.co.uk](mailto:security@tawesoft.co.uk).

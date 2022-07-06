@@ -3,7 +3,37 @@
 Open source is a gift to the commons and all contributions - bug reports,
 documentation, code, etc. - are welcomed.
 
-## Contributing Code
+## Issues and bug reports
+
+Open an issue on the
+[tawesoft/golib issue tracker](https://github.com/tawesoft/golib/issues).
+
+Please make the issue title start with the package relative
+path including version (or "all" for everything or misc chores), followed 
+by a colon. For example:
+
+```
+v2/lazy: error when doing something
+v2/all: help getting started
+```
+
+Please also label the issue "bug", "enchancement", "question", "help wanted", 
+etc.
+
+
+## Contributing code
+
+### Pull requests
+
+In the git commit message, make the first line (the subject) start with the
+package relative path (or "all" for everything or chores), followed by a colon. 
+For example:
+
+```
+all: update README
+lazy: fix something
+legacy/foo: fix something else
+```
 
 ### Copyright
 

@@ -39,3 +39,16 @@ This is modern code with generics, for go v1.19beta1+
 [normal stability guarantees](https://go.dev/doc/modules/version-numbers)
 expected for a Go package of v2 or higher. See [MIGRATIONS.md](/MIGRATIONS.md) 
 for the meaning of other terms. 
+
+## Support
+
+### Free and Community Support
+
+Use the [tawesoft/golib issue tracker](), powered by GitHub issues.
+
+### Commercial Support
+
+Open source software from Tawesoft® is backed by commercial support options.
+Email [open-source@tawesoft.co.uk](mailto:open-source@tawesoft.co.uk) or visit
+[tawesoft.co.uk/products/open-source-software](https://www.tawesoft.co.uk/products/open-source-software) 
+to learn more.
