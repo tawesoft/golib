@@ -1,6 +1,14 @@
-on: [push, pull_request]
-jobs:
+on:
+  push:
+    branches: [ "v2" ]
+  pull_request:
+    branches: [ "v2" ]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
+      - '.*/'
 
+jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
