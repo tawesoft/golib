@@ -28,7 +28,7 @@ jobs:
         id: test_targets
 
       - run: mkdir -p .tmp/coverage
-      - run: go test -d 1m -v -race -coverprofile=.tmp/coverage/profile.cov ${{ steps.test_targets.list }}
+      - run: go test -d 1m -v -race -coverprofile=.tmp/coverage/profile.cov ${{ test_targets.list }}
 
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
