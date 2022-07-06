@@ -22,8 +22,7 @@ jobs:
 
       - name: Get targets
         run: |
-          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy )"
-          go list ./... | grep -v /internal | grep -v /legacy
+          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy | xargs -n 1 basename | xargs printf -- './%s ' | xargs)"
         id: test_targets
 
       - run: mkdir -p .tmp/coverage
