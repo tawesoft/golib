@@ -3,6 +3,12 @@
 package dialog
 
 import (
+    "fmt"
+    "os"
+    "path/filepath"
+    "unicode/utf16"
+    "unsafe"
+
     "github.com/tawesoft/golib/v2/ks"
     "golang.org/x/sys/windows"
 )
@@ -11,110 +17,83 @@ var (
     dllComdlg32 = windows.NewLazySystemDLL("comdlg32.dll")
 
     procGetOpenFileName      = dllComdlg32.NewProc("GetOpenFileNameW")
+    procGetSaveFileName      = dllComdlg32.NewProc("GetSaveFileNameW")
     procCommDlgExtendedError = dllComdlg32.NewProc("CommDlgExtendedError")
 )
+
+// https://docs.microsoft.com/en-us/windows/win32/api/commdlg/ns-commdlg-openfilenamew
+type openFileNameW struct {
+    lStructSize uint32 // unsafe.SizeOf
+    hwndOwner   uintptr // leave as nil
+    hInstance   uintptr // leave as nil
+
+    // filetype filters.
+    // Pairs of (label, filter1;filter2).
+    // Nul delimited and double-nul terminated.
+    // Remove whitespace between filters
+    lpstrFilter uintptr
+    lpstrCustomFilter uintptr // buffer for filter selected by user (can be nil)
+    nMaxCustFilter uint32 // size in characters of lpstrCustomFilter
+    nFilterIndex uint32 // index (get or set) of the filter (1-indexed, or 0 for custom filter)
+
+    // initial or selected (get or set) file name; can be zero-terminated empty
+    // string. For multi-select, nul delimited and double-nul terminated. On
+    // success, contains the drive designator, path, file name, and extension of
+    // selected file.
+    lpstrFile uintptr
+    nMaxFile uint32 // size in characters of above
+
+    // file name and extension (without path information) of the selected file;
+    // can be nil. Always leave this as nil because we use OFN_NOCHANGEDIR.
+    // Get path from lpstrFile instead.
+    lpstrFileTitle uintptr
+    nMaxFileTitle uint32 // size in characters of above
+    lpstrInitialDir uintptr // initial directory
+    lpstrTitle uintptr // titlebar title; leave as nil to use locale-appropriate system default
+    flags uint32
+
+    // returned zero-based character offset of file name in lpstrFile
+    // useless when selecting multiple files
+    nFileOffset int32
+    nFileExtension int32 // as above but for extension, useless for selecting multiple files
+
+    // default extension added to the file name if the user fails to type an extension.
+    // Is it better to ignore this and let client code add extension if desired?
+    lpstrDefExt uintptr // leave as nil
+
+    lCustData uintptr // leave as nill
+    lpfnHook uintptr // leave as nil
+    lpTemplateName uintptr // leave as nil
+    pvReserved uintptr
+    dwReserved uint32
+    flagsEx uint32
+}
 
 func errSys(err error) error {
     return fmt.Errorf("windows syscall error: %w", err)
 }
 
-func getOpenFileNameW() (string, bool, error) {
-    if err := procGetOpenFileName.Find(); err != nil {
-        return nil, errSys(err)
+// splits a slice up to a null terminator, and the rest
+func nullTerminated[T ~uint16 | rune](buf []T) ([]T, []T, bool) {
+    for i := 0; i < len(buf); i++ {
+        if buf[i] == 0 {
+            if i + 1 < len(buf) {
+                return buf[:i], buf[i+1:], true
+            } else {
+                return buf[:i], buf[0:0], true
+            }
+        }
     }
-
-    // https://docs.microsoft.com/en-us/windows/win32/api/commdlg/ns-commdlg-openfilenamew
-    type openFileNameW struct {
-        lStructSize uint32 // unsafe.SizeOf
-        hwndOwnder  uintptr // leave as nil
-        hInstance   uintptr // leave as nil
-
-        // filetype filters.
-        // Pairs of (label, filter1;filter2).
-        // Nul delimited and double-nul terminated.
-        // Remove whitespace between filters
-        lpstrFilter uintptr
-        lpstrCustomFilter uintptr // buffer for filter selected by user (can be nil)
-        nMaxCustFilter uint32 // size in characters of lpstrCustomFilter
-        nFilterIndex uint32 // index (get or set) of the filter (1-indexed, or 0 for custom filter)
-
-        // initial or selected (get or set) file name; can be zero-terminated empty
-        // string. For multi-select, nul delimited and double-nul terminated. On
-        // success, contains the drive designator, path, file name, and extension of
-        // selected file.
-        lpstrFile uintptr
-        nMaxFile uint32 // size in characters of above
-
-        // file name and extension (without path information) of the selected file;
-        // can be nil. Always leave this as nil because we use OFN_NOCHANGEDIR.
-        // Get path from lpstrFile instead.
-        lpstrFileTitle uintptr
-        nMaxFileTitle uint32 // size in characters of above
-        lpstrInitialDir uintptr // initial directory
-        lpstrTitle *uint16 // titlebar title; leave as nil to use locale-appropriate system default
-        flags uint32
-
-        // returned zero-based character offset of file name in lpstrFile
-        // useless when selecting multiple files
-        nFileOffset int32
-        nFileExtension // as above but for extension, useless for selecting multiple files
-
-        // default extension added to the file name if the user fails to type an extension.
-        // Is it better to ignore this and let client code add extension if desired?
-        lpstrDefExt *uint16 // leave as nil
-
-        lCustData uintptr // leave as nill
-        lpfnHook uintptr // leave as nil
-        lpTemplateName uintptr // leave as nil
-        pvReserved uintptr
-        dwReserved uint32
-        flagsEx uint32
-    }
-
-    var flags uint32 = 0 |
-        0x00000008 | // OFN_NOCHANGEDIR  - don't let selecting a file change the program working directory
-        0x00000004 | // OFN_HIDEREADONLY - don't show a readonly checkbox (very old!)
-        0x00000800 | // OFN_PATHMUSTEXIST
-        0x00001000 | // OFN_FILEMUSTEXIST
-        0
-
-    pOpenFileNameW := openFileNameW{
-        lStructSize:       unsafe.Sizeof(openFileNameW),
-        hwndOwnder:        0,
-        hInstance:         0,
-        lpstrFilter:       pwidePermitNul("Test\0*.*\0\0"),
-        lpstrCustomFilter: 0,
-        nMaxCustFilter:    0,
-        nFilterIndex:      1,
-        lpstrFile:         pwidePermitNul("test\0\0          "),
-        nMaxFile:          16,
-        lpstrFileTitle:    0,
-        nMaxFileTitle:     0,
-        lpstrInitialDir:   pwide(ks.Must(os.Getwd())), // TODO handle error
-        lpstrTitle:        0,
-        flags:             flags,
-        nFileOffset:       0,
-        nFileExtension:    0,
-        lpstrDefExt:       0,
-        lCustData:         0,
-        lpfnHook:          0,
-        lpTemplateName:    0,
-        pvReserved:        0,
-        dwReserved:        0,
-        flagsEx:           0,
-    }
-
-    ret, _, _ := procGetOpenFileName.Call(
-        uintptr(unsafe.Pointer(&pOpenFileNameW)),
-    )
+    return nil, nil, false
 }
 
 func widePermitNul(input string) *uint16 {
-    return &utf16.Encode([]rune(s + "\x00"))
+    s := utf16.Encode([]rune(input + "\x00"))
+    return &s[0]
 }
 
 func pwidePermitNul(input string) uintptr {
-    return unsafe.Pointer(widePermitNul(input))
+    return uintptr(unsafe.Pointer(widePermitNul(input)))
 }
 
 func wide(input string) *uint16 {
@@ -124,8 +103,9 @@ func wide(input string) *uint16 {
         return result
     }
 }
+
 func pwide(input string) uintptr {
-    return unsafe.Pointer(wide(input))
+    return uintptr(unsafe.Pointer(wide(input)))
 }
 
 func (i IconType) iconFlag() uint32 {
@@ -147,19 +127,196 @@ func supported() Support {
     }
 }
 
-func (m FilePicker) open() (string, bool) {
+func (m FilePicker) _pick(
+    mode rune, // (o)pen, (m)ultiple, (s)ave
+) ([]string, bool, error) {
+    var err error
 
+    if err := procGetOpenFileName.Find(); err != nil {
+        err = fmt.Errorf("missing requried comdlg32.dll procedure GetOpenFileNameW: %w", err)
+        return nil, false, errSys(err)
+    }
 
+    if err := procGetSaveFileName.Find(); err != nil {
+        err = fmt.Errorf("missing requried comdlg32.dll procedure GetSaveFileNameW: %w", err)
+        return nil, false, errSys(err)
+    }
 
-    return "", false
+    if err := procGetOpenFileName.Find(); err != nil {
+        err = fmt.Errorf("missing requried comdlg32.dll procedure CommDlgExtendedError: %w", err)
+        return nil, false, errSys(err)
+    }
+
+    var flags uint32 = 0 |
+        0x00000008 | // OFN_NOCHANGEDIR  - don't let selecting a file change the program working directory
+        0x00000004 | // OFN_HIDEREADONLY - don't show a readonly checkbox (very old!)
+        0
+
+    if (mode == 'o') || (mode == 'm') {
+        flags |=
+            0x00000800 | // OFN_PATHMUSTEXIST
+            0x00001000 | // OFN_FILEMUSTEXIST
+            0
+    }
+
+    if mode == 'm' {
+        flags |=
+            0x00000200 | // OFN_ALLOWMULTISELECT
+            0x00080000 | // OFN_EXPLORER force more modern multiselect
+            0
+    }
+
+    if mode == 's' {
+        flags |=
+            0x00008000 | // OFN_NOREADONLYRETURN
+            0x00010000 | // OFN_NOTESTFILECREATE
+            0
+    }
+
+    if !m.AddToRecent {
+        flags |= 0x02000000 // OFN_DONTADDTORECENT
+    }
+
+    if m.AlwaysShowHidden {
+        flags |= 0x10000000 // OFN_FORCESHOWHIDDEN
+    }
+
+    const bufSize = 16*1024 // UTF16 chars
+    buf := make([]uint16, bufSize)
+    base := filepath.Base(m.Path)
+    if base != "" {
+        if lpstrBase, err := windows.UTF16FromString(base); err == nil {
+            copy(buf, lpstrBase)
+        } else {
+            return nil, false, fmt.Errorf("Unicode error: %w", err)
+        }
+    }
+
+    initialDir := filepath.Dir(m.Path)
+    if initialDir == "" {
+        initialDir, err = os.Getwd()
+        if err != nil {
+            return nil, false, fmt.Errorf("error getting current working directory: %w", err)
+        }
+    }
+
+    pOpenFileNameW := openFileNameW{
+        lStructSize:       152,
+        lpstrFilter:       pwidePermitNul("Test (*.txt)\000*.txt\000\000"),
+        nFilterIndex:      1,
+        lpstrFile:         uintptr(unsafe.Pointer(&buf[0])),
+        nMaxFile:          bufSize,
+        lpstrInitialDir:   pwide(initialDir),
+        flags:             flags,
+    }
+
+    if mode != 's' {
+        ret, _, err := procGetOpenFileName.Call(
+            uintptr(unsafe.Pointer(&pOpenFileNameW)),
+        )
+
+        if ret == 0 {
+            ret, _, err = procCommDlgExtendedError.Call()
+            if err != nil {
+                err = fmt.Errorf("error in comdlg32.dll procedure CommDlgExtendedError: %w", err)
+                return nil, false, errSys(err)
+            }
+            if ret != 0 {
+                err = fmt.Errorf("error in comdlg32.dll procedure GetOpenFileNameW: CommDlgExtendedError returned 0x%x", ret)
+                return nil, false, errSys(err)
+            } else {
+                return nil, false, nil // closed / cancelled
+            }
+        }
+    } else {
+        ret, _, err := procGetSaveFileName.Call(
+            uintptr(unsafe.Pointer(&pOpenFileNameW)),
+        )
+
+        if ret == 0 {
+            ret, _, err = procCommDlgExtendedError.Call()
+            if err != nil {
+                err = fmt.Errorf("error in comdlg32.dll procedure CommDlgExtendedError: %w", err)
+                return nil, false, errSys(err)
+            }
+            if ret != 0 {
+                err = fmt.Errorf("error in comdlg32.dll procedure GetSaveFileNameW: CommDlgExtendedError returned 0x%x", ret)
+                return nil, false, errSys(err)
+            } else {
+                return nil, false, nil // closed / cancelled
+            }
+        }
+    }
+
+    // multiple items
+    if mode == 'm' {
+        results := make([]string, 0)
+        for {
+            result, rest, ok := nullTerminated(buf)
+            if len(result) == 0 { break }
+            if !ok { break }
+            results = append(results, string(utf16.Decode(result)))
+            buf = rest
+        }
+
+        if len(results) <= 1 {
+            // single item
+            return results, true, nil
+        } else {
+            // multiple items so the first is the directory
+            // and the remaining are relative.
+            root, rest := results[0], results[1:]
+            for i := 0; i < len(rest); i++ {
+                rest[i] = filepath.Join(root, rest[i])
+            }
+            return rest, true, nil
+        }
+    }
+
+    // single item
+    if result, _, ok := nullTerminated(buf); !ok {
+        err = fmt.Errorf("error in comdlg32.dll procedure CommDlgExtendedError: expected null-terminated result")
+        return nil, false, errSys(err)
+    } else {
+        resultStr := string(utf16.Decode(result))
+        return []string{resultStr}, true, nil
+    }
 }
 
-func (m FilePicker) openMultiple() ([]string, bool) {
-    return []string{}, false
+func (m FilePicker) open() (string, bool, error) {
+    if xs, ok, err := m._pick('o'); err != nil {
+        return "", false, fmt.Errorf("error opening file picker: %w", err)
+    } else if !ok {
+        return "", false, nil
+    } else {
+        if len(xs) > 0 {
+            return xs[0], true, nil
+        } else {
+            return "", false, nil
+        }
+    }
 }
 
-func (m FilePicker) save() (string, bool) {
-    return "", false
+func (m FilePicker) openMultiple() ([]string, bool, error) {
+    if xs, ok, err := m._pick('m'); err != nil {
+        return nil, false, fmt.Errorf("error opening file picker: %w", err)
+    } else {
+        return xs, ok, nil
+    }
+}
+
+func (m FilePicker) save() (string, bool, error) {
+    if xs, ok, err := m._pick('s'); err != nil {
+        return "", false, fmt.Errorf("error opening save file picker: %w", err)
+    } else if !ok {
+        return "", false, nil
+    } else {
+        if len(xs) > 0 {
+            return xs[0], true, nil
+        } else {
+            return "", false, nil
+        }
+    }
 }
 
 func (m Message) ask(message string) bool {

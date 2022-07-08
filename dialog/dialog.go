@@ -17,7 +17,7 @@
 // right-to-left display mode when using a RTL writing system such as Arabic or
 // Hebrew. This package uses the older (pre-Vista) APIs because the new APIs
 // make an awkward mix with Go's concurrency model and we don't want that to
-// complicated our API just for simple features.
+// complicate our API just for simple features.
 //
 // On other systems (Linux, etc), this package executes (in order of priority):
 //
@@ -94,46 +94,48 @@ func Ask(message string, args...interface{}) bool {
 
 // Open is a convenience function to display a file picker dialog to select a
 // single file. It blocks until an option is picked, then returns the selected
-// path and true, or ("", false) if no file was selected (i.e. the user
-// selected the cancel option) . Where not supported, immediately returns ("",
-// false) without blocking.
+// path as an absolute path, and true, or an empty string and false if no file
+// was selected (i.e. the user selected the cancel option).
+//
+// Where not supported, immediately returns ("", false, nil) without blocking
+// (see [Supported]).
 //
 // Note that this does not actually read the file or open it for writing,
 // but merely selects a path.
-func Open(file string) (string, bool) {
+func Open(file string) (string, bool, error) {
     return FilePicker{
     }.Open()
 }
 
-// OpenMultiple is like [Open], but allows multiple files to be selected.
-func OpenMultiple(file string) ([]string, bool) {
+// OpenMultiple is like [Open], but allows multiple files to be selected. Each
+// returned path is still an absolute path.
+func OpenMultiple(file string) ([]string, bool, error) {
     return FilePicker{
     }.OpenMultiple()
 }
 
-// Save is like [Open], but for picking a file to write to. This may change the look of
-// the file picker (e.g. to have a button that says "Save" instead of "Open").
+// Save is like [Open], but for picking a file to write to. This may change the
+// look of the file picker (e.g. to have a button that says "Save" instead of
+// "Open").
 //
 // Note that this does not actually write to the file or open it for writing,
 // but merely selects a path.
-func Save(file string) (string, bool) {
+func Save(file string) (string, bool, error) {
     return FilePicker{
     }.Save()
 }
 
-// FilePicker is a dialog to select files (including directories) to load or
-// save.
+// FilePicker is a dialog to select file(s) to load or save.
 type FilePicker struct {
     // Title is the file picker window title (may be empty) e.g. "Open" or
     // "Save". If the implementation has a locale-aware default, then this
     // is ignored and the default is used instead.
     Title string
 
-    // Path is the initial file or directory selected (may be empty).
+    // Path is the initial file selected (if empty, defaults to
+    // current working directory). To open in a specific directory without
+    // specifying a file name, use a trailing slash.
     Path string
-
-    // SelectDirectories, if true, selects directory(ies) instead of files.
-    SelectDirectories bool
 
     // FileTypes is hint describing known file types and file extensions. It
     // may be used to filter visible files. May be nil.
@@ -161,20 +163,23 @@ type FilePicker struct {
 }
 
 // Open displays a file picker dialog to select a single file. It blocks until
-// an option is picked, then returns the selected path and true, or ("", false)
-// if no file was selected (i.e. the user selected the cancel option) . Where
-// not supported, immediately returns ("", false) without blocking.
+// an option is picked, then returns the selected path as an absolute path, and
+// true, or an empty string and false if no file was selected (i.e. the user
+// selected the cancel option).
+//
+// Where not supported, immediately returns ("", false, nil) without blocking
+// (see [Supported]).
 //
 // Note that this does not actually read the file or open it for writing,
 // but merely selects a path.
-func (m FilePicker) Open() (string, bool) {
+func (m FilePicker) Open() (string, bool, error) {
     if m.Title == "" { m.Title = "Open..." }
     return m.open()
 }
 
 // OpenMultiple is like [FilePicker.Open], but allows multiple files to be
-// selected.
-func (m FilePicker) OpenMultiple() ([]string, bool) {
+// selected. Each returned path is still an absolute path.
+func (m FilePicker) OpenMultiple() ([]string, bool, error) {
     if m.Title == "" { m.Title = "Open..." }
     return m.openMultiple()
 }
@@ -185,7 +190,7 @@ func (m FilePicker) OpenMultiple() ([]string, bool) {
 //
 // Note that this does not actually write to the file or open it for writing,
 // but merely selects a path.
-func (m FilePicker) Save() (string, bool) {
+func (m FilePicker) Save() (string, bool, error) {
     if m.Title == "" { m.Title = "Save As..." }
     return m.save()
 }

@@ -1,13 +1,26 @@
 package main
 
 import (
+    "fmt"
+
     "github.com/tawesoft/golib/v2/dialog"
 )
 
 func main() {
     osInit()
 
-    dialog.Open("hello.txt")
+    // dialog.Open("hello.txt")
+    name, ok, err := dialog.FilePicker{
+        Title:             "",
+        Path:              "/home/ben/Desktop/test.txt",
+        FileTypes:         nil,
+        DefaultFileType:   0,
+        AlwaysShowHidden:  false,
+        AddToRecent:       false,
+    }.OpenMultiple()
+
+    if ok { fmt.Println(name) }
+    if err != nil { fmt.Println(err.Error()) }
 
     return
 
