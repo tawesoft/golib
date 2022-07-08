@@ -1,0 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:co.v1="urn:schemas-microsoft-com:clickonce.v1" targetNamespace="urn:schemas-microsoft-com:clickonce.v1" >
+   <xs:element name="customHostSpecified" type="co.v1:customHostSpecifiedType"  /> 
+   <xs:complexType name="customHostSpecifiedType"  />  
+ </xs:schema>

@@ -1,0 +1,141 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <xs:schema targetNamespace="urn:schemas-microsoft-com:asm.v2" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:asm.v2="urn:schemas-microsoft-com:asm.v2" xmlns:asm.v3="urn:schemas-microsoft-com:asm.v3" xmlns:co.v1="urn:schemas-microsoft-com:clickonce.v1" >
+   <xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="external/xmldsig-core-schema.0.0.0.2.xsd" />
+   <xs:import namespace="urn:schemas-microsoft-com:clickonce.v1" schemaLocation="co.v1.xsd" />
+   <xs:import namespace="urn:schemas-microsoft-com:asm.v3" schemaLocation="asm.v3.types.xsd" />
+   <xs:element name="application" type="asm.v2:applicationType" />
+   <xs:element name="entryPoint" type="asm.v2:entryPointType"  />
+   <xs:element name="trustInfo" type="asm.v2:trustInfoType" />
+   <xs:element name="dependency" type="asm.v2:dependencyType" />
+   <xs:element name="file" type="asm.v2:fileType"  />
+   <xs:element name="assemblyIdentity" type="asm.v2:assemblyIdentityType"  />
+   <xs:element name="publisherIdentity" type="asm.v2:publisherIdentityType"  />
+   <xs:complexType name="applicationType" />
+   <xs:complexType name="dependencyType" >
+     <xs:sequence>
+       <xs:choice>
+         <xs:element name="dependentAssembly" type="asm.v2:dependentAssemblyType"  />
+         <xs:element name="dependentOS" type="asm.v2:dependentOSType" />
+       </xs:choice>
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="dependentAssemblyType" >
+     <xs:sequence>
+       <xs:element name="assemblyIdentity" type="asm.v2:assemblyIdentityType"  />
+       <xs:element name="hash" type="asm.v2:hashType" minOccurs="0" maxOccurs="unbounded"  />
+     </xs:sequence>
+     <xs:attribute name="dependencyType" type="asm.v2:dependencyTypeType" use="optional" default="preRequisite"  />
+     <xs:attribute name="codebase" type="xs:anyURI" />
+     <xs:attribute name="size" type="xs:integer" use="optional"  />
+     <xs:attribute name="allowDelayedBinding" type="xs:boolean" use="required" fixed="true"  />
+   </xs:complexType>
+   <xs:complexType name="hashType" >
+     <xs:complexContent>
+       <xs:extension base="ds:ReferenceType">
+         <xs:sequence>
+           <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+         </xs:sequence>
+       </xs:extension>
+     </xs:complexContent>
+   </xs:complexType>
+   <xs:complexType name="dependentOSType" >
+     <xs:sequence>
+       <xs:element name="osVersionInfo" type="asm.v2:osVersionInfoType" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="osVersionInfoType" >
+     <xs:sequence>
+       <xs:element name="os" type="asm.v2:osType" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="osType" >
+     <xs:attribute name="majorVersion" type="asm.v2:TwoByteVersion" use="required" fixed="4" />
+     <xs:attribute name="minorVersion" type="asm.v2:TwoByteVersion" use="required" fixed="10" />
+     <xs:attribute name="buildNumber" type="asm.v2:TwoByteVersion" use="required" fixed="0"  />
+     <xs:attribute name="servicePackMajor" type="asm.v2:OneByteVersion" use="required" fixed="0"  />
+   </xs:complexType>
+   <xs:simpleType name="TwoByteVersion" >
+     <xs:restriction base="xs:integer">
+       <xs:minInclusive value="0" />
+       <xs:maxInclusive value="65535" />
+     </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="OneByteVersion" >
+     <xs:restriction base="xs:integer">
+       <xs:minInclusive value="0" />
+       <xs:maxInclusive value="255" />
+     </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="dependencyTypeType" >
+     <xs:restriction base="xs:string">
+       <xs:enumeration value="preRequisite"  />
+       <xs:enumeration value="install"/>
+     </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="fileNameStringType" >
+         <xs:restriction base="xs:string">
+           <xs:pattern value="([\u0020]|[\u0021]|[\u0024]|[\u0025]|[\u0027-\u0029]|[\u002B-\u002E]|[\u0030-\u0039]|[\u003B]|[\u003D]|[\u0040-\u005B]|[\u005D-\u007B]|[\u007D-\uFFFD]|[\u10000-\u10FFFF])*" />
+         </xs:restriction>
+     </xs:simpleType>
+   <xs:complexType name="assemblyIdentityType" >
+     <xs:attribute name="name" type="asm.v2:fileNameStringType" use="required" />
+     <xs:attribute name="version" type="asm.v2:fourPartVersionType" use="required"  />
+     <xs:attribute name="type" type="xs:string" use="optional" fixed="win32"  />
+     <xs:attribute name="processorArchitecture" type="xs:string" use="optional" fixed="msil"  />
+     <xs:attribute name="publicKeyToken" type="asm.v2:publicKeyTokenType" use="optional"  />
+     <xs:attribute name="language" type="xs:string" use="optional" fixed="neutral"  />
+   </xs:complexType>
+   <xs:simpleType name="fourPartVersionType" >
+     <xs:restriction base="xs:string">
+       <xs:pattern value="(0*[0-9]{1,4}|0*[1-5][0-9]{4}|0*6[0-4][0-9]{3}|0*65[0-4][0-9]{2}|0*655[0-2][0-9]|0*6553[0-5])\.(0*[0-9]{1,4}|0*[1-5][0-9]{4}|0*6[0-4][0-9]{3}|0*65[0-4][0-9]{2}|0*655[0-2][0-9]|0*6553[0-5])\.(0*[0-9]{1,4}|0*[1-5][0-9]{4}|0*6[0-4][0-9]{3}|0*65[0-4][0-9]{2}|0*655[0-2][0-9]|0*6553[0-5])\.(0*[0-9]{1,4}|0*[1-5][0-9]{4}|0*6[0-4][0-9]{3}|0*65[0-4][0-9]{2}|0*655[0-2][0-9]|0*6553[0-5])" />
+     </xs:restriction>
+   </xs:simpleType>  
+   <xs:simpleType name="publicKeyTokenType" >
+     <xs:restriction base="xs:string">
+       <xs:pattern value="([0-9]|[a-f]|[A-F]){16}" />
+     </xs:restriction>
+   </xs:simpleType>
+   <xs:complexType name="publisherIdentityType" >
+     <xs:attribute name="name" type="xs:string" />
+     <xs:attribute name="issuerKeyHash" type="xs:string"  />
+   </xs:complexType>
+   <xs:complexType name="entryPointType" >
+     <xs:sequence>
+       <xs:element ref="co.v1:customHostSpecified" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="trustInfoType" >
+     <xs:sequence>
+       <xs:element name="security" type="asm.v2:securityType" />                 
+       <xs:element ref="asm.v3:asmv3" minOccurs="0"  />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="securityType" >
+     <xs:sequence>
+       <xs:element name="applicationRequestMinimum" type="asm.v2:applicationRequestMinimumType" />
+       <xs:element name="requestedPrivileges" type="asm.v3:requestedPrivilegesType" />
+       <xs:element ref="asm.v3:asmv3" minOccurs="0" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="applicationRequestMinimumType" >
+     <xs:sequence>
+       <xs:element name="PermissionSet" type="asm.v2:PermissionSetType" />
+       <xs:element name="defaultAssemblyRequest" type="asm.v2:defaultAssemblyRequestType" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="PermissionSetType" >
+     <xs:attribute name="ID" type="xs:ID" use="required" />
+     <xs:attribute name="Unrestricted" type="xs:boolean" use="required" fixed="true"  />
+     <xs:attribute name="SameSite" type="xs:string" use="required" fixed="site"  />
+   </xs:complexType>
+   <xs:complexType name="defaultAssemblyRequestType" >
+     <xs:attribute name="permissionSetReference" type="xs:IDREF"  />
+   </xs:complexType>
+   <xs:complexType name="fileType" >
+     <xs:choice minOccurs="0" maxOccurs="unbounded">
+       <xs:element name="hash" type="asm.v2:hashType" />
+     </xs:choice>
+     <xs:attribute name="name" type="xs:string" use="required" />
+     <xs:attribute name="size" type="xs:unsignedLong" use="required"  />
+   </xs:complexType>
+ </xs:schema>

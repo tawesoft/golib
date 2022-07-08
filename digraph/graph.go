@@ -1,6 +1,3 @@
-// x-doc-short-desc: directed graphs (including DAGs)
-// x-doc-stable: no
-
 // Package digraph implements a directed graph (a "digraph") and related
 // operations.
 //

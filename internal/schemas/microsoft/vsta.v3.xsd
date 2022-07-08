@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+ <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:asm.v2="urn:schemas-microsoft-com:asm.v2" xmlns:vsto.v4="urn:schemas-microsoft-com:vsto.v4" xmlns:vsta.v3="urn:schemas-microsoft-com:vsta.v3" targetNamespace="urn:schemas-microsoft-com:vsta.v3" attributeFormDefault="unqualified" elementFormDefault="qualified" >
+   <xs:import namespace="urn:schemas-microsoft-com:asm.v2" schemaLocation="asm.v2.types.xsd" />
+   <xs:import namespace="urn:schemas-microsoft-com:vsto.v4" schemaLocation="vsto.v4.xsd" />
+   <xs:element name="addIn" type="vsta.v3:addInType" />
+   <xs:complexType name="addInType" >
+     <xs:sequence>
+       <xs:element name="entryPointsCollection" type="vsta.v3:entryPointsCollectionType" minOccurs="1" maxOccurs="1"  />
+       <xs:element name="update" type="vsta.v3:updateType" maxOccurs="1" minOccurs="1"  />
+       <xs:element name="postActions" type="vsta.v3:postActionsType" maxOccurs="1" minOccurs="0"  />
+       <xs:element name="application" type="vsta.v3:applicationType" maxOccurs="1" minOccurs="0"  />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="entryPointsCollectionType" >
+     <xs:sequence>
+       <xs:element name="entryPoints" type="vsta.v3:entryPointsType" minOccurs="1" maxOccurs="unbounded"  />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="entryPointsType" >
+     <xs:sequence>
+       <xs:element name="entryPoint" type="vsta.v3:entryPointType" maxOccurs="unbounded" />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:attribute name="id" type="xs:string" use="optional"  />
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="entryPointType" mixed="true" >
+     <xs:sequence minOccurs="1" maxOccurs="1">            
+       <xs:element ref="asm.v2:assemblyIdentity" />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:attribute name="class" type="xs:string" use="required"  />    
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="postActionEntryPointType" mixed="true" >
+     <xs:sequence minOccurs="1" maxOccurs="1">
+       <xs:element ref="asm.v2:assemblyIdentity" />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:attribute name="class" type="xs:string" use="required" />    
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="updateType" >
+     <xs:sequence>
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:attribute name="enabled" type="xs:boolean" use="required" fixed="false"  />
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="postActionsType" >
+     <xs:sequence>
+       <xs:element name="postAction" type="vsta.v3:postActionType" maxOccurs="unbounded" minOccurs="0"  />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="postActionType" >
+     <xs:sequence>
+       <xs:element name="entryPoint" type="vsta.v3:postActionEntryPointType" maxOccurs="1" minOccurs="1"  />
+       <xs:element name="postActionData" type="vsta.v3:postActionDataType" maxOccurs="1" minOccurs="0"  />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="postActionDataType" >
+     <xs:sequence>
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="applicationType" >
+     <xs:sequence>
+       <xs:element ref="vsto.v4:customizations"  />
+     </xs:sequence>
+   </xs:complexType>
+ </xs:schema>

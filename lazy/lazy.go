@@ -1,6 +1,3 @@
-// x-doc-short-desc: lazy evaluation
-// x-doc-stable: candidate
-
 // Package lazy implements lazy evaluation (strictly typed with Go generics).
 //
 // To avoid confusion, between the higher-order function "map" and the Go map

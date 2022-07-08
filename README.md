@@ -11,33 +11,33 @@ This is modern code with generics, for go v1.19beta1+
 
 ## Packages
 
+|   Name   |       /v2        | /v3 | Description                                             |
+|:--------:|:----------------:|:---:|:--------------------------------------------------------|
+|  dialog  |      stable      |  -  | simple cross-platform message boxes & file pickers      |
+| digraph  | [unstable][101]  |  -  | directed graphs (including DAGs)                        |
+|   drop   |    candidate     |  -  | drop process privileges and inherit handles             |
+|  grace   |    candidate     |  -  | start and gracefully shutdown processes                 |
+| humanize |    candidate     |  -  | locale-aware parsing & formatting of times & quantities |
+|    ks    | [candidate][102] |  -  | misc helpful things                                     |
+|   lazy   | [candidate][103] |  -  | composable lazy sequences                               |
+|  loader  | [unstable][105]  |  -  | concurrent dependency graph solver                      |
+| numbers  |  [stable][107]   |  -  | helpful things for number types                         |
 
-|      Name       |   v2 Status    | v3 Status | Description                                 |
-|:---------------:|:--------------:|:---------:|:--------------------------------------------|
-|     dialog      |     stable     |     -     | simple cross-platform message boxes         |
-|     digraph     | [unstable][1]  |     -     | directed graphs (including DAGs)            |
-|      drop       |   candidate    |     -     | drop process privileges and inherit handles |
-|      grace      |   candidate    |     -     | start and gracefully shutdown processes     |
-|    humanize     |     stable     | unstable  | locale-aware natural number formatting      |
-|       ks        | [candidate][2] |     -     | misc helpful things                         |
-|      lazy       | [candidate][3] |     -     | lazy evaluation                             |
-| legacy/operator |  [frozen][4]   |     -     | operators as functions                      |
-|     loader      | [unstable][5]  |     -     | concurrent dependency graph solver          |
-|    localize     |  [stable][6]   | unstable  | locale-aware number parsing                 |
-|     numbers     |  [stable][7]   |     -     | helpful things for number types             |
+[101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
+[102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
+[103]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
+[105]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
+[106]: https://pkg.go.dev/github.com/tawesoft/golib/v2/localize
+[107]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
 
+**Note:** Additional v2/legacy packages exist for users migrating from
+`tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).
 
-[1]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
-[2]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
-[3]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
-[4]: https://pkg.go.dev/github.com/tawesoft/golib/v2/legacy/operator
-[5]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
-[6]: https://pkg.go.dev/github.com/tawesoft/golib/v2/localize
-[7]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
-
-**Note:** "Frozen" or "normal" stability packages have the
+**Note:** Packages have the
 [normal stability guarantees](https://go.dev/doc/modules/version-numbers)
-expected for a Go package of v2 or higher. See [MIGRATIONS.md](/MIGRATIONS.md) 
+expected for a Go package of v2 or higher, except where marked 
+"partial", "candidate", or "unstable". See 
+[MIGRATIONS.md](/MIGRATIONS.md) 
 for the meaning of other terms. 
 
 ## Support

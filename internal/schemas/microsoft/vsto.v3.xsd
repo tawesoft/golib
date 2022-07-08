@@ -1,0 +1,43 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <xs:schema xmlns:vsto.v4="urn:schemas-microsoft-com:vsto.v4" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="urn:schemas-microsoft-com:vsto.v4" xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+   <xs:element name="customizations" type="vsto.v4:customizationsType"  />
+   <xs:complexType name="customizationsType" >
+     <xs:sequence>
+       <xs:element name="customization" type="vsto.v4:customizationType" minOccurs="1" maxOccurs="unbounded"  />
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+   <xs:complexType name="customizationType" >
+     <xs:sequence>
+       <xs:choice minOccurs="1" maxOccurs="1">        
+         <xs:element name="appAddIn" type="vsto.v4:appAddInType" />        
+       </xs:choice>
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+     </xs:sequence>
+     <xs:attribute name="id" type="xs:string" use="optional"  />
+     <xs:anyAttribute namespace="##other" processContents="skip" />
+   </xs:complexType>
+    <xs:complexType name="appAddInType" >
+             <xs:sequence>
+               <xs:element name="friendlyName" type="xs:string" maxOccurs="1" minOccurs="1"  />
+               <xs:element name="description" type="xs:string" maxOccurs="1" minOccurs="0"  />              
+               <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other" processContents="skip" />
+             </xs:sequence>
+             <xs:attribute name="application" type="xs:string" use="required" fixed="Outlook"  />
+             <xs:attribute name="loadBehavior" type="vsto.v4:loadBehaviorType" use="optional" />
+             <xs:attribute name="keyName" type="vsto.v4:keyStringType" use="required" />
+             <xs:anyAttribute namespace="##other" processContents="skip" />
+           </xs:complexType>          
+     <xs:simpleType name="loadBehaviorType" >        
+         <xs:restriction base="xs:int">            
+             <xs:enumeration value="2"  />
+             <xs:enumeration value="3"  />
+         </xs:restriction>
+     </xs:simpleType>
+     <xs:simpleType name="keyStringType" >
+         <xs:restriction base="xs:string">
+           <xs:pattern value="(\u0020|\u0021|[\u0023-\u0029]|[\u002B-\u0039]|\u003B|\u003D|[\u0040-\u005B]|[\u005D-\u007B]|[\u007D-\uD7FF]|[\uE000-\uFFFD]|[\u10000-\u10FFFF])*" />
+         </xs:restriction>
+     </xs:simpleType>
+ </xs:schema>

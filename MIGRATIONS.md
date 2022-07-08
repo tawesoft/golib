@@ -50,10 +50,6 @@ for each package.
 
 ### Package **tawesoft.co.uk/go/dialog:**
 
-#### TODO
-
-This package has not been added yet.
-
 #### Update imports:
 
 ```diff
@@ -63,16 +59,25 @@ This package has not been added yet.
 
 ### Package **tawesoft.co.uk/go/humanizex:**
 
-#### TODO
-
-This package has not been added yet.
-
 #### Update imports:
 
 ```diff
 - import "tawesoft.co.uk/go/humanizex"
-+ import humanizex "github.com/tawesoft/golib/v2/humanize"
++ import humanizex "github.com/tawesoft/golib/v2/legacy/humanize"
 ```
+
+This `golib/v2/legacy/humanize` package is frozen and will not appear 
+in v3. It will always be available at the v2 import path. Note that this
+is different to the new (non-legacy) humanize package, which is not directly
+compatible with existing code.
+
+### (Optional) migrate **humanize** → **goblib/v2/humanize:**
+
+Package `goblib/v2/humanize` provides similar features to the old
+`tawesoft.co.uk/go/humanize` package, but migrating will require changes to 
+existing code. Note that this package is different to the legacy humanize 
+package, which is compatible with existing code.
+
 
 ### Package **tawesoft.co.uk/go/lxstrconv:**
 
@@ -80,8 +85,19 @@ This package has not been added yet.
 
 ```diff
 - import "tawesoft.co.uk/go/lxstrconv"
-+ import lxstrconv "github.com/tawesoft/golib/v2/localize"
++ import lxstrconv "github.com/tawesoft/golib/v2/legacy/localize"
 ```
+
+This `golib/v2/legacy/localize` package is frozen and will not appear 
+in v3. It will always be available at the v2 import path.
+
+### (Optional) migrate **lxstrconv** → **goblib/v2/humanize:**
+
+Package `goblib/v2/humanize` provides similar features to the old
+`tawesoft.co.uk/go/lxstrconv` package, but migrating will require changes to 
+existing code. Note that this package is different to the legacy humanize 
+package, which is compatible with existing code.
+
 
 ### Package **tawesoft.co.uk/go/operator:**
 
@@ -95,7 +111,7 @@ This package has not been added yet.
 This `golib/v2/legacy/operator` package is frozen and will not appear 
 in v3. It will always be available at the v2 import path.
 
-### (Optional) migrate package → **goblib/v2/number:**
+### (Optional) migrate operator → **goblib/v2/number:**
 
 Package `goblib/v2/number` provides similar features to the old
 `tawesoft.co.uk/go/operator` package. It uses generics and will be maintained
@@ -135,10 +151,13 @@ func foo[N numbers.Real](a N, b N) N {
 
 #### Rewrite non-checked code
 
-Remaining code is trivial, and types are automatically detected by the Go
-compiler.
+Remaining code is trivial to update, and types are automatically detected by 
+the Go compiler.
 
 ```diff
+- operator.Int.Binary.Add(2, 3) // 5
++ numbers.Add(2, 5) // 5
+
 - reduce(operator.Int.Binary.Add, []int{1, 2, 3})
 + reduce(numbers.Add, []int{1, 2, 3})
 

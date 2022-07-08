@@ -1,6 +1,3 @@
-// x-doc-short-desc: concurrent dependency graph solver
-// x-doc-stable: candidate
-
 // Package loader implements the ability to define a graph of tasks and
 // dependencies that produce results, and solve the graph incrementally or
 // totally, including concurrently.

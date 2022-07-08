@@ -1,6 +1,3 @@
-// x-doc-short-desc: helpful things for number types
-// x-doc-stable: stable
-
 // Package numbers implements assorted things that operate on numbers, such
 // as generic access to limits, addition checked for integer overflow, and
 // functions implementing builtin operators like addition so that they can

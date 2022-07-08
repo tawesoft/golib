@@ -3,3 +3,6 @@
 /coverage.out
 /coverage.html
 /.tmp
+*.exe
+*.syso
+*.out

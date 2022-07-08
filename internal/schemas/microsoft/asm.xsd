@@ -1,0 +1,23 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vsta.v3="urn:schemas-microsoft-com:vsta.v3" xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asm.v3="urn:schemas-microsoft-com:asm.v3" xmlns:asm.v2="urn:schemas-microsoft-com:asm.v2" xmlns:asm.v1="urn:schemas-microsoft-com:asm.v1" xmlns:xrml="http://www.xrml.org/schema/2001/11/xrml2core" xmlns:r="urn:mpeg:mpeg21:2003:01-REL-R-NS" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:enc="http://www.w3.org/2001/04/xmlenc#" targetNamespace="urn:schemas-microsoft-com:asm.v1" elementFormDefault="qualified" attributeFormDefault="unqualified" >
+     <xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="external/xmldsig-core-schema.0.0.0.2.xsd" />
+     <xs:include schemaLocation="asm.v1.types.xsd" />
+     <xs:import namespace="urn:schemas-microsoft-com:asm.v2" schemaLocation="asm.v2.types.xsd" />
+     <xs:import namespace="urn:schemas-microsoft-com:vsta.v3" schemaLocation="vsta.v3.xsd" />
+     <xs:element name="assembly" type="assemblyType" >        
+     </xs:element>
+     <xs:complexType name="assemblyType" >
+         <xs:sequence>            
+             <xs:element name="assemblyIdentity" type="asm.v1:assemblyIdentityType" />
+             <xs:element ref="asm.v2:application" />
+             <xs:element ref="asm.v2:entryPoint" />
+             <xs:element ref="asm.v2:trustInfo" />
+             <xs:element ref="asm.v2:dependency" minOccurs="0" maxOccurs="24575" />
+             <xs:element ref="asm.v2:file" minOccurs="0" maxOccurs="24575" />
+             <xs:element ref="vsta.v3:addIn" />
+             <xs:element ref="asm.v2:publisherIdentity" />          
+             <xs:element ref="ds:Signature" />
+         </xs:sequence>
+         <xs:attribute name="manifestVersion" type="asm.v1:twoPartVersionType" use="required" fixed="1.0"  />                  
+     </xs:complexType>
+ </xs:schema>

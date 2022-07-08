@@ -1,6 +1,3 @@
-// x-doc-short-desc: misc helpful things
-// x-doc-stable: candidate
-
 // Package ks ("kitchen sink") implements assorted helpful things that don't
 // fit anywhere else.
 package ks
@@ -188,6 +185,17 @@ func MustFunc[X any, Y any](
 ) func (x X) Y {
     return func(x X) Y {
         return Must(f(x))
+    }
+}
+
+// MustInit calls f, a function that returns a (value, error) tuple. If the
+// error is nil, returns the value. Otherwise, returns the default value d.
+// Intended to be used to initialise package-level constants.
+func MustInit[K any](f func () (value K, err error), d K) K {
+    if v, err := f(); err == nil {
+        return v
+    } else {
+        return d
     }
 }
 

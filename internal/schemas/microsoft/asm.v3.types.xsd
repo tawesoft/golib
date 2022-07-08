@@ -1,0 +1,17 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <xs:schema xmlns:asm.v3="urn:schemas-microsoft-com:asm.v3" targetNamespace="urn:schemas-microsoft-com:asm.v3" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+   <xs:element name="asmv3" type="asm.v3:asmv3Type" />
+   <xs:complexType name="requestedPrivilegesType" >
+     <xs:sequence>
+       <xs:element name="requestedExecutionLevel" type="asm.v3:requestedExecutionLevelType" />
+     </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name="requestedExecutionLevelType" >
+     <xs:attribute name="level" type="xs:string" use="required" fixed="asInvoker" />
+   </xs:complexType>  
+   <xs:complexType name="asmv3Type" >
+     <xs:sequence>
+       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##any" processContents="skip" />
+     </xs:sequence>
+   </xs:complexType>
+ </xs:schema>
