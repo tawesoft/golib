@@ -10,20 +10,6 @@ import (
 func main() {
     fmt.Printf("Supported features: %+v\n", ks.Must(dialog.Supported()))
 
-    {
-        name, ok, err := dialog.FilePicker{
-            Title:             "",
-            Path:              "",
-            FileTypes:         nil,
-            DefaultFileType:   0,
-            AlwaysShowHidden:  false,
-            AddToRecent:       false,
-        }.Open()
-
-        fmt.Printf("Got %v, %v, %v\n", name, ok, err)
-    }
-    return
-
     // For windows, enable modern styles. Does nothing on other platforms.
     osInit()
 

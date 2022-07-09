@@ -7,6 +7,7 @@ import (
     "os/exec"
     "strings"
 
+    "github.com/alessio/shellescape"
     "golang.org/x/sys/execabs"
 )
 
@@ -33,8 +34,13 @@ type funs struct {
     datePick             func() (string, bool)
 }
 
+func clean(x string) string {
+    return shellescape.Quote(x)
+}
+
 func init() {
     type paths struct {
+        shell    string
         whiptail string
         xmessage string
         xterm    string
@@ -49,6 +55,7 @@ func init() {
 
     var err error
     p := &paths{}
+    if err == nil { err = stash(&p.shell,    "sh") }
     if err == nil { err = stash(&p.whiptail, "whiptail") }
     if err == nil { err = stash(&p.xmessage, "xmessage") }
     if err == nil { err = stash(&p.xterm,    "xterm") }
@@ -67,8 +74,9 @@ func init() {
         }
     }
 
-    if (p.xterm != "") && (p.whiptail != "") && enableWhiptail {
+    if (p.shell != "") && (p.xterm != "") && (p.whiptail != "") && enableWhiptail {
         w := whiptail{
+            shell:    p.shell,
             xterm:    p.xterm,
             whiptail: p.whiptail,
         }

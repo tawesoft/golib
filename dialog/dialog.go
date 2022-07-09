@@ -187,14 +187,14 @@ type FilePicker struct {
 // Note that this does not actually read the file or open it for writing,
 // but merely selects a path.
 func (m FilePicker) Open() (string, bool, error) {
-    if m.Title == "" { m.Title = "Open..." }
+    if m.Title == "" { m.Title = "Open File..." }
     return m.open()
 }
 
 // OpenMultiple is like [FilePicker.Open], but allows multiple files to be
 // selected. Each returned path is still an absolute path.
 func (m FilePicker) OpenMultiple() ([]string, bool, error) {
-    if m.Title == "" { m.Title = "Open..." }
+    if m.Title == "" { m.Title = "Open Files..." }
     return m.openMultiple()
 }
 

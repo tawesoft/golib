@@ -1,3 +1,5 @@
+//go:build (linux || unix)
+
 package dialog
 
 import (
