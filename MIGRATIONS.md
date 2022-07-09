@@ -57,6 +57,17 @@ for each package.
 + import "github.com/tawesoft/golib/v2/dialog"
 ```
 
+#### (Optional) update code
+
+Although the new package is API-compatible with the old one, check out the
+[new features](https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog) too.
+
+```diff
+- dialog.Alert(...) // deprecated but still works
++ err := dialog.Raise(...) // preferred
++ err := dialog.MessageBox{...}.Raise() // more options
+```
+
 ### Package **tawesoft.co.uk/go/humanizex:**
 
 #### Update imports:

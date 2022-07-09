@@ -13,22 +13,22 @@ This is modern code with generics, for go v1.19beta1+
 
 |   Name   |       /v2        | /v3 | Description                                             |
 |:--------:|:----------------:|:---:|:--------------------------------------------------------|
-|  dialog  |      stable      |  -  | simple cross-platform message boxes & file pickers      |
-| digraph  | [unstable][101]  |  -  | directed graphs (including DAGs)                        |
-|   drop   |    candidate     |  -  | drop process privileges and inherit handles             |
-|  grace   |    candidate     |  -  | start and gracefully shutdown processes                 |
-| humanize |    candidate     |  -  | locale-aware parsing & formatting of times & quantities |
+|  dialog  |  [stable][101]   |  -  | simple cross-platform message boxes & file pickers      |
+| digraph  | [unstable][102]  |  -  | directed graphs (including DAGs)                        |
+|   drop   |       TODO       |  -  | drop process privileges and inherit handles             |
+|  grace   |       TODO       |  -  | start and gracefully shutdown processes                 |
+| humanize |       TODO       |  -  | locale-aware parsing & formatting of times & quantities |
 |    ks    | [candidate][102] |  -  | misc helpful things                                     |
 |   lazy   | [candidate][103] |  -  | composable lazy sequences                               |
 |  loader  | [unstable][105]  |  -  | concurrent dependency graph solver                      |
-| numbers  |  [stable][107]   |  -  | helpful things for number types                         |
+| numbers  |  [stable][106]   |  -  | helpful things for number types                         |
 
-[101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
-[102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
-[103]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
+[101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
+[102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
+[103]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
+[104]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
 [105]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
-[106]: https://pkg.go.dev/github.com/tawesoft/golib/v2/localize
-[107]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
+[106]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
 
 **Note:** Additional v2/legacy packages exist for users migrating from
 `tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).

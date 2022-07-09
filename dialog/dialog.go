@@ -71,7 +71,7 @@ func Supported() (Support, error) {
 
 // Alert is like [Raise], but doesn't return any error message on failure.
 //
-// Deprecated. This is here for legacy reasons.
+// Deprecated. This is here for legacy reasons. Use [Raise] instead.
 func Alert(message string, args...interface{}) {
     Message{
         Title:  "Alert",
@@ -99,10 +99,30 @@ func Ask(message string, args...interface{}) (bool, error) {
 // option is picked. Where not supported, immediately returns without blocking.
 func Raise(message string, args...interface{}) error {
     return Message{
-        Title:  "Alert",
+        Title:  "Message",
         Format: message,
         Args:   args,
         Icon:   IconInfo,
+    }.Raise()
+}
+
+// Warning is like [Raise], but uses a warning icon and title bar.
+func Warning(message string, args...interface{}) error {
+    return Message{
+        Title:  "Warning",
+        Format: message,
+        Args:   args,
+        Icon:   IconWarning,
+    }.Raise()
+}
+
+// Error is like [Raise], but uses an error icon and title bar.
+func Error(message string, args...interface{}) error {
+    return Message{
+        Title:  "Error",
+        Format: message,
+        Args:   args,
+        Icon:   IconError,
     }.Raise()
 }
 
