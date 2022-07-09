@@ -186,6 +186,7 @@ func (m FilePicker) pick(
 
     const bufSize = 16*1024 // UTF16 chars
     buf := make([]uint16, bufSize)
+    /*
     base := filepath.Base(m.Path)
     if base != "" {
         if lpstrBase, err := windows.UTF16FromString(base); err == nil {
@@ -193,7 +194,7 @@ func (m FilePicker) pick(
         } else {
             return nil, false, fmt.Errorf("Unicode error: %w", err)
         }
-    }
+    }*/
 
     initialDir := filepath.Dir(m.Path)
     if initialDir == "" {
