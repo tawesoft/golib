@@ -14,7 +14,7 @@ type xmessage struct {
     path string
 }
 
-func (x xmessage) exec(m Message, path string, buttons []string) *exec.Cmd {
+func (x xmessage) exec(m Message, buttons []string) *exec.Cmd {
     var btns strings.Builder
     for i, b := range buttons {
         btns.WriteString(fmt.Sprintf("%s:%d", b, i + 1))
@@ -39,7 +39,7 @@ func (x xmessage) exec(m Message, path string, buttons []string) *exec.Cmd {
 func (x xmessage) ask(m Message, message string) (bool, error) {
     var output strings.Builder
     message = ks.WrapBlock(message, 56)
-    cmd := x.exec(m, x.path, []string{"Yes", "No"})
+    cmd := x.exec(m, []string{"Yes", "No"})
     cmd.Stdin = strings.NewReader(message)
     cmd.Stdout = &output
 
@@ -70,7 +70,7 @@ func (x xmessage) ask(m Message, message string) (bool, error) {
 
 func (x xmessage) raise(m Message, message string) error {
     message = ks.WrapBlock(message, 56)
-    cmd := x.exec(m, x.path, []string{"OK"})
+    cmd := x.exec(m, []string{"OK"})
     cmd.Stdin = strings.NewReader(message)
 
     if err := cmd.Run(); err == nil {

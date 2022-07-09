@@ -13,7 +13,7 @@
 // [ncruces/zenity]:https://github.com/ncruces/zenity
 //
 // On Windows, this package uses the native windows dialogs, converts Go
-// strings into Windows UTF-16, handles null terminators, and (TODO) uses
+// strings into Windows UTF-16, handles null terminators, and uses the
 // right-to-left display mode when using a RTL writing system such as Arabic or
 // Hebrew. This package uses the older (pre-Vista) APIs because the new APIs
 // make an awkward mix with Go's concurrency model and we don't want that to
@@ -27,22 +27,26 @@
 //   - whiptail in an xterm
 //   - osascript (Apple script) (TODO) (Note: not tested!)
 //
+// Native windows and zenity dialogs will use localised text where possible,
+// but fallback implementations based on xmessage and others may default to
+// using English.
+//
 // Feature support:
 //
 //   Platform/software | Message.Raise | Message.Ask | FilePicker
 //   ------------------------------------------------------------
 //   Windows           | Yes           | Yes         | Yes
 //   zenity            | Yes           | Yes         | Yes
-//   xmessage          | Yes           | Yes         |  X
-//   whiptail + xterm  | Yes           | Yes         | Yes
+//   xmessage          | Yes           | Yes         |  No
+//   whiptail + xterm  |  No           | Yes         | Yes
 //
 // Additional feature support:
 //
 //   Platform/software | ColorPicker | DatePicker
 //   ----------------------------------------------------------
-//   Windows           |  X          |  X
+//   Windows           |  No         |  No
 //   zenity            | Yes         | Yes
-//   xmessage          |  X          |  X
+//   xmessage          |  No         |  No
 //   whiptail + xterm  | Yes         | Yes
 //
 // Please note: the message box appears on the local system. If you are writing
@@ -55,11 +59,12 @@ import (
 )
 
 type Support struct {
-    MessageRaise  bool // Can use Message.Raise?
-    MessageAsk    bool // Can use Message.Ask?
-    FilePicker    bool // Can use FileSelect.Open, FileSelect.Save, etc?
-    ColorPicker   bool // Can use ColorPicker.Pick?
-    DatePicker    bool // Can use DatePicker.Pick?
+    MessageRaise    bool // Can use Message.Raise?
+    MessageAsk      bool // Can use Message.Ask?
+    FilePicker      bool // Can use FilePicker.Open, FilePicker.Save?
+    MultiFilePicker bool // Can use FilePicker.OpenMultiple?
+    ColorPicker     bool // Can use ColorPicker.Pick?
+    DatePicker      bool // Can use DatePicker.Pick?
 }
 
 // Supported returns a [Support] struct detailing what features are available
@@ -172,12 +177,19 @@ type FilePicker struct {
     Path string
 
     // FileTypes is hint describing known file types and file extensions. It
-    // may be used to filter visible files. May be nil.
+    // may be used to filter visible files. May be nil. This is a slice of
+    // 2-tuples. The first item in the tuple is a human-readable label, the
+    // second item in the tuple is a list of patterns delimited by space. Can
+    // be left as nil as default. ("All Files", "*.*") is automatically added
+    // to the end if the last item doesn't have the exact filter "*.*".
+    //
+    // For example:
     //
     //   FileTypes: [][2]string{
-    //       {"Text Document", "*.txt; *.rtf"},
-    //       {"All Documents, ".*."},
+    //       {"Text Document", "*.txt *.rtf"},
+    //       {"Image",         "*.png"},
     //       ...
+    //       {"Pob Ffeil",      "*.*"}, // suppress English "All Files"
     //   }
     FileTypes [][2]string
 
@@ -196,6 +208,23 @@ type FilePicker struct {
     AddToRecent bool
 }
 
+// clear sets defaults on the file picker (and makes its own copy of the file
+// types slice).
+func (m FilePicker) clear() FilePicker {
+    if m.FileTypes == nil { m.FileTypes = [][2]string{} }
+    fileTypes := make([][2]string, 0, len(m.FileTypes) + 1)
+    fileTypes = append(fileTypes, m.FileTypes...)
+
+    if (len(fileTypes)) > 0 && (fileTypes[len(fileTypes) - 1][1] != "*.*") {
+        fileTypes = append(fileTypes, [2]string{"All Files", "*.*"})
+    } else if len(fileTypes) == 0 {
+        fileTypes = append(fileTypes, [2]string{"All Files", "*.*"})
+    }
+
+    m.FileTypes = fileTypes
+    return m
+}
+
 // Open displays a file picker dialog to select a single file. It blocks until
 // an option is picked, then returns the selected path as an absolute path, and
 // true, or an empty string and false if no file was selected (i.e. the user
@@ -207,6 +236,7 @@ type FilePicker struct {
 // Note that this does not actually read the file or open it for writing,
 // but merely selects a path.
 func (m FilePicker) Open() (string, bool, error) {
+    m = m.clear()
     if m.Title == "" { m.Title = "Open File..." }
     return m.open()
 }
@@ -214,6 +244,7 @@ func (m FilePicker) Open() (string, bool, error) {
 // OpenMultiple is like [FilePicker.Open], but allows multiple files to be
 // selected. Each returned path is still an absolute path.
 func (m FilePicker) OpenMultiple() ([]string, bool, error) {
+    m = m.clear()
     if m.Title == "" { m.Title = "Open Files..." }
     return m.openMultiple()
 }
@@ -225,6 +256,7 @@ func (m FilePicker) OpenMultiple() ([]string, bool, error) {
 // Note that this does not actually write to the file or open it for writing,
 // but merely selects a path.
 func (m FilePicker) Save() (string, bool, error) {
+    m = m.clear()
     if m.Title == "" { m.Title = "Save As..." }
     return m.save()
 }

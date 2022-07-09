@@ -123,6 +123,17 @@ func CheckedRangeValue[K comparable, V any, R Rangeable[K, V]](
     return v, err
 }
 
+// FirstNonZero returns the first argument that isn't equal to the zero value
+// of T, or otherwise the zero value.
+func FirstNonZero[T comparable](args ... T) T {
+    var zero T
+    for _, a := range args {
+        if a == zero { continue }
+        return a
+    }
+    return zero
+}
+
 // IfThenElse returns a value based on a boolean condition, q. Iff q is true,
 // returns the ifTrue. Iff q is false, returns ifFalse. This [IfThenElse
 // expression] (as distinct from If-Then-Else statements) is much like the

@@ -63,14 +63,31 @@ func init() {
     giniterr = err
 
     if (p.zenity != "") && enableZenity {
+        z := zenity{p.zenity}
+        if gfuns.messageAsk == nil {
+            gfuns.messageAsk = z.ask
+        }
+        if gfuns.messageRaise == nil {
+            gfuns.messageRaise = z.raise
+        }
+        if gfuns.filePickOpen == nil {
+            gfuns.filePickOpen = z.open
+        }
+        if gfuns.filePickOpenMultiple == nil {
+            gfuns.filePickOpenMultiple = z.openMultiple
+        }
+        if gfuns.filePickSave == nil {
+            gfuns.filePickSave = z.save
+        }
     }
 
     if (p.xmessage != "") && enableXMessage {
+        x := xmessage{p.xmessage}
         if gfuns.messageAsk == nil {
-            gfuns.messageAsk = xmessage{p.xmessage}.ask
+            gfuns.messageAsk = x.ask
         }
         if gfuns.messageRaise == nil {
-            gfuns.messageRaise = xmessage{p.xmessage}.raise
+            gfuns.messageRaise = x.raise
         }
     }
 
@@ -83,16 +100,20 @@ func init() {
         if gfuns.filePickOpen == nil {
             gfuns.filePickOpen = w.open
         }
+        if gfuns.filePickSave == nil {
+            gfuns.filePickSave = w.save
+        }
     }
 }
 
 func supported() (Support, error) {
     return Support{
-        MessageRaise:  gfuns.messageRaise != nil,
-        MessageAsk:    gfuns.messageAsk   != nil,
-        FilePicker:    gfuns.filePickOpen != nil,
-        DatePicker:    gfuns.datePick     != nil,
-        ColorPicker:   gfuns.colorPick    != nil,
+        MessageRaise:    gfuns.messageRaise != nil,
+        MessageAsk:      gfuns.messageAsk   != nil,
+        FilePicker:      gfuns.filePickOpen != nil,
+        MultiFilePicker: gfuns.filePickOpenMultiple != nil,
+        DatePicker:      gfuns.datePick     != nil,
+        ColorPicker:     gfuns.colorPick    != nil,
     }, giniterr
 }
 
@@ -130,11 +151,13 @@ func (m FilePicker) open() (string, bool, error) {
 }
 
 func (m FilePicker) openMultiple() ([]string, bool, error) {
-    return []string{}, false, nil
+    if gfuns.filePickSave == nil { return []string{}, false, nil }
+    return gfuns.filePickOpenMultiple(m)
 }
 
 func (m FilePicker) save() (string, bool, error) {
-    return "", false, nil
+    if gfuns.filePickSave == nil { return "", false, nil }
+    return gfuns.filePickSave(m)
 }
 
 func (m Message) ask(message string) (bool, error) {

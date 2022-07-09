@@ -53,12 +53,16 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id lorem id 
     dialog.Alert("Now please pick any file (I won't do anything with it)")
 
     name, ok, err := dialog.FilePicker{
-        Title:             "",
-        Path:              "",
-        FileTypes:         nil,
-        DefaultFileType:   0,
-        AlwaysShowHidden:  false,
-        AddToRecent:       false,
+        FileTypes: [][2]string{
+            {"Text Document", "*.txt *.rtf"},
+            {"Image",         "*.png *.jpg *.jpeg *.bmp *.gif"},
+
+            // "All Files", "*.*" appears by default, but you can suppress this
+            // and add your own as long as the last item has a filter of
+            // exactly "*.*".
+            {"Pob Ffeil",      "*.*"}, // e.g. Welsh "All Files".
+        },
+        DefaultFileType:   0, // default to first one
     }.Open()
 
     if err != nil {

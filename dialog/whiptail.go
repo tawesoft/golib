@@ -101,5 +101,18 @@ func (x whiptail) open(m FilePicker) (string, bool, error) {
         path = cwd
     }
 
-    return x.getString(m.Title, "Path:", path)
+    return x.getString(m.Title, m.Title, path)
+}
+
+func (x whiptail) save(m FilePicker) (string, bool, error) {
+    path := m.Path
+    if path == "" {
+        cwd, err := os.Getwd()
+        if err != nil {
+            return "", false, fmt.Errorf("error getting working directory: %v", err)
+        }
+        path = cwd
+    }
+
+    return x.getString(m.Title, m.Title, path)
 }

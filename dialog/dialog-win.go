@@ -6,6 +6,7 @@ import (
     "fmt"
     "os"
     "path/filepath"
+    "strings"
     "unicode/utf16"
     "unsafe"
 
@@ -122,13 +123,14 @@ func (i IconType) iconFlag() uint32 {
 
 func supported() (Support, error) {
     return Support{
-        MessageRaise:  true,
-        MessageAsk:    true,
-        FilePicker:    true,
+        MessageRaise:    true,
+        MessageAsk:      true,
+        FilePicker:      true,
+        MultiFilePicker: true,
     }, nil
 }
 
-func (m FilePicker) _pick(
+func (m FilePicker) pick(
     mode rune, // (o)pen, (m)ultiple, (s)ave
 ) ([]string, bool, error) {
     var err error
@@ -201,10 +203,23 @@ func (m FilePicker) _pick(
         }
     }
 
+    var filters strings.Builder
+    if len(m.FileTypes) == 0 { ks.Never() }
+    for _, f := range m.FileTypes {
+        name, patterns := f[0], strings.Split(f[1], " ")
+        filters.WriteString(fmt.Sprintf("%s (%s)", name, strings.Join(patterns, ", ")))
+        filters.WriteByte(0) // null terminate
+        filters.WriteString(strings.Join(patterns, ";"))
+        filters.WriteByte(0) // null terminate
+    }
+
+    // double null terminate
+    filters.WriteByte(0)
+
     pOpenFileNameW := openFileNameW{
         lStructSize:       152,
-        lpstrFilter:       pwidePermitNul("Test (*.txt)\000*.txt\000\000"),
-        nFilterIndex:      1,
+        lpstrFilter:       pwidePermitNul(filters.String()),
+        nFilterIndex:      uint32(m.DefaultFileType + 1),
         lpstrFile:         uintptr(unsafe.Pointer(&buf[0])),
         nMaxFile:          bufSize,
         lpstrInitialDir:   pwide(initialDir),
@@ -277,7 +292,7 @@ func (m FilePicker) _pick(
 }
 
 func (m FilePicker) open() (string, bool, error) {
-    if xs, ok, err := m._pick('o'); err != nil {
+    if xs, ok, err := m.pick('o'); err != nil {
         return "", false, fmt.Errorf("error opening file picker: %w", err)
     } else if !ok {
         return "", false, nil
@@ -291,7 +306,7 @@ func (m FilePicker) open() (string, bool, error) {
 }
 
 func (m FilePicker) openMultiple() ([]string, bool, error) {
-    if xs, ok, err := m._pick('m'); err != nil {
+    if xs, ok, err := m.pick('m'); err != nil {
         return nil, false, fmt.Errorf("error opening file picker: %w", err)
     } else {
         return xs, ok, nil
@@ -299,7 +314,7 @@ func (m FilePicker) openMultiple() ([]string, bool, error) {
 }
 
 func (m FilePicker) save() (string, bool, error) {
-    if xs, ok, err := m._pick('s'); err != nil {
+    if xs, ok, err := m.pick('s'); err != nil {
         return "", false, fmt.Errorf("error opening save file picker: %w", err)
     } else if !ok {
         return "", false, nil
