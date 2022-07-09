@@ -2,18 +2,139 @@
 
 package dialog
 
-func find() {
+import (
+    "fmt"
+    "os/exec"
+    "strings"
+
+    "golang.org/x/sys/execabs"
+)
+
+// Compile-time constants to enable/disable implementations, even when they're
+// found at runtime.
+const (
+    enableWhiptail = true
+    enableXMessage = true
+    enableZenity   = true
+)
+
+var (
+    gfuns  funs  // global init of functions to implementations
+    giniterr error
+)
+
+type funs struct {
+    messageRaise         func(m Message, message string) error
+    messageAsk           func(m Message, message string) (bool, error)
+    filePickOpen         func(p FilePicker) (string, bool, error)
+    filePickOpenMultiple func(p FilePicker) ([]string, bool, error)
+    filePickSave         func(p FilePicker) (string, bool, error)
+    colorPick            func() (string, bool)
+    datePick             func() (string, bool)
+}
+
+func init() {
+    type paths struct {
+        whiptail string
+        xmessage string
+        xterm    string
+        zenity   string
+    }
+
+    stash := func(dest *string, bin string) error {
+        path, err := find(bin)
+        *dest = path
+        return err
+    }
+
+    var err error
+    p := &paths{}
+    if err == nil { err = stash(&p.whiptail, "whiptail") }
+    if err == nil { err = stash(&p.xmessage, "xmessage") }
+    if err == nil { err = stash(&p.xterm,    "xterm") }
+    if err == nil { err = stash(&p.zenity,   "zenity"  ) }
+    giniterr = err
+
+    if (p.zenity != "") && enableZenity {
+    }
+
+    if (p.xmessage != "") && enableXMessage {
+        if gfuns.messageAsk == nil {
+            gfuns.messageAsk = xmessage{p.xmessage}.ask
+        }
+        if gfuns.messageRaise == nil {
+            gfuns.messageRaise = xmessage{p.xmessage}.raise
+        }
+    }
+
+    if (p.xterm != "") && (p.whiptail != "") && enableWhiptail {
+        w := whiptail{
+            xterm:    p.xterm,
+            whiptail: p.whiptail,
+        }
+        if gfuns.filePickOpen == nil {
+            gfuns.filePickOpen = w.open
+        }
+    }
+}
+
+func supported() (Support, error) {
+    return Support{
+        MessageRaise:  gfuns.messageRaise != nil,
+        MessageAsk:    gfuns.messageAsk   != nil,
+        FilePicker:    gfuns.filePickOpen != nil,
+        DatePicker:    gfuns.datePick     != nil,
+        ColorPicker:   gfuns.colorPick    != nil,
+    }, giniterr
+}
+
+func find(bin string) (string, error) {
     // "In older versions of Go, LookPath could return a path relative to the
     // current directory. As of Go 1.19, LookPath will instead return that path
     // along with an error satisfying errors.Is(err, ErrDot). See the package
     // documentation for more details."
 
-    // In case imported by an older version of Go, we use "which"
+    // Due to build constraints, we don't have to care about the
+    // “what to do about PATH lookups on Windows” "saga", but some unix users
+    // might have this set insecurely, too.
 
-    // Due to build constraints, we don't have to care about Windows
-    // being insecure if it looks in the current directory for exec.Command
+    // We use execabs.Command, which should be safe on old versions, too.
 
-    // return (exec.Command("sh", "-c", "which "+cmd+" > /dev/null 2>&1").Run() == nil)
+    var buf strings.Builder
+    cmd := execabs.Command("which", bin)
+    cmd.Stdout = &buf
 
-    // TODO TODO TODO
+    if err := cmd.Run(); err != nil {
+        if exitError, ok := err.(*exec.ExitError); ok {
+            if 1 == exitError.ExitCode() {
+                return "", nil
+            }
+        }
+        return "", fmt.Errorf("error running 'which' command: %v", err)
+    }
+
+    return strings.TrimSpace(buf.String()), nil
+}
+
+func (m FilePicker) open() (string, bool, error) {
+    if gfuns.filePickOpen == nil { return "", false, nil }
+    return gfuns.filePickOpen(m)
+}
+
+func (m FilePicker) openMultiple() ([]string, bool, error) {
+    return []string{}, false, nil
+}
+
+func (m FilePicker) save() (string, bool, error) {
+    return "", false, nil
+}
+
+func (m Message) ask(message string) (bool, error) {
+    if gfuns.messageAsk == nil { return false, nil }
+    return gfuns.messageAsk(m, message)
+}
+
+func (m Message) raise(message string) error {
+    if gfuns.messageRaise == nil { return nil }
+    return gfuns.messageRaise(m, message)
 }

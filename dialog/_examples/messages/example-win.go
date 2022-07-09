@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -7,6 +9,9 @@ import (
 )
 
 func osInit() {
+
+    // Enable modern styles
+
     libcomctl32 := windows.MustLoadDLL("comctl32.dll")
     defer libcomctl32.Release()
     commonControlsEx := libcomctl32.MustFindProc("InitCommonControlsEx")

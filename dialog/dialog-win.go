@@ -11,6 +11,7 @@ import (
 
     "github.com/tawesoft/golib/v2/ks"
     "golang.org/x/sys/windows"
+    "golang.org/x/text/unicode/bidi"
 )
 
 var (
@@ -119,12 +120,12 @@ func (i IconType) iconFlag() uint32 {
     return 0
 }
 
-func supported() Support {
+func supported() (Support, error) {
     return Support{
         MessageRaise:  true,
         MessageAsk:    true,
         FilePicker:    true,
-    }
+    }, nil
 }
 
 func (m FilePicker) _pick(
@@ -217,12 +218,8 @@ func (m FilePicker) _pick(
 
         if ret == 0 {
             ret, _, err = procCommDlgExtendedError.Call()
-            if err != nil {
-                err = fmt.Errorf("error in comdlg32.dll procedure CommDlgExtendedError: %w", err)
-                return nil, false, errSys(err)
-            }
             if ret != 0 {
-                err = fmt.Errorf("error in comdlg32.dll procedure GetOpenFileNameW: CommDlgExtendedError returned 0x%x", ret)
+                err = fmt.Errorf("error in comdlg32.dll procedure GetOpenFileNameW: CommDlgExtendedError returned 0x%x: %w", ret, err)
                 return nil, false, errSys(err)
             } else {
                 return nil, false, nil // closed / cancelled
@@ -235,12 +232,8 @@ func (m FilePicker) _pick(
 
         if ret == 0 {
             ret, _, err = procCommDlgExtendedError.Call()
-            if err != nil {
-                err = fmt.Errorf("error in comdlg32.dll procedure CommDlgExtendedError: %w", err)
-                return nil, false, errSys(err)
-            }
             if ret != 0 {
-                err = fmt.Errorf("error in comdlg32.dll procedure GetSaveFileNameW: CommDlgExtendedError returned 0x%x", ret)
+                err = fmt.Errorf("error in comdlg32.dll procedure GetSaveFileNameW: CommDlgExtendedError returned 0x%x: %w", ret, err)
                 return nil, false, errSys(err)
             } else {
                 return nil, false, nil // closed / cancelled
@@ -319,31 +312,58 @@ func (m FilePicker) save() (string, bool, error) {
     }
 }
 
-func (m Message) ask(message string) bool {
+func (m Message) flags(message string) uint32 {
+    flags := uint32(0)           |
+        windows.MB_SETFOREGROUND |
+        windows.MB_TASKMODAL     |
+        windows.MB_TOPMOST
+
+    // right-to-left writing system?
+    for _, r := range message {
+        prop, _ := bidi.LookupRune(r)
+        cls := prop.Class()
+        var isRtl bool
+
+        switch cls {
+            case bidi.R:   isRtl = true // Strong R-to-L
+            case bidi.AL:  isRtl = true // Strong R-to-L
+            case bidi.RLO: isRtl = true // Explicit R-to-L
+        }
+        if isRtl {
+            rtlFlags := uint32(0) | windows.MB_RIGHT | windows.MB_RTLREADING
+            flags |= rtlFlags
+            continue
+        }
+    }
+
+    return flags
+}
+
+func (m Message) ask(message string) (bool, error) {
+
+    // no need to word-wrap message for windows.Messagebox
 
     flags := uint32(0)           |
         windows.MB_YESNO         |
         windows.MB_ICONWARNING   | // docs say don't use ICONQUESTION
-        windows.MB_SETFOREGROUND |
-        windows.MB_TASKMODAL     |
-        windows.MB_TOPMOST
+        m.flags(message)
 
     // TODO add MB_RIGHT | MB_RTLREADING if right-to-left runes detected
 
     q, _ := windows.MessageBox(0, wide(message), wide(m.Title), flags)
-    return q == 6 // IDYES
+    return q == 6, nil // IDYES
 }
 
-func (m Message) raise(message string) {
+func (m Message) raise(message string) error {
+
+    // no need to word-wrap message for windows.Messagebox
 
     flags := uint32(0)           |
         windows.MB_OK            |
         m.Icon.iconFlag()        |
-        windows.MB_SETFOREGROUND |
-        windows.MB_TASKMODAL     |
-        windows.MB_TOPMOST
-
-    // TODO add MB_RIGHT | MB_RTLREADING if right-to-left runes detected
+        m.flags(message)
 
     windows.MessageBox(0, wide(message), wide(m.Title), flags)
+
+    return nil
 }

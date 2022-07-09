@@ -19,11 +19,13 @@
 // make an awkward mix with Go's concurrency model and we don't want that to
 // complicate our API just for simple features.
 //
-// On other systems (Linux, etc), this package executes (in order of priority):
+// On other systems (Linux, etc), this package uses (in order of priority) one
+// or more of:
 //
 //   - zenity
 //   - xmessage
-//   - osascript (Apple script) (Note: not tested!)
+//   - whiptail in an xterm
+//   - osascript (Apple script) (TODO) (Note: not tested!)
 //
 // Feature support:
 //
@@ -32,6 +34,7 @@
 //   Windows           | Yes           | Yes         | Yes
 //   zenity            | Yes           | Yes         | Yes
 //   xmessage          | Yes           | Yes         |  X
+//   whiptail + xterm  | Yes           | Yes         | Yes
 //
 // Additional feature support:
 //
@@ -40,10 +43,11 @@
 //   Windows           |  X          |  X
 //   zenity            | Yes         | Yes
 //   xmessage          |  X          |  X
+//   whiptail + xterm  | Yes         | Yes
 //
 // Please note: the message box appears on the local system. If you are writing
 // a web application and want a message to appear in a client's web browser,
-// output HTML such as "<script>alert("Hello);</script>" instead!
+// output HTML such as "<script>alert('Hello');</script>" instead!
 package dialog
 
 import (
@@ -61,16 +65,13 @@ type Support struct {
 // Supported returns a [Support] struct detailing what features are available
 // on the current system. Using a feature that isn't supported will silently
 // proceed as documented.
-func Supported() Support {
+func Supported() (Support, error) {
     return supported()
 }
 
-// Alert is a convenience function to display a modal message box with a
-// message. The message string can be a printf-style format string for an
-// optional sequence of additional arguments of any type. It returns true if
-// the affirmative option (such as "yes" or "okay") is picked, or false if the
-// negative option (such as "no" or "cancel") is picked. It blocks until an
-// option is picked. Where not supported, immediately returns without blocking.
+// Alert is like [Raise], but doesn't return any error message on failure.
+//
+// Deprecated. This is here for legacy reasons.
 func Alert(message string, args...interface{}) {
     Message{
         Title:  "Alert",
@@ -85,11 +86,24 @@ func Alert(message string, args...interface{}) {
 // optional sequence of additional arguments of any type. It blocks until an
 // option is picked. Where not supported, immediately returns true without
 // blocking.
-func Ask(message string, args...interface{}) bool {
+func Ask(message string, args...interface{}) (bool, error) {
     return Message{
         Format: message,
         Args:   args,
     }.Ask()
+}
+
+// Raise is a convenience function to display a modal message box with a
+// message. The message string can be a printf-style format string for an
+// optional sequence of additional arguments of any type. It blocks until an
+// option is picked. Where not supported, immediately returns without blocking.
+func Raise(message string, args...interface{}) error {
+    return Message{
+        Title:  "Alert",
+        Format: message,
+        Args:   args,
+        Icon:   IconInfo,
+    }.Raise()
 }
 
 // Open is a convenience function to display a file picker dialog to select a
@@ -246,7 +260,7 @@ func (m Message) clear() (Message, string) {
 //
 // Ask also ignores the supplied icon option and sets an appropriate question
 // icon instead.
-func (m Message) Ask() bool {
+func (m Message) Ask() (bool, error) {
     n, s := m.clear()
     if n.Title == "" { n.Title = "Question" }
     return n.ask(s)
@@ -256,8 +270,8 @@ func (m Message) Ask() bool {
 // (for example by clicking "Okay").
 //
 // Where not supported, returns immediately without blocking.
-func (m Message) Raise() {
+func (m Message) Raise() error {
     n, s := m.clear()
     if n.Title == "" { n.Title = "Message" }
-    n.raise(s)
+    return n.raise(s)
 }

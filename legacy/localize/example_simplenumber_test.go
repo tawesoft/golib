@@ -3,7 +3,7 @@ package localize_test
 import (
     "fmt"
 
-    "github.com/tawesoft/golib/v2/localize"
+    "github.com/tawesoft/golib/v2/legacy/localize"
     "golang.org/x/text/language"
     "golang.org/x/text/message"
 )
