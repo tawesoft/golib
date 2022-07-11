@@ -38,7 +38,7 @@
 //   Windows           | Yes           | Yes         | Yes
 //   zenity            | Yes           | Yes         | Yes
 //   xmessage          | Yes           | Yes         |  No
-//   whiptail + xterm  |  No           | Yes         | Yes
+//   whiptail + xterm  |  No           |  No         | Yes
 //
 // Additional feature support:
 //
