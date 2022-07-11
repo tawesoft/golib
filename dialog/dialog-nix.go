@@ -4,10 +4,13 @@ package dialog
 
 import (
     "fmt"
+    "image/color"
     "os/exec"
     "strings"
+    "time"
 
     "github.com/alessio/shellescape"
+    "github.com/tawesoft/golib/v2/ks"
     "golang.org/x/sys/execabs"
 )
 
@@ -27,11 +30,11 @@ var (
 type funs struct {
     messageRaise         func(m Message, message string) error
     messageAsk           func(m Message, message string) (bool, error)
-    filePickOpen         func(p FilePicker) (string, bool, error)
-    filePickOpenMultiple func(p FilePicker) ([]string, bool, error)
-    filePickSave         func(p FilePicker) (string, bool, error)
-    colorPick            func() (string, bool)
-    datePick             func() (string, bool)
+    filePickOpen         func(m FilePicker)  (string, bool, error)
+    filePickOpenMultiple func(m FilePicker)  ([]string, bool, error)
+    filePickSave         func(m FilePicker)  (string, bool, error)
+    colorPick            func(m ColorPicker) (color.Color, bool, error)
+    datePick             func(m DatePicker)  (time.Time, bool, error)
 }
 
 func clean(x string) string {
@@ -79,6 +82,12 @@ func init() {
         if gfuns.filePickSave == nil {
             gfuns.filePickSave = z.save
         }
+        if gfuns.colorPick == nil {
+            gfuns.colorPick = z.color
+        }
+        if gfuns.datePick == nil {
+            gfuns.datePick = z.date
+        }
     }
 
     if (p.xmessage != "") && enableXMessage {
@@ -102,6 +111,12 @@ func init() {
         }
         if gfuns.filePickSave == nil {
             gfuns.filePickSave = w.save
+        }
+        if gfuns.colorPick == nil {
+            gfuns.colorPick = w.color
+        }
+        if gfuns.datePick == nil {
+            gfuns.datePick = w.date
         }
     }
 }
@@ -143,6 +158,16 @@ func find(bin string) (string, error) {
     }
 
     return strings.TrimSpace(buf.String()), nil
+}
+
+func (m ColorPicker) pick() (color.Color, bool, error) {
+    if gfuns.colorPick == nil { return ks.Zero[color.Color](), false, nil }
+    return gfuns.colorPick(m)
+}
+
+func (m DatePicker) pick() (time.Time, bool, error) {
+    if gfuns.datePick == nil { return ks.Zero[time.Time](), false, nil }
+    return gfuns.datePick(m)
 }
 
 func (m FilePicker) open() (string, bool, error) {

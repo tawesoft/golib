@@ -4,9 +4,13 @@ package dialog
 
 import (
     "fmt"
+    "image/color"
     "os"
     "os/exec"
+    "regexp"
+    "strconv"
     "strings"
+    "time"
 )
 
 type zenity struct {
@@ -23,15 +27,20 @@ func (x zenity) iconString(i IconType) string {
 }
 
 func (x zenity) ask(m Message, message string) (bool, error) {
-cmd := exec.Command(x.path,
+    args := []string{
         "--question",
         "--no-markup",
         "--default-cancel",
         "--width",       "480",
         "--window-icon", "question",
-        "--title",       m.Title,
         "--text",        message,
-    )
+    }
+
+    if m.Title != "Question" {
+        args = append(args, "--title", m.Title)
+    }
+
+    cmd := exec.Command(x.path, args...)
 
     if err := cmd.Run(); err != nil {
         if ExitError, ok := err.(*exec.ExitError); ok && (ExitError.ExitCode() == 1) {
@@ -45,20 +54,123 @@ cmd := exec.Command(x.path,
 }
 
 func (x zenity) raise(m Message, message string) error {
-    cmd := exec.Command(x.path,
+    args := []string{
         "--"+x.iconString(m.Icon),
         "--no-markup",
         "--width",      "480",
         "--window-icon", x.iconString(m.Icon),
-        "--title",       m.Title,
         "--text",        message,
-    )
+    }
+
+    if (m.Title != x.iconString(m.Icon)) && (m.Title != "Message")  {
+        args = append(args, "--title", m.Title)
+    }
+
+    cmd := exec.Command(x.path, args...)
 
     if err := cmd.Run(); err != nil {
         return fmt.Errorf("zenity error: %w", err)
     }
 
     return nil
+}
+
+var zenityColorPickerRE = regexp.MustCompile(`^rgb\((?P<red>\d+),(?P<green>\d+),(?P<blue>\d+)\)$`)
+
+func (x zenity) color(m ColorPicker) (color.Color, bool, error) {
+    var zero color.Color
+
+    args := []string{
+        "--color-selection",
+        "--title", m.Title,
+    }
+
+    if m.Palette {
+        args = append(args, "--show-palette")
+    }
+
+    if m.Initial != zero {
+        r, g, b, _ := m.Initial.RGBA()
+        r /= 256; g /= 256; b /= 256;
+        hex := fmt.Sprintf("#%02x%02x%02x", r, g, b)
+        args = append(args, "--color", hex)
+    }
+
+    var sb strings.Builder
+    cmd := exec.Command(x.path, args...)
+    cmd.Stdout = &sb
+
+    if err := cmd.Run(); err != nil {
+        if ExitError, ok := err.(*exec.ExitError); ok && (ExitError.ExitCode() == 1) {
+            return zero, false, nil // cancel
+        } else {
+            return zero, false, fmt.Errorf("zenity error: %w", err)
+        }
+    }
+
+    result := strings.TrimSpace(sb.String())
+    matches := zenityColorPickerRE.FindStringSubmatch(result)
+    if len(matches) != 4 {
+        return zero, false, fmt.Errorf("zenity --color-selection parse error parsing %q", result)
+    }
+    cr, errR := strconv.Atoi(matches[1])
+    cg, errG := strconv.Atoi(matches[2])
+    cb, errB := strconv.Atoi(matches[3])
+    if (errR != nil) || (errG != nil) || (errB != nil) {
+        return zero, false, fmt.Errorf("zenity --color-selection parse error parsing %q", result)
+    }
+
+    return color.RGBA{
+        R: uint8(cr & 255),
+        G: uint8(cg & 255),
+        B: uint8(cb & 255),
+        A: 255,
+    }, true, nil
+}
+
+func (x zenity) date(m DatePicker) (time.Time, bool, error) {
+    var zero time.Time
+
+    args := []string{
+        "--calendar",
+        "--day",         fmt.Sprintf("%d", m.Initial.Day()),
+        "--month",       fmt.Sprintf("%d", m.Initial.Month()),
+        "--year",        fmt.Sprintf("%d", m.Initial.Year()),
+        "--date-format", "%Y%m%d",
+    }
+
+    if len(m.Title) > 0 {
+        args = append(args, "--title", m.Title)
+    }
+
+    if len(m.LongTitle) > 0 {
+        args = append(args, "--text", m.LongTitle)
+    }
+
+    var sb strings.Builder
+    cmd := exec.Command(x.path, args...)
+    cmd.Stdout = &sb
+
+    if err := cmd.Run(); err != nil {
+        if ExitError, ok := err.(*exec.ExitError); ok && (ExitError.ExitCode() == 1) {
+            return zero, false, nil // cancel
+        } else {
+            return zero, false, fmt.Errorf("zenity error: %w", err)
+        }
+    }
+
+    ymd := strings.TrimSpace(sb.String()) // YYYYMMDD
+    if len(ymd) != 8 {
+        return zero, false, fmt.Errorf("zenity --calendar format error")
+    }
+    dy, errY := strconv.Atoi(ymd[0:4])
+    dm, errM := strconv.Atoi(ymd[4:6])
+    dd, errD := strconv.Atoi(ymd[6:8])
+    if (errY != nil) || (errM != nil) || (errD != nil) {
+        return zero, false, fmt.Errorf("zenity --calendar format error")
+    }
+
+    return time.Date(dy, time.Month(dm), dd, 0, 0, 0, 0, m.Location), true, nil
 }
 
 func (x zenity) pickFile(
@@ -109,9 +221,12 @@ func (x zenity) pickFile(
     var sb strings.Builder
     cmd := exec.Command(x.path, args...)
     cmd.Stdout = &sb
-    fmt.Println(cmd)
     if err := cmd.Run(); err != nil {
-        return nil, false, fmt.Errorf("zenity error: %w", err)
+        if ExitError, ok := err.(*exec.ExitError); ok && (ExitError.ExitCode() == 1) {
+            return nil, false, nil // closed/cancelled
+        } else {
+            return nil, false, fmt.Errorf("zenity error: %w", err)
+        }
     } else {
         f := sb.String()
         if len(f) == 0 {

@@ -25,11 +25,11 @@
 //   - zenity
 //   - xmessage
 //   - whiptail in an xterm
-//   - osascript (Apple script) (TODO) (Note: not tested!)
+//   - osascript (Apple script) (TODO)
 //
-// Native windows and zenity dialogs will use localised text where possible,
-// but fallback implementations based on xmessage and others may default to
-// using English.
+// All dialogs will default to using localised text for window titles, buttons,
+// etc. where possible, but may default to using English in places depending on
+// the implementation.
 //
 // Feature support:
 //
@@ -56,6 +56,10 @@ package dialog
 
 import (
     "fmt"
+    "image/color"
+    "time"
+
+    "github.com/tawesoft/golib/v2/ks"
 )
 
 type Support struct {
@@ -74,16 +78,13 @@ func Supported() (Support, error) {
     return supported()
 }
 
-// Alert is like [Raise], but doesn't return any error message on failure.
+// Alert is like [Raise] and the other convenience methods, but doesn't return
+// any error message on failure.
 //
-// Deprecated. This is here for legacy reasons. Use [Raise] instead.
+// Deprecated. This is here for legacy reasons. Use [Raise] instead and just
+// ignore the returned error if you don't care about it.
 func Alert(message string, args...interface{}) {
-    Message{
-        Title:  "Alert",
-        Format: message,
-        Args:   args,
-        Icon:   IconInfo,
-    }.Raise()
+    _ = Warning(message, args...)
 }
 
 // Ask is a convenience function to display a modal message box asking a
@@ -102,9 +103,16 @@ func Ask(message string, args...interface{}) (bool, error) {
 // message. The message string can be a printf-style format string for an
 // optional sequence of additional arguments of any type. It blocks until an
 // option is picked. Where not supported, immediately returns without blocking.
+//
+// Raise uses the default icon and title bar, which is currently the same as
+// [Info].
 func Raise(message string, args...interface{}) error {
+    return Info(message, args...)
+}
+
+// Info is like [Raise], but uses an information icon and title bar.
+func Info(message string, args...interface{}) error {
     return Message{
-        Title:  "Message",
         Format: message,
         Args:   args,
         Icon:   IconInfo,
@@ -114,7 +122,7 @@ func Raise(message string, args...interface{}) error {
 // Warning is like [Raise], but uses a warning icon and title bar.
 func Warning(message string, args...interface{}) error {
     return Message{
-        Title:  "Warning",
+        Title:  "Warning", // may be localised
         Format: message,
         Args:   args,
         Icon:   IconWarning,
@@ -124,11 +132,100 @@ func Warning(message string, args...interface{}) error {
 // Error is like [Raise], but uses an error icon and title bar.
 func Error(message string, args...interface{}) error {
     return Message{
-        Title:  "Error",
+        Title:  "Error", // may be localised
         Format: message,
         Args:   args,
         Icon:   IconError,
     }.Raise()
+}
+
+// Color is a convenience function to display a colour picker. Use the
+// [ColorPicker.Pick] method on a configured [ColorPicker] for more options. It
+// blocks until an option is picked. Where not supported, immediately returns
+// false without blocking.
+func Color() (color.Color, bool, error) {
+    return ColorPicker{
+    }.Pick()
+}
+
+// Pick displays a colour selection dialog to select a single colour. It blocks
+// until an option is picked, then returns the selected colour and true, or
+// false if no colour was selected (i.e. the user selected the cancel option).
+//
+// Where not supported, immediately returns (zero, false, nil) without blocking
+// (see [Supported]).
+func (m ColorPicker) Pick() (color.Color, bool, error) {
+    if m.Title == "" { m.Title = "Select color" }
+    return m.pick()
+}
+
+// ColorPicker is a dialog to select a colour.
+type ColorPicker struct {
+    // Title is the colour picker window title (may be empty) e.g. "Colour".
+    // If omitted, defaults to US-en "Color".
+    Title string
+
+    // Palette controls the color picker mode. If false, this is a simple
+    // colour picker suited for picking a colour as a "one-off" e.g. with
+    // sliders or by typing in a value. If true, where supported, this is
+    // an extended picker with support for a palette where the user can
+    // define favourite colours and easily pick those colours again later.
+    Palette bool
+
+    // Initial specifies the colour initially picked by default in the dialog.
+    // For example, in a painting tool, you might want to set a default to
+    // black. Or, if your application manages its own palette of colours, you
+    // might want to launch the color picker with an existing palette colour so
+    // that the user can adjust it slightly.
+    Initial color.Color
+}
+
+// Date is a convenience function to display a date picker. Use the
+// [DatePicker.Pick] method on a configured [DatePicker] for more options. It
+// blocks until an option is picked. Where not supported, immediately returns
+// (zero, false, nil) without blocking.
+func Date() (time.Time, bool, error) {
+    return DatePicker{
+    }.Pick()
+}
+
+// Pick displays a (day, month, year( selection dialog to select a single date.
+// It blocks until an option is picked, then returns the selected date and
+// true, or false if no date was selected (i.e. the user selected the cancel
+// option).
+//
+// The returned date is location and timezone aware. If the [DatePicker]
+// Location is nil, this defaults to the user's configured location and
+// timezone (i.e. [time.Local]). For example, set this to [time.UTC].
+//
+// Where not supported, immediately returns (zero, false, nil) without blocking
+// (see [Supported]).
+func (m DatePicker) Pick() (time.Time, bool, error) {
+    // m.Title has sensible defaults on some implementations, so not set here
+    if m.Location == nil { m.Location = time.Local }
+    if m.Initial == ks.Zero[time.Time]() { m.Initial = time.Now() }
+    return m.pick()
+}
+
+// DatePicker is a dialog to select a date (year, month, day).
+type DatePicker struct {
+    // Title is the date picker window title (may be empty). For example,
+    // "Date of publication".
+    Title string
+
+    // LongTitle is some extra text (may be empty) that, where supported, can
+    // give the user further context for the date picker. For example, "Select
+    // date article first published".
+    LongTitle string
+
+    // Initial specifies the date initially picked by default in the dialog.
+    // If not set, defaults to the current day.
+    Initial time.Time
+
+    // Location is used to return a location and timezone-aware time. If nil,
+    // defaults to the user's configured location and timezone (i.e. [time.Local]).
+    // For example, set this to [time.UTC].
+    Location *time.Location
 }
 
 // Open is a convenience function to display a file picker dialog to select a

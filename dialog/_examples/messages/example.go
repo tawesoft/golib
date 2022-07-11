@@ -2,16 +2,44 @@ package main
 
 import (
     "fmt"
+    "image/color"
+    "time"
 
     "github.com/tawesoft/golib/v2/dialog"
     "github.com/tawesoft/golib/v2/ks"
 )
 
 func main() {
-    fmt.Printf("Supported features: %+v\n", ks.Must(dialog.Supported()))
+    supported := ks.Must(dialog.Supported())
+    fmt.Printf("Supported features: %+v\n", supported)
 
     // For windows, enable modern styles. Does nothing on other platforms.
     osInit()
+
+    if supported.DatePicker {
+        t, ok, err := dialog.DatePicker{
+            Title:     "",
+            LongTitle: "Pick your favourite date in the year 2000:",
+            Initial:   time.Date(2000, 01, 01, 0, 0, 0, 0, time.UTC),
+            Location:  nil,
+        }.Pick()
+
+        if err != nil {
+            dialog.Error("Got an error: %v", err)
+        } else  if ok {
+            if t.Year() == 2000 {
+                dialog.Info("That %s was my favourite date, too!", t.Weekday())
+            } else {
+                dialog.Error("I said in the year 2000, not the year %d!", t.Year())
+            }
+        } else {
+            dialog.Warning("You didn't pick anything. But that's okay!")
+        }
+    } else {
+        dialog.Error("Date picker isn't supported for your machine, sorry.")
+    }
+
+    return
 
     dialog.Raise("Hello %s. Here's some Unicode: £¹²³€½¾", "world")
     dialog.Raise(`
@@ -50,7 +78,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id lorem id 
         }.Raise()
     }
 
-    dialog.Alert("Now please pick any file (I won't do anything with it)")
+    dialog.Info("Now please pick any file (I won't do anything with it)")
 
     name, ok, err := dialog.FilePicker{
         FileTypes: [][2]string{
@@ -66,10 +94,61 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id lorem id 
     }.Open()
 
     if err != nil {
-        dialog.Alert("Got an error: %v", err)
+        dialog.Error("Got an error: %v", err)
     } else  if ok {
-        dialog.Alert("You selected: %s", name)
+        dialog.Info("You selected: %s", name)
     } else {
-        dialog.Alert("You didn't pick anything. But that's okay!")
+        dialog.Warning("You didn't pick anything. But that's okay!")
     }
+
+    if supported.DatePicker {
+        t, ok, err := dialog.DatePicker{
+            Title:     "",
+            LongTitle: "Pick your favourite date in the year 2000:",
+            Initial:   time.Date(2000, 01, 01, 0, 0, 0, 0, time.UTC),
+            Location:  nil,
+        }.Pick()
+
+        if err != nil {
+            dialog.Error("Got an error: %v", err)
+        } else  if ok {
+            if t.Year() == 2000 {
+                dialog.Info("That %s was my favourite date, too!", t.Weekday())
+            } else {
+                dialog.Error("I said in the year 2000, not the year %d!", t.Year())
+            }
+        } else {
+            dialog.Warning("You didn't pick anything. But that's okay!")
+        }
+    } else {
+        dialog.Error("Date picker isn't supported for your machine, sorry.")
+    }
+
+    if supported.ColorPicker {
+        c, ok, err := dialog.ColorPicker{
+            Title:     "Favourite Colour?",
+            Initial:   color.RGBA{
+                R: 182,
+                G: 51,
+                B: 85,
+            }, // "Tawesoft Red", a nice wine colour
+            // Palette: true, <- optional, works with Zenity
+        }.Pick()
+
+        if err != nil {
+            dialog.Error("Got an error: %v", err)
+        } else  if ok {
+            r, _, _, _ := c.RGBA()
+            if float64(r)/0xffff > 0.6 {
+                dialog.Info("You like red too, huh?")
+            } else {
+                dialog.Info("Needs more red. %d", r)
+            }
+        } else {
+            dialog.Warning("You didn't pick anything. But that's okay!")
+        }
+    } else {
+        dialog.Error("Color picker isn't supported for your machine, sorry.")
+    }
+
 }

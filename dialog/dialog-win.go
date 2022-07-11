@@ -4,9 +4,11 @@ package dialog
 
 import (
     "fmt"
+    "image/color"
     "os"
     "path/filepath"
     "strings"
+    "time"
     "unicode/utf16"
     "unsafe"
 
@@ -128,6 +130,14 @@ func supported() (Support, error) {
         FilePicker:      true,
         MultiFilePicker: true,
     }, nil
+}
+
+func (m ColorPicker) pick() (color.Color, bool, error) {
+    return ks.Zero[color.Color](), false, nil
+}
+
+func (m DatePicker) pick() (time.Time, bool, error) {
+    return ks.Zero[time.Time](), false, nil
 }
 
 func (m FilePicker) pick(

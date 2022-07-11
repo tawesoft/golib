@@ -4,11 +4,16 @@ package dialog
 
 import (
     "fmt"
+    "image/color"
     "io"
     "os"
     "os/exec"
+    "regexp"
     "strconv"
     "strings"
+    "time"
+
+    "github.com/tawesoft/golib/v2/ks"
 )
 
 type whiptail struct {
@@ -87,8 +92,80 @@ func (x whiptail) getString(title string, label string, placeholder string) (str
     if in, err := io.ReadAll(f); err != nil {
         return "", false, fmt.Errorf("I/O error: %v", err)
     } else {
-        return string(in), len(in) != 0, nil
+        return strings.TrimSpace(string(in)), len(in) != 0, nil
     }
+}
+
+var whiptailColorPickerRE = regexp.MustCompile(`^#(?P<red>[[:xdigit:]]{2})(?P<green>[[:xdigit:]]{2})(?P<blue>[[:xdigit:]]{2})$`)
+
+func (x whiptail) color(m ColorPicker) (color.Color, bool, error) {
+    zero := ks.Zero[color.Color]()
+
+    r, g, b, _ := m.Initial.RGBA()
+    r /= 256; g /= 256; b /= 256;
+    initial := fmt.Sprintf("#%02x%02x%02x", r, g, b)
+
+    result, ok, err := x.getString(m.Title, "Color (hexadecimal #RRGGBB):", initial)
+    if !ok { return zero, ok, nil }
+    if err != nil {
+        return zero, ok, fmt.Errorf("error picking color: %v", err)
+    }
+
+    matches := whiptailColorPickerRE.FindStringSubmatch(result)
+    if len(matches) != 4 {
+        return zero, false, fmt.Errorf("whiptail color selection parse error parsing %q", result)
+    }
+    cr, errR := strconv.ParseInt(matches[1], 16, 16)
+    cg, errG := strconv.ParseInt(matches[2], 16, 16)
+    cb, errB := strconv.ParseInt(matches[3], 16, 16)
+    if (errR != nil) || (errG != nil) || (errB != nil) {
+        return zero, false, fmt.Errorf("whiptail color selection parse error parsing %q", result)
+    }
+
+    return color.RGBA{
+        R: uint8(cr & 255),
+        G: uint8(cg & 255),
+        B: uint8(cb & 255),
+        A: 255,
+    }, true, nil
+}
+
+var whiptailDatePickerRE = regexp.MustCompile(`^(?P<year>\d+)/(?P<month>\d+)/(?P<day>\d+)$`)
+
+func (x whiptail) date(m DatePicker) (time.Time, bool, error) {
+    if m.Title == "" {
+        m.Title = "Select Date"
+    }
+
+    if m.LongTitle == "" {
+        m.LongTitle = "Date: (YYYY/MM/DD)"
+    } else {
+        m.LongTitle += " (YYYY/MM/DD)"
+    }
+
+    zero := ks.Zero[time.Time]()
+
+    initial := fmt.Sprintf("%d/%d/%d",
+        m.Initial.Year(), m.Initial.Month(), m.Initial.Day())
+
+    result, ok, err := x.getString(m.Title, m.LongTitle, initial)
+    if !ok { return zero, ok, nil }
+    if err != nil {
+        return zero, ok, fmt.Errorf("error picking date: %v", err)
+    }
+
+    matches := whiptailDatePickerRE.FindStringSubmatch(result)
+    if len(matches) != 4 {
+        return zero, false, fmt.Errorf("whiptail date selection parse error parsing %q", result)
+    }
+    dy, errY := strconv.Atoi(matches[1])
+    dm, errM := strconv.Atoi(matches[2])
+    dd, errD := strconv.Atoi(matches[3])
+    if (errY != nil) || (errM != nil) || (errD != nil) {
+        return zero, false, fmt.Errorf("whiptail color selection parse error parsing %q", result)
+    }
+
+    return time.Date(dy, time.Month(dm), dd, 0, 0, 0, 0, m.Location), true, nil
 }
 
 func (x whiptail) open(m FilePicker) (string, bool, error) {
