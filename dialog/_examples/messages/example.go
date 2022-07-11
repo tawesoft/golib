@@ -16,31 +16,6 @@ func main() {
     // For windows, enable modern styles. Does nothing on other platforms.
     osInit()
 
-    if supported.DatePicker {
-        t, ok, err := dialog.DatePicker{
-            Title:     "",
-            LongTitle: "Pick your favourite date in the year 2000:",
-            Initial:   time.Date(2000, 01, 01, 0, 0, 0, 0, time.UTC),
-            Location:  nil,
-        }.Pick()
-
-        if err != nil {
-            dialog.Error("Got an error: %v", err)
-        } else  if ok {
-            if t.Year() == 2000 {
-                dialog.Info("That %s was my favourite date, too!", t.Weekday())
-            } else {
-                dialog.Error("I said in the year 2000, not the year %d!", t.Year())
-            }
-        } else {
-            dialog.Warning("You didn't pick anything. But that's okay!")
-        }
-    } else {
-        dialog.Error("Date picker isn't supported for your machine, sorry.")
-    }
-
-    return
-
     dialog.Raise("Hello %s. Here's some Unicode: £¹²³€½¾", "world")
     dialog.Raise(`
 Here's a really long string, to show that word-wrapping works.
