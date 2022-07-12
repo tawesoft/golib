@@ -19,6 +19,14 @@
 // make an awkward mix with Go's concurrency model and we don't want that to
 // complicate our API just for simple features.
 //
+// For modern/prettier buttons on Windows using Common Control Styles ([Visual
+// Styles]), see the examples folder for creating a manifest, (cross)compiling
+// the manifest with a resource compiler ([akavel/rsrc]), and initialising
+// comctl32.dll.
+//
+// [Visual Styles]: https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/Controls/visual-styles-overview.md
+// [akavel/rsrc]: https://github.com/akavel/rsrc
+//
 // On other systems (Linux, etc), this package uses (in order of priority) one
 // or more of:
 //

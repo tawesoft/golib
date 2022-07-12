@@ -1,5 +1,11 @@
 package main
 
+// On windows, built in the parent directory with the command
+//
+//     `./windows.sh messages`
+//
+// Needs rsrc provided by https://github.com/akavel/rsrc
+
 import (
     "fmt"
     "image/color"
