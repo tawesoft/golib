@@ -4,6 +4,12 @@
 // This is a light-weight implementation (without using cgo or gtk bindings
 // etc.) for developers who just need these basic features with a basic API.
 //
+// All dialogs will default to using localised text for window titles, buttons,
+// etc. where possible, but may default to using English in places depending on
+// the implementation.
+//
+// ## Alternatives
+//
 // There are more complete options. Here are some:
 //
 //   - [sqweek/dialog]
@@ -11,6 +17,14 @@
 //
 // [sqweek/dialog]: https://github.com/sqweek/dialog
 // [ncruces/zenity]:https://github.com/ncruces/zenity
+//
+// ## Please note!
+//
+// The message box appears on the local system. If you are writing a web
+// application and want a message to appear in a client's web browser, output
+// HTML such as "<script>alert('Hello');</script>" instead!
+//
+// ## Windows
 //
 // On Windows, this package uses the native windows dialogs, converts Go
 // strings into Windows UTF-16, handles null terminators, and uses the
@@ -27,6 +41,8 @@
 // [Visual Styles]: https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/Controls/visual-styles-overview.md
 // [akavel/rsrc]: https://github.com/akavel/rsrc
 //
+// ## Other platforms
+//
 // On other systems (Linux, etc), this package uses (in order of priority) one
 // or more of:
 //
@@ -35,31 +51,16 @@
 //   - whiptail in an xterm
 //   - osascript (Apple script) (TODO)
 //
-// All dialogs will default to using localised text for window titles, buttons,
-// etc. where possible, but may default to using English in places depending on
-// the implementation.
+// ## Feature support
 //
-// Feature support:
+//   Platform/software | Message.Raise | Message.Ask | FilePicker | ColorPicker | DatePicker
+//   ---------------------------------------------------------------------------------------
+//   Windows           | Yes           | Yes         | Yes        |  No         |  No
+//   zenity            | Yes           | Yes         | Yes        | Yes         | Yes
+//   xmessage          | Yes           | Yes         |  No        |  No         |  No
+//   whiptail + xterm  |  No           |  No         | Yes        | Yes         | Yes
+//   osascript         | TODO          | TODO        | TODO       | TODO        | TODO
 //
-//   Platform/software | Message.Raise | Message.Ask | FilePicker
-//   ------------------------------------------------------------
-//   Windows           | Yes           | Yes         | Yes
-//   zenity            | Yes           | Yes         | Yes
-//   xmessage          | Yes           | Yes         |  No
-//   whiptail + xterm  |  No           |  No         | Yes
-//
-// Additional feature support:
-//
-//   Platform/software | ColorPicker | DatePicker
-//   ----------------------------------------------------------
-//   Windows           |  No         |  No
-//   zenity            | Yes         | Yes
-//   xmessage          |  No         |  No
-//   whiptail + xterm  | Yes         | Yes
-//
-// Please note: the message box appears on the local system. If you are writing
-// a web application and want a message to appear in a client's web browser,
-// output HTML such as "<script>alert('Hello');</script>" instead!
 package dialog
 
 import (
