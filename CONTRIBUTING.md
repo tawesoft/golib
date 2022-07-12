@@ -17,8 +17,8 @@ v2/lazy: error when doing something
 v2/all: help getting started
 ```
 
-Please also label the issue "bug", "enchancement", "question", "help wanted", 
-etc.
+Please also label the issue "bug", "enchancement", "question", "help wanted",
+etc. on the issue tracker.
 
 
 ## Contributing code
@@ -34,6 +34,9 @@ all: update README
 lazy: fix something
 legacy/foo: fix something else
 ```
+
+A version prefix in the commit message is not required, because this can be 
+inferred from the branch name.
 
 ### Copyright
 
@@ -54,5 +57,6 @@ order).
 ### Style guide
 
 * Unlike most Go projects, we exclusively use spaces for indentation.
-* Use British English (en-GB) for code comments and documentation, US 
-  English (en-US) for identifiers and file names.
+* Use British English (en-GB) for code comments and documentation
+* Use US  English (en-US) for identifiers and file names.
+* Use any English language for commit messages, pull requests, etc. 
