@@ -81,8 +81,9 @@ func Supported() (Support, error) {
 // Alert is like [Raise] and the other convenience methods, but doesn't return
 // any error message on failure.
 //
-// Deprecated. This is here for legacy reasons. Use [Raise] instead and just
-// ignore the returned error if you don't care about it.
+// Deprecated. This is here for legacy reasons. Use [Raise], [Info], [Warning]
+// etc. instead and just ignore the returned error if you don't care about it.
+// Will be removed in golib/v3 but always available in golib/v2.
 func Alert(message string, args...interface{}) {
     _ = Warning(message, args...)
 }
@@ -233,6 +234,10 @@ type DatePicker struct {
 // path as an absolute path, and true, or an empty string and false if no file
 // was selected (i.e. the user selected the cancel option).
 //
+// The provided file path argument is the initial file selected (if empty,
+// defaults to current working directory). To open in a specific directory
+// without specifying a file name, use a trailing slash.
+//
 // Where not supported, immediately returns ("", false, nil) without blocking
 // (see [Supported]).
 //
@@ -240,6 +245,7 @@ type DatePicker struct {
 // but merely selects a path.
 func Open(file string) (string, bool, error) {
     return FilePicker{
+        Path: file,
     }.Open()
 }
 
@@ -247,6 +253,7 @@ func Open(file string) (string, bool, error) {
 // returned path is still an absolute path.
 func OpenMultiple(file string) ([]string, bool, error) {
     return FilePicker{
+        Path: file,
     }.OpenMultiple()
 }
 
@@ -258,6 +265,7 @@ func OpenMultiple(file string) ([]string, bool, error) {
 // but merely selects a path.
 func Save(file string) (string, bool, error) {
     return FilePicker{
+        Path: file,
     }.Save()
 }
 
