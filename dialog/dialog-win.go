@@ -17,6 +17,44 @@ import (
     "golang.org/x/text/unicode/bidi"
 )
 
+func osInit() error {
+    return initComctl32()
+}
+
+func initComctl32() error {
+    libcomctl32 := windows.NewLazySystemDLL("comctl32.dll")
+    if err := libcomctl32.Load(); err != nil {
+        return fmt.Errorf("comctl32.dll load error: %w", err)
+    }
+
+    commonControlsEx := libcomctl32.NewProc("InitCommonControlsEx")
+    if err := commonControlsEx.Find(); err != nil {
+        return fmt.Errorf("could not find InitCommonControlsEx in comctl32.dll: %w", err)
+    }
+
+    type CommonControlsExArgs struct {
+        DwSize, DwICC uint32
+    }
+
+    ctrls := &CommonControlsExArgs{
+        DwSize: 8,
+        DwICC: 0 |
+            0x000000FF | // windows 95+
+            0x00002000 | // fonts
+            0x00004000, // buttons, etc.
+    }
+
+    ret, _, err := commonControlsEx.Call(uintptr(unsafe.Pointer(ctrls)))
+
+    if ret != 1 { // (int true)
+        if err != nil {
+            return fmt.Errorf("comctl32.dll InitCommonControlsEx error: %w", err)
+        }
+    }
+
+    return nil
+}
+
 var (
     dllComdlg32 = windows.NewLazySystemDLL("comdlg32.dll")
 

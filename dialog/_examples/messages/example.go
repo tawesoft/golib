@@ -1,8 +1,7 @@
 package main
 
-// On windows, built in the parent directory with the command
-//
-//     `./windows.sh messages`
+// rsrc -manifest manifest.xml -o $1.syso
+// CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_ENABLED=1  go build -trimpath -o "$1.exe"
 //
 // Needs rsrc provided by https://github.com/akavel/rsrc
 
@@ -19,8 +18,12 @@ func main() {
     supported := ks.Must(dialog.Supported())
     fmt.Printf("Supported features: %+v\n", supported)
 
-    // For windows, enable modern styles. Does nothing on other platforms.
-    osInit()
+    // For windows, enable modern styles. Does nothing on other platforms. Also
+    // requires modern styles enabled in a manifest compiled into a .syso file.
+    err := dialog.Init()
+    if err != nil {
+        fmt.Printf("Error loading styles: %v", err)
+    }
 
     dialog.Raise("Hello %s. Here's some Unicode: £¹²³€½¾", "world")
     dialog.Raise(`

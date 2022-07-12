@@ -70,6 +70,14 @@ import (
     "github.com/tawesoft/golib/v2/ks"
 )
 
+// Init performs optional per-platform initialisation. On Windows, this loads
+// modern visual styles (also requires the program is compiled with a matching
+// manifest that enables visual styles). An error is not fatal. On platforms
+// other than Windows, this currently doesn't do anything.
+func Init() error {
+    return osInit()
+}
+
 type Support struct {
     MessageRaise    bool // Can use Message.Raise?
     MessageAsk      bool // Can use Message.Ask?

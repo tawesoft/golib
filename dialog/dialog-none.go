@@ -6,6 +6,10 @@ import (
     "time"
 )
 
+func osInit() error {
+    return nil
+}
+
 func supported() (Support, error) {
     return Support{}, nil
 }

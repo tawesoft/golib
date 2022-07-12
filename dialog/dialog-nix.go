@@ -41,6 +41,10 @@ func clean(x string) string {
     return shellescape.Quote(x)
 }
 
+func osInit() error {
+    return nil
+}
+
 func init() {
     type paths struct {
         shell    string
