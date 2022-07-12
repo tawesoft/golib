@@ -3,9 +3,6 @@
 // bytes, and time - in a human-readable way ideal for config files and as a
 // building-block for fully translated ergonomic user interfaces.
 //
-// If golang.org/x/text is ever promoted to core then there will be a new version
-// of this package named `humanize` (dropping the 'x').
-//
 // This is the frozen version of the package previously at
 // `tawesoft.co.uk/go/humanizex`. See [migration instructions].
 //

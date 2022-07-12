@@ -4,9 +4,9 @@ import (
     "math"
     "time"
 
+    lxstrconv "github.com/tawesoft/golib/v2/legacy/localize"
     "golang.org/x/text/language"
     "golang.org/x/text/message"
-    "tawesoft.co.uk/go/lxstrconv"
 )
 
 // String holds an Utf8-encoded and an Ascii-compatible encoding of a string.
