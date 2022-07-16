@@ -2,17 +2,35 @@
 
 ## Trade marks
 
-* **Tawesoft®** is a trading style and registered trade mark of
-[Tawesoft Ltd](https://www.tawesoft.co.uk/).
+GITHUB® is an exclusive trade mark registered in the United States by
+[GitHub, Inc](https://github.com/).
 
-* **The Go™ programming language** is a trade mark of
+"The Go™ programming language" is a trade mark of
 [Google LLC](https://about.google/).
 
+Linux® is the registered trade mark of Linus Torvalds in the U.S.
+and other countries.
 
-## Not trade marks
+OS X® is a trade-mark of Apple Inc., registered in the US and other countries.
 
-* **golib** (in the context of **tawesoft/golib**) is used as a generic
-  descriptive term for a
-  [software library](https://en.wikipedia.org/wiki/Library_(computing))
-  for the Go programming language.
-  No trade mark rights for the word "golib" are claimed here.
+Tawesoft® is a trading style and registered trade mark of
+[Tawesoft Ltd](https://www.tawesoft.co.uk/). 
+
+The Unicode Word Mark is a trade mark of
+[Unicode, Inc.](https://unicode.org/)
+
+"The  Unicode Consortium" and "Unicode, Inc." are trade names of Unicode, Inc.
+
+UNIX is a registered trade mark of
+[The Open Group](https://unix.org/).
+
+Windows is a trade mark of
+[Microsoft Corporation](https://www.microsoft.com/en-gb). 
+
+
+## Disclaimed
+
+The name of this "golib" software is used as a generic descriptive term for a
+[software library](https://en.wikipedia.org/wiki/Library_(computing))
+for the Go programming language. No trade mark rights for the word "golib" 
+are claimed here.

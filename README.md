@@ -21,7 +21,7 @@ This is modern code with generics, for go v1.19beta1+
 |    ks    | [candidate][102] |  -  | misc helpful things                                     |
 |   lazy   | [candidate][103] |  -  | composable lazy sequences                               |
 |  loader  | [unstable][105]  |  -  | concurrent dependency graph solver                      |
-| numbers  |  [stable][106]   |  -  | helpful things for number types                         |
+| numbers  | [candidate][106] |  -  | helpful things for number types                         |
 
 [101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
 [102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph

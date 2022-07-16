@@ -11,15 +11,24 @@ import (
     "golang.org/x/exp/utf8string"
 )
 
-// Catch calls the input function f. If successful, Catch passes on the return
-// value from f and also returns a nil error. If f panics, Catch recovers from
+// Check panics if the error is not nil. Otherwise, it returns a nil error (so
+// that it is convenient to chain)
+func Check(err error) error {
+    if err != nil {
+        panic(fmt.Errorf("assertion error: %w", err))
+    }
+    return nil
+}
+
+// CatchFunc calls the input function f. If successful, CatchFunc passes on the return
+// value from f and also returns a nil error. If f panics, CatchFunc recovers from
 // the panic and returns a non-nil error.
 //
 // If the panic raised by f contains is of type error, the returned error
 // is wrapped once.
 //
-// The opposite of Catch is [Must]: Catch(Must(os.Open(""))
-func Catch[X any](f func() X) (x X, err error) {
+// The opposite of CatchFunc is [MustFunc] - e.g. CatchFunc(MustFunc(os.Open))
+func AssertFunc[X any](f func() X) (x X, err error) {
     defer func() {
         if r := recover(); r != nil {
             if rErr, ok := r.(error); ok {
@@ -174,8 +183,6 @@ type Item[K comparable, V any] struct {
 // "unexpected error in Must[*os.File]: open doesnotexist: no such file or
 // directory". Must(os.Open("filethatexists")) returns a pointer to an
 // [os.File].
-//
-// The opposite of Must is [Catch]: Catch(Must(os.Open(""))
 func Must[T any](t T, err error) T {
     if err != nil {
         panic(fmt.Errorf("unexpected error in Must[%T]: %w", t, err))
@@ -188,9 +195,11 @@ func Must[T any](t T, err error) T {
 // that panics if the returned err != nil, otherwise returns value Y. The
 // returned error is wrapped in another error.
 //
-// For example, MustFunc(os.Open) returns a function (call this f).
-// f("doesnotexist") panics with an error (like [Must]), and
-// f("filethatexists") returns a pointer to an [os.File].
+// For example, MustFunc(os.Open) returns a function (call this MustOpen).
+// MustOpen("doesnotexist") panics with an error on failure, and
+// MustOpen("filethatexists") returns a pointer to an [os.File].
+//
+// The opposite of MustFunc is AssertFunc - e.g. AssertFunc(MustFunc(os.Open))
 func MustFunc[X any, Y any](
     f func (x X) (Y, error),
 ) func (x X) Y {
@@ -228,6 +237,49 @@ func Zero[T any]() T {
 // K must always be int.
 type Rangeable[K comparable, V any] interface {
     ~string | ~map[K]V | ~[]V | chan V
+}
+
+// Closeable is an interface implemented by anything with a Close method.
+type Closable interface {
+    Close() error
+}
+
+// With calls a function on a resource that can be opened and closed. The
+// resource if automatically closed as soon as that function returns. Checks
+// for errors opening the resource, checks for errors returned by the provided
+// function, and checks for errors closing the resource.
+//
+// For example:
+//
+//   opener := func(name) func() (*os.File, error) { return os.Open(name) }
+//   err := With(opener("example.txt"), func(f *os.File) error {
+//      ...
+//      return nil
+//   }) // calls .Close() automatically
+func With[T Closable](opener func() (T, error), do func(v T) error) error {
+    var zero T
+
+    f, err := opener()
+    if err != nil { return fmt.Errorf("with(%T) open error: %w", zero, err) }
+
+    // TODO allow this to panic, and recover
+    err = do(f)
+    if err != nil {
+        err = fmt.Errorf("with(%T) error: %w", zero, err)
+    }
+
+    errClose := f.Close()
+    if errClose != nil {
+        // TODO allow unwrapping the close error
+        err = fmt.Errorf("with(%T) close error: %v; %w", zero, errClose, err)
+    }
+
+    return err
+}
+
+// MustWith is like [With], but panics if it would return an error.
+func MustWith[T Closable](opener func() (T, error), do func(v T) error) {
+    Check(With(opener, do))
 }
 
 // WrapBlock word-wraps a whitespace-delimited string to a given number of

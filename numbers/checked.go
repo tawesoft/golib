@@ -37,6 +37,22 @@ func CheckedSubReals[N Real](min N, max N, a N, b N) (N, bool) {
     return a - b, true
 }
 
+// CheckedMulReals returns (a * b, true) iff a times b would not overflow
+// (see [CheckedAddReals] for notes).
+func CheckedMulReals[N Real](min N, max N, a N, b N) (N, bool) {
+    if (a == 0) || (b == 0) || (a == 1) || (b == 1) { return a * b, true }
+
+    if  ((a > 0) && (b > 0) && (a > (max / b))) ||
+        ((a < 0) && (b < 0) && (a < (max / b))) ||
+        ((a > 0) && (b < 0) && (b > min) && (a > (min / b))) ||
+        ((a < 0) && (b > 0) && (a > min) && (b > (min / a))) ||
+        false {
+        return 0, false
+    }
+
+    return a * b, true
+}
+
 // CheckedAdd returns (a + b, true) iff the sum would not overflow (including
 // negative overflow if adding a negative number).
 func (t RealInfo[N]) CheckedAdd(a N, b N) (N, bool) {
@@ -49,7 +65,13 @@ func (t RealInfo[N]) CheckedAddN(xs ... N) (N, bool) {
     return CheckedAddRealsN(t.Min, t.Max, xs...)
 }
 
-// CheckedSub returns (a - b, true) iff a - b would not overflow.
+// CheckedSub returns (a - b, true) iff a minus b would not overflow.
 func (t RealInfo[N]) CheckedSub(a N, b N) (N, bool) {
     return CheckedAddReals(t.Min, t.Max, a, b)
+}
+
+// CheckedMul returns (a * b, true) iff a times b would not overflow (including
+// negative overflow if multiplying by a negative number).
+func (t RealInfo[N]) CheckedMul(a N, b N) (N, bool) {
+    return CheckedMulReals(t.Min, t.Max, a, b)
 }

@@ -29,7 +29,7 @@ func TestFactorBracket(t *testing.T) {
     }
 
     for _, test := range tests {
-        idx := factors.bracket(test.value)
+        idx := factors.Min(test.value)
         if idx != test.expectedFactorIndex {
             t.Errorf("factors.bracket(%f): got idx %d but expected %d",
                 test.value, idx, test.expectedFactorIndex)

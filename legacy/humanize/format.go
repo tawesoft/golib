@@ -21,7 +21,7 @@ func FormatParts(n float64, unit Unit, factors Factors) []Part {
     parts := make([]Part, 0, numComponents)
 
     for i := 0; i < numComponents; i++ {
-        factorIdx := factors.bracket(n)
+        factorIdx := factors.Min(n)
         factor := factors.Factors[factorIdx]
 
         part := Part{
