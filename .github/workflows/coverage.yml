@@ -32,7 +32,7 @@ jobs:
 
       - name: Get targets
         run: |
-          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy | xargs -n 1 basename | xargs printf -- './%s ' | xargs)"
+          echo "::set-output name=list::$(go list ./... | grep -v /internal | grep -v /legacy | sed -r 's/github.com\/tawesoft\/golib\/v2\///g' | xargs printf -- './%s ' | xargs)"
         id: test_targets
 
       - run: mkdir -p .tmp/coverage
