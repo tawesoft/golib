@@ -697,9 +697,9 @@ func Zip[X any, Y []X](
 // iterators should not be used anywhere else once provided to this function.
 //
 // For example, for an iterator abc that produces the runes 'a', 'b', 'c', and
-// an input iterator wxyz that produces the runes 'w', 'x', 'y', 'z', Zip(abc,
-// wxyz) produces the runes 'a', 'w', 'b', 'x', 'c', 'y' before becoming
-// exhausted.
+// an input iterator wxyz that produces the runes 'w', 'x', 'y', 'z',
+// ZipFlat(abc, wxyz) produces the runes 'a', 'w', 'b', 'x', 'c', 'y' before
+// becoming exhausted.
 //
 // If zipping multiple different types together, you will need to use
 // iterators of type It[any].

@@ -7,7 +7,7 @@
 // Their names come from those technical reports.
 //
 // WARNING: folding is NOT appropriate for secure contexts -
-// see [text/secure/precis] instead.
+// see [x/text/secure/precis] instead.
 //
 // See, for important commentary:
 // - [Unicode Technical Report 30: CHARACTER FOLDINGS] (withdrawn, draft)
