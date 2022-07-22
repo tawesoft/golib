@@ -28,39 +28,17 @@ import (
     "golang.org/x/text/unicode/norm"
 )
 
-type Folder struct {
-    // hidden internal TODO optimised byte buffer versions
-    str func(string) string
-}
-
-// Transform implements the [transform.Transform] interface.
-func (f Folder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-
-    // TODO optimise using byte buffers directly so as not to allocate memory?
-    s := []byte(f.str(string(src)))
-
-    if len(s) > len(dst) {
-        return 0, len(src), transform.ErrShortDst
-    }
-
-    copy(dst, s)
-    return len(s), len(src), nil
-}
-
-// Reset implements the [transform.Transform] interface.
-func (f Folder) Reset() {}
-
-
-var Dashes = runes.Map(func(r rune) rune {
+var Dashes = dashesFolder
+var dashesFolder = runes.Map(func(r rune) rune {
     if unicode.Is(unicode.Pd, r) {
         return 0x002D // Hyphen-Minus
     }
     return r
 })
 
-var NoBreak = dm.New(dm.NoBreak)
+var NoBreak = dm.New(dm.NoBreak).Transformer()
 
-var Positional = dm.New(dm.Initial, dm.Medial, dm.Final, dm.Isolated)
+var Positional = dm.New(dm.Initial, dm.Medial, dm.Final, dm.Isolated).Transformer()
 
 var Space = runes.Map(func(r rune) rune {
     if unicode.Is(unicode.Zs, r) {
@@ -69,9 +47,8 @@ var Space = runes.Map(func(r rune) rune {
     return r
 })
 
-
 func example() {
-    t := transform.Chain(cases.Lower(language.English), dm.CD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+    t := transform.Chain(cases.Lower(language.English), dm.CD.Transformer(), runes.Remove(runes.In(unicode.Mn)), norm.NFC)
     s, _, _ := transform.String(t, "Résumé")
     fmt.Println(s)
 }

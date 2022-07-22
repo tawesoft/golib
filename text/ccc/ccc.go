@@ -16,6 +16,8 @@ import (
 
 const maxSeenNonStarters = 30
 
+var ErrMaxNonStarters = fmt.Errorf("illegal input: contains a sequence of more than %d non-starters", maxSeenNonStarters)
+
 // cccBin contains packed Unicode Canonical Combining Class values
 // for ordered ranges of codepoints (not worth gziping)
 //go:embed ccc.bin
@@ -79,7 +81,7 @@ func Of(c rune) CCC {
     return 0
 }
 
-// gerRange looks up the range of (start, end, ccc) in the range tables
+// getRange looks up the range of (start, end, ccc) in the range tables
 func getRange(c rune) (cccRange, bool) {
     i, found := sort.Find(len(cccs), func(i int) int {
         if c <  cccs[i].Start { return -1 }
@@ -95,11 +97,8 @@ func getRange(c rune) (cccRange, bool) {
 }
 
 // ReorderRunes performs the Unicode Canonical Ordering Algorithm on a slice of
-// runes. If the input is not a [Stream-Safe Text Format] (usually this means
-// it is a maliciously crafted input), the ordering is not complete.
-//
-// [Stream-Safe Text Format]: https://unicode.org/reports/tr15/#Stream_Safe_Text_Format
-func ReorderRunes(xs []rune) {
+// runes.
+func ReorderRunes(xs []rune) error {
 
     seenNonStarters := 0
 
@@ -110,17 +109,21 @@ func ReorderRunes(xs []rune) {
 
         if cccHere == 0 {
             seenNonStarters = 0
-        } else {
+        } else if seenNonStarters < maxSeenNonStarters {
             seenNonStarters++
+        } else {
+            return ErrMaxNonStarters
         }
 
         if (cccHere != 0) && (cccPrev > cccHere) {
             tmp := xs[i]
             xs[i] = xs[i-1]
             xs[i-1] = tmp
-            if (i > 1) && (seenNonStarters < maxSeenNonStarters) { i-=2 } // backtrack
+            if (i > 1) { i-=2 } // backtrack
         }
     }
+
+    return nil
 }
 
 /*
@@ -143,10 +146,8 @@ func ReorderString(xs string) error {
 // Reorder performs the Unicode Canonical Ordering Algorithm on a slice
 // of bytes encoding a UTF-8 sequence.
 //
-// If the input is not a [Stream-Safe Text Format] (usually this means it is a
-// maliciously crafted input), the ordering is not complete.
-//
-// [Stream-Safe Text Format]: https://unicode.org/reports/tr15/#Stream_Safe_Text_Format
+// If the input contains more than 30 non-starters in sequence (usually this
+// means it is a maliciously crafted input), an error is returned.
 func Reorder(xs []byte) error {
     // Fuller tests for this function are implemented in text/dm
 
@@ -184,8 +185,10 @@ func Reorder(xs []byte) error {
 
         if cccHere == 0 {
             seenNonStarters = 0
-        } else {
+        } else if seenNonStarters < maxSeenNonStarters {
             seenNonStarters++
+        } else {
+            return ErrMaxNonStarters
         }
 
         if (cccHere != 0) && (cccPrev > cccHere) {
@@ -197,7 +200,7 @@ func Reorder(xs []byte) error {
             copy(xs[offset - prevZ : offset - prevZ + currentZ], tmp2[:])
             copy(xs[offset - prevZ + currentZ : offset + currentZ], tmp1[:])
 
-            if (offset > prevZ + currentZ) && (seenNonStarters < maxSeenNonStarters) {
+            if (offset > prevZ + currentZ) {
                 offset -= prevZ + currentZ
             }
             prev, prevZ = current, currentZ
@@ -209,113 +212,55 @@ func Reorder(xs []byte) error {
     }
 }
 
-func IsStreamSafe(src []byte) bool {
-    seenNonstarters := 0
-    for len(src) > 0 {
-        r, rZ := utf8.DecodeRune(src)
-        if r == utf8.RuneError {
-            if rZ == 0 { break } // EOF
-            return false
-        }
+// Transformer implements the [transform.Transform] interface to apply the
+// Unicode Canonical Ordering Algorithm across its input. It outputs ordered
+// Unicode.
+//
+// If the input contains more than 30 non-starters in sequence (usually this
+// means it is a maliciously crafted input), an error is returned.
+//
+// The returned transformer is stateless, so may be used concurrently.
+var Transformer = transform.Transformer(orderer{})
 
-        cls := Of(r)
-        if cls == 0 {
-            seenNonstarters = 0
-        } else {
-            seenNonstarters++
-            if seenNonstarters == maxSeenNonStarters {
-                return false
-            }
-        }
-        src = src[rZ:]
+type orderer struct {}
+func (o orderer) Reset() {}
+
+func emit(runes []rune, dst []byte, nDst, nSrc int) (int, int) {
+    if len(runes) != 0 { ReorderRunes(runes) }
+
+    for len(runes) > 0 {
+        nDst += utf8.EncodeRune(dst[nDst:], runes[0])
+        runes = runes[1:]
     }
-    return true
+
+    return nDst, nSrc
 }
 
-func IsStreamSafeRunes(src []rune) bool {
-    seenNonstarters := 0
-    for len(src) > 0 {
-        cls := Of(src[0])
-        if cls == 0 {
-            seenNonstarters = 0
-        } else {
-            seenNonstarters++
-            if seenNonstarters == maxSeenNonStarters {
-                return false
-            }
+func (o orderer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+    buf := [maxSeenNonStarters]rune{}
+    runes := buf[0:0]
+    seenNonStarters := 0
+
+    for {
+        if (len(runes) >= maxSeenNonStarters) {
+            return nDst, nSrc, ErrMaxNonStarters
+            //nDst, nSrc = emit(runes, dst, nDst, nSrc)
+            //runes = buf[0:0]
+            //seenNonStarters = 0
         }
-        src = src[1:]
-    }
-    return true
-}
-
-func IsStreamSafeString(src string) bool {
-    return IsStreamSafe([]byte(src))
-}
-
-// Transformer returns an object implementing the [transform.Transform]
-// interface that applies the Unicode Canonical Ordering Algorithm across its
-// input. It outputs ordered Unicode.
-//
-// If the input is not a [Stream-Safe Text Format] (usually this means it is a
-// maliciously crafted input), the ordering is not complete.
-//
-// [Stream-Safe Text Format]: https://unicode.org/reports/tr15/#Stream_Safe_Text_Format
-//
-// Note that this transformer is stateful, so should not be used concurrently.
-func Transformer() transform.Transformer {
-    o := &orderer{}
-    o.Reset()
-    return o
-}
-
-// orderer implements the [transform.Transformer] interface.
-type orderer struct {
-    backing [maxSeenNonStarters]rune
-    runes []rune
-    ordered bool
-    emitting bool
-}
-
-func (o *orderer) Reset() {
-    o.runes = o.backing[0:0]
-    o.ordered = false
-    o.emitting = false
-}
-
-func (o *orderer) emit(dst, src[]byte, nDst, nSrc int) (int, int, error) {
-    if len(o.runes) == 0 { return nDst, nSrc, nil }
-    if !o.ordered { ReorderRunes(o.runes); o.ordered = true }
-    o.emitting = true
-
-    for len(o.runes) > 0 {
-        s := o.runes[0]
-        sZ := utf8.RuneLen(s)
-        if cap(dst) - nDst < sZ {
+        if (seenNonStarters == 0) && (len(src) - nSrc < (maxSeenNonStarters + 2) * 4) && !atEOF {
+            return nDst, nSrc, transform.ErrShortSrc
+        }
+        if (seenNonStarters == 0) && (cap(dst) - nDst < (maxSeenNonStarters + 2) * 4) {
             return nDst, nSrc, transform.ErrShortDst
         }
-        nDst += utf8.EncodeRune(dst[nDst:], s)
-        o.runes = o.runes[1:]
-    }
-
-    o.Reset()
-    return nDst, nSrc, nil
-}
-
-func (o *orderer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-    for {
-        if o.emitting || (len(o.runes) == cap(o.backing)) {
-            nDst2, nSrc2, err2 := o.emit(dst, src, nDst, nSrc)
-            nDst = nDst2
-            nSrc = nSrc2
-            if err2 != nil { return nDst, nSrc, err2 }
-        }
-        ks.Assert(cap(o.runes) == maxSeenNonStarters) // should be static
+        ks.Assert(cap(runes) <= maxSeenNonStarters) // should be static
 
         r, rZ := utf8.DecodeRune(src[nSrc:])
         if r == utf8.RuneError {
             if (rZ == 0) && (atEOF) {
-                return o.emit(dst, src, nDst, nSrc)
+                nDst, nSrc = emit(runes, dst, nDst, nSrc)
+                return nDst, nSrc, nil
             }
             if atEOF { return nDst, nSrc, fmt.Errorf("invalid utf8 sequence") }
             return nDst, nSrc, transform.ErrShortSrc
@@ -323,12 +268,11 @@ func (o *orderer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err er
 
         cls := Of(r)
 
-        if (cls == 0) && (len(o.runes) > 0) {
+        if (cls == 0) && (len(runes) > 0) {
             // end of a run of non-starters
-            nDst2, nSrc2, err2 := o.emit(dst, src, nDst, nSrc)
-            nDst = nDst2
-            nSrc = nSrc2
-            if err2 != nil { return nDst, nSrc, err2 }
+            nDst, nSrc = emit(runes, dst, nDst, nSrc)
+            runes = buf[0:0]
+            seenNonStarters = 0
         }
 
         if (cls == 0) {
@@ -338,7 +282,8 @@ func (o *orderer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err er
             nSrc += rZ
             nDst += utf8.EncodeRune(dst[nDst:], r)
         } else {
-            o.runes = append(o.runes, r)
+            runes = append(runes, r)
+            seenNonStarters++
             nSrc += rZ
         }
     }

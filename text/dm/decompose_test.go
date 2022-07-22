@@ -104,7 +104,8 @@ func TestDecomposer_String(t *testing.T) {
     }
 
     for i, r := range rows {
-        s := r.dc.String(string(r.input))
+        s, err := r.dc.String(string(r.input))
+        assert.Nil(t, err)
         assert.Equal(t, string(r.output), s, "test(%d) %x, got %x, expected %x", i, r.input, []rune(s), r.output)
     }
 }
@@ -227,8 +228,10 @@ func TestUCD(t *testing.T) {
 
     var lineno int
     seenLineno := make(map[int]struct{})
-    equal := func(a string, b string, test string, comment string) {
+    equal := func(a string, stringer func(string) (string, error), b string, test string, comment string) {
         if _, ok := seenLineno[lineno]; ok { return }
+        b, err := stringer(b)
+        assert.Nil(t, err)
         if a != b {
             matchNFD := ks.IfThenElse(a == norm.NFD.String(a), "match", "differ")
             matchNFKD := ks.IfThenElse(a == norm.NFKD.String(a), "match", "differ")
@@ -274,27 +277,27 @@ func TestUCD(t *testing.T) {
 
         // NFD
         // c3 ==  toNFD(c1) ==  toNFD(c2) ==  toNFD(c3)
-        equal(c3, dm.CD.String(c1), "c3 == toNFD(c1)", comment)
-        equal(c3, dm.CD.String(c2), "c3 == toNFD(c2)", comment)
-        equal(c3, dm.CD.String(c3), "c3 == toNFD(c3)", comment)
+        equal(c3, dm.CD.String, c1, "c3 == toNFD(c1)", comment)
+        equal(c3, dm.CD.String, c2, "c3 == toNFD(c2)", comment)
+        equal(c3, dm.CD.String, c3, "c3 == toNFD(c3)", comment)
         // c5 ==  toNFD(c4) ==  toNFD(c5)
-        equal(c5, dm.CD.String(c4), "c5 == toNFD(c4)", comment)
-        equal(c5, dm.CD.String(c5), "c5 == toNFD(c5)", comment)
+        equal(c5, dm.CD.String, c4, "c5 == toNFD(c4)", comment)
+        equal(c5, dm.CD.String, c5, "c5 == toNFD(c5)", comment)
 
         // NFKD
         // c5 == toNFKD(c1) == toNFKD(c2) == toNFKD(c3) == toNFKD(c4) == toNFKD(c5)
-        equal(c5, dm.KD.String(c1), "c5 == toNFKD(c1)", comment)
-        equal(c5, dm.KD.String(c2), "c5 == toNFKD(c2)", comment)
-        equal(c5, dm.KD.String(c3), "c5 == toNFKD(c3)", comment)
-        equal(c5, dm.KD.String(c4), "c5 == toNFKD(c4)", comment)
-        equal(c5, dm.KD.String(c5), "c5 == toNFKD(c5)", comment)
+        equal(c5, dm.KD.String, c1, "c5 == toNFKD(c1)", comment)
+        equal(c5, dm.KD.String, c2, "c5 == toNFKD(c2)", comment)
+        equal(c5, dm.KD.String, c3, "c5 == toNFKD(c3)", comment)
+        equal(c5, dm.KD.String, c4, "c5 == toNFKD(c4)", comment)
+        equal(c5, dm.KD.String, c5, "c5 == toNFKD(c5)", comment)
 
         // transformer versions...
         trans := func(a string, f dm.Decomposer, b string, test string, comment string) {
             r := transform.NewReader(strings.NewReader(b), f.Transformer())
             xs, err := io.ReadAll(r)
             if !assert.Nil(t, err) { return }
-            equal(a, string(xs), test, comment)
+            equal(a, func(x string) (string, error) { return x, nil}, string(xs), test, comment)
         }
         trans(c3, dm.CD, c1, "c3 == toNFD(c1) [transformer]", comment)
         trans(c3, dm.CD, c2, "c3 == toNFD(c2) [transformer]", comment)

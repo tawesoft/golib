@@ -83,35 +83,24 @@ func TestReorder(t *testing.T) {
     }
 }
 
-func TestIsStreamSafe(t *testing.T) {
-    var inBytes []byte
-    inBytes = append(inBytes, []byte("\u0064")...)
-    inBytes = append(inBytes, bytes.Repeat([]byte("\u0307"), 1000)...)
-    inBytes = append(inBytes, []byte("\u0323")...)
-
-    assert.False(t, ccc.IsStreamSafe(inBytes))
-}
-
-func TestReorder_Time(t *testing.T) {
+func TestReorder_MaliciousInput(t *testing.T) {
     // Tests that you can't DoS Reorder with malicious input by ensuring it
     // completes in a reasonable time.
 
-    const repeat = 50_000
-
     var inBytes []byte
     inBytes = append(inBytes, []byte("\u0064")...)
-    inBytes = append(inBytes, bytes.Repeat([]byte("\u0307"), repeat)...)
+    inBytes = append(inBytes, bytes.Repeat([]byte("\u0307"), 100)...)
     inBytes = append(inBytes, []byte("\u0323")...)
     inRunes := []rune(string(inBytes))
 
     ks.TestCompletes(t, 1 * time.Second, func() {
         var inBytesCopy []byte
         inBytesCopy = append(inBytesCopy, inBytes...)
-        ccc.ReorderRunes(inRunes)
-        ccc.Reorder(inBytes)
-        rdr := transform.NewReader(strings.NewReader(string(inBytesCopy)), ccc.Transformer())
+        assert.Equal(t, ccc.ErrMaxNonStarters, ccc.ReorderRunes(inRunes))
+        assert.Equal(t, ccc.ErrMaxNonStarters, ccc.Reorder(inBytes))
+        rdr := transform.NewReader(strings.NewReader(string(inBytesCopy)), ccc.Transformer)
         _, err := io.ReadAll(rdr)
-        assert.Nil(t, err)
+        assert.Equal(t, ccc.ErrMaxNonStarters, err)
     })
 }
 
@@ -181,7 +170,7 @@ func TestTransform(t *testing.T) {
             expected := r.expected(i)
 
             // construct a new transformer so that we can hit default size buffers
-            rdr := transform.NewReader(strings.NewReader(input), ccc.Transformer())
+            rdr := transform.NewReader(strings.NewReader(input), ccc.Transformer)
             result, err := io.ReadAll(rdr)
 
             if !assert.Nil(t, err, "test %d with i=%d", j, i) { break }

@@ -6,10 +6,6 @@
 // [text/unicode/norm], so this package is only appropriate in situations where
 // a custom decomposition is required.
 //
-// Note that if an input is not a [Stream-Safe Text Format] (usually this means
-// it is a maliciously crafted input), the decomposition may not be
-// complete. See [ccc.IsStreamSafe].
-//
 // See [Unicode Normalization Forms] and [Character Decomposition Mapping].
 //
 // [compatibility mapping tags]: https://unicode.org/reports/tr44/#Formatting_Tags_Table
@@ -207,12 +203,13 @@ func (d Decomposer) Map(r rune) (Type, []rune) {
 // String returns the full decomposition of s, but only applies the
 // decomposition mappings that match the types registered with the Decomposer
 // with [New], [Decomposer.Extend], or [Decomposer.Except].
-func (d Decomposer) String(s string) string {
+func (d Decomposer) String(s string) (string, error) {
     dest := make([]rune, 0)
     d.flatten_r(&dest, []rune(s))
     xs := []byte(string(dest))
-    ks.Check(ccc.Reorder(xs))
-    return string(xs)
+    err := ccc.Reorder(xs)
+    if err != nil { return "", err }
+    return string(xs), nil
 }
 
 func (d Decomposer) flatten_r(dest *[]rune, xs []rune) {
@@ -240,13 +237,13 @@ func (d Decomposer) flatten_r(dest *[]rune, xs []rune) {
 
 // Transformer returns an object implementing the [transform.Transform]
 // interface that applies the decomposition specified by the decomposer across
-// its input.
+// its input. It outputs the decomposed result.
 //
-// Note that this transformer is stateful, so should not be used concurrently.
+// The returned transformer is stateless, so may be used concurrently.
 func (d Decomposer) Transformer() transform.Transformer {
     return transform.Chain(
         mappingTransformer{d},
-        ccc.Transformer(),
+        ccc.Transformer,
     )
 }
 
