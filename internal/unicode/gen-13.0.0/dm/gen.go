@@ -180,7 +180,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    ks.MustWith(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    ks.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -225,7 +225,7 @@ func main() {
         }
 
         return nil
-    })
+    }))
 
     ks.Assert(sort.SliceIsSorted(chars, func(i int, j int) bool {
         return chars[i].codepoint < chars[j].codepoint
