@@ -43,6 +43,13 @@ type Item[K comparable, V any] ks.Item[K, V]
 // produces values.
 type It[X any] func()(X, bool)
 
+/*
+// Next implements an interface
+func (it It[X]) Next() (X, bool) {
+    return it()
+}
+*/
+
 // All calls function f for each value x produced by an iterator until either f
 // returns false, or the iterator is exhausted. All returns true iff f(x) was
 // true for every x. If the iterator produced no values (was empty), then
@@ -90,14 +97,14 @@ func AppendToSlice[X any](
 
 // Averageable is any number type. It is used as the input type for an
 // [AverageJoiner].
-type Averagable interface { numbers.Real }
+type Averageable interface { numbers.Real }
 
 // AverageJoiner returns a [Joiner] for calculating the average of a sequence.
-func AverageJoiner[In Averagable]() Joiner[In, float64] {
+func AverageJoiner[In Averageable]() Joiner[In, float64] {
     return &averageJoiner[In]{}
 }
 
-type averageJoiner[In Averagable] struct {
+type averageJoiner[In Averageable] struct {
     count int
     mean float64
 }
@@ -160,6 +167,27 @@ func Check[X any](
         if err := f(x); err != nil { return x, err }
     }
     return zero, nil
+}
+
+// Count calls function f for each value x produced by an iterator. It returns
+// a 3-tuple containing a count of the number of times f(x) returned true,
+// a count of the number of times f(x) returned false, and the total number
+// of times f(x) was called. If f is nil, acts as if f(x) => true for all x.
+func Count[X any](
+    f func(X) bool,
+    it It[X],
+) (numTrue, numFalse, total int) {
+    for {
+        x, ok := it()
+        if !ok { break }
+        if (f == nil) || (f(x)) {
+            numTrue++
+        } else {
+            numFalse++
+        }
+        total++
+    }
+    return
 }
 
 // Counter returns an iterator that produces a series of integers (between

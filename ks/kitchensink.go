@@ -4,132 +4,61 @@ package ks
 
 import (
     "fmt"
+    "io"
     "reflect"
     "strings"
+    "testing"
+    "time"
     "unicode/utf8"
 
     "golang.org/x/exp/utf8string"
 )
 
+// Assert panics if the value is not true. Optionally, follow with a
+// printf-style format string and arguments.
+func Assert(q bool, args ... interface{}) {
+    if q { return }
+
+    if len(args) == 0 {
+        panic(fmt.Errorf("assertion error"))
+    } else {
+        panic(fmt.Errorf("assertion error: " + args[0].(string), args[1:]...))
+    }
+}
+
 // Check panics if the error is not nil. Otherwise, it returns a nil error (so
-// that it is convenient to chain)
+// that it is convenient to chain).
 func Check(err error) error {
     if err != nil {
-        panic(fmt.Errorf("assertion error: %w", err))
+        panic(fmt.Errorf("unexpected error: %w", err))
     }
     return nil
 }
 
-// CatchFunc calls the input function f. If successful, CatchFunc passes on the return
-// value from f and also returns a nil error. If f panics, CatchFunc recovers from
-// the panic and returns a non-nil error.
+// CatchFunc returns a function that wraps input function f. When called, if f
+// is successful, CatchFunc passes on the return value from f and also returns
+// a nil error. If f panics, CatchFunc recovers from the panic and returns a
+// non-nil error.
 //
 // If the panic raised by f contains is of type error, the returned error
 // is wrapped once.
 //
-// The opposite of CatchFunc is [MustFunc] - e.g. CatchFunc(MustFunc(os.Open))
-func AssertFunc[X any](f func() X) (x X, err error) {
-    defer func() {
-        if r := recover(); r != nil {
-            if rErr, ok := r.(error); ok {
-                err = fmt.Errorf("caught panic: %w", rErr)
-            } else {
-                err = fmt.Errorf("caught panic: %v", r)
+// The opposite of CatchFunc is [MustFunc] - e.g.
+//   CatchFunc(MustFunc(os.Open))("example.txt")
+func CatchFunc[X any](f func() X) func() (x X, err error) {
+    return func() (x X, err error) {
+        defer func() {
+            if r := recover(); r != nil {
+                if rErr, ok := r.(error); ok {
+                    err = fmt.Errorf("caught panic: %w", rErr)
+                } else {
+                    err = fmt.Errorf("caught panic: %v", r)
+                }
             }
-        }
-    }()
+        }()
 
-    return f(), nil
-}
-
-// initsh casts an int to comparable. If the comparable is not an integer type,
-// this will panic.
-func intish[T comparable](i int) T {
-    var t T
-    ref := reflect.ValueOf(&t).Elem()
-    ref.SetInt(int64(i))
-    return t
-}
-
-// Range calls some function f(k, v) => bool over any [Rangeable]. If the
-// return value of f is false, the iteration stops.
-//
-// This is roughly equivalent to "k, v := range(x); if !f(x) { break }".
-//
-// Caution: invalid key types will panic at runtime. The key type must be int
-// for any type other than a map. See [Rangeable] for details. In a channel,
-// the key is always zero.
-func Range[K comparable, V any, R Rangeable[K, V]](
-    f func(K, V) bool,
-    r R,
-) {
-    switch ref := reflect.ValueOf(r); ref.Kind() {
-        case reflect.Array:
-            for i := 0; i < ref.Len(); i++ {
-                k := intish[K](i)
-                v := ref.Index(i).Interface().(V)
-                if !f(k, v) { break }
-            }
-        case reflect.Chan:
-            for {
-                x, ok := ref.Recv()
-                if !ok { break }
-                v := x.Interface().(V)
-                if !f(intish[K](0), v) { break }
-            }
-        case reflect.Map:
-            iter := ref.MapRange()
-            for iter.Next() {
-                k, v := iter.Key().Interface().(K), iter.Value().Interface().(V)
-                if !f(k, v) { break }
-            }
-        case reflect.Slice:
-            for i := 0; i < ref.Len(); i++ {
-                k := intish[K](i)
-                v := ref.Index(i).Interface().(V)
-                if !f(k, v) { break }
-            }
-        case reflect.String:
-            for i := 0; i < ref.Len(); i++ {
-                k := intish[K](i)
-                v := ref.Index(i).Interface().(V)
-                if !f(k, v) { break }
-            }
+        return f(), nil
     }
-}
-
-// CheckedRange calls fn(k, v) => error for each key, value in the input slice,
-// but halts if an error is returned at any point. If so, it returns the key
-// and value being examined at the time of the error, and the encountered
-// error, or a nil error otherwise.
-func CheckedRange[K comparable, V any, R Rangeable[K, V]](
-    fn func(k K, v V) error,
-    r R,
-) (K, V, error) {
-    var (k K; v V; err error)
-    f := func(k2 K, v2 V) bool {
-        k, v = k2, v2
-        err = fn(k, v);
-        return err == nil
-    }
-    Range(f, r)
-    return k, v, err
-}
-
-// CheckedRangeValue is like [CheckedRange], but calls fn(value), not fn(key,
-// value), and returns only (value, error), not (key, value, error).
-func CheckedRangeValue[K comparable, V any, R Rangeable[K, V]](
-    fn func(v V) error,
-    r R,
-) (V, error) {
-    var (v V; err error)
-    f := func(_ K, v2 V) bool {
-        v = v2
-        err = fn(v)
-        return err == nil
-    }
-    Range(f, r)
-    return v, err
 }
 
 // FirstNonZero returns the first argument that isn't equal to the zero value
@@ -190,16 +119,11 @@ func Must[T any](t T, err error) T {
     return t
 }
 
-// MustFunc accepts a function that takes an input of type X, where that
-// function then returns a (value Y, err) tuple. Must then returns a function
-// that panics if the returned err != nil, otherwise returns value Y. The
-// returned error is wrapped in another error.
+// MustFunc accepts a function f(x) => (y, err) and returns a function
+// g(x) => y that panics if f(x) returned an error, otherwise returns y.
 //
-// For example, MustFunc(os.Open) returns a function (call this MustOpen).
-// MustOpen("doesnotexist") panics with an error on failure, and
-// MustOpen("filethatexists") returns a pointer to an [os.File].
-//
-// The opposite of MustFunc is AssertFunc - e.g. AssertFunc(MustFunc(os.Open))
+// The opposite of MustFunc is CatchFunc - e.g.
+//   CatchFunc(MustFunc(os.Open))("example.txt")
 func MustFunc[X any, Y any](
     f func (x X) (Y, error),
 ) func (x X) Y {
@@ -221,14 +145,91 @@ func MustInit[K any](f func () (value K, err error), d K) K {
 
 // Never signifies code that should never be reached. It raises a panic when
 // called.
-func Never() {
-    panic("this should never happen")
+func Never(args ... interface{}) {
+    if len(args) > 0 {
+        panic(fmt.Errorf("this should never happen: " + args[0].(string), args[1:]...))
+    }
+    panic(fmt.Errorf("this should never happen"))
 }
 
-// Zero returns the zero value for any type.
-func Zero[T any]() T {
+// initsh casts an int to comparable. If the comparable is not an integer type,
+// this will panic.
+func intish[T any](i int) T {
     var t T
+    ref := reflect.ValueOf(&t).Elem()
+    ref.SetInt(int64(i))
     return t
+}
+
+// Range calls some function f(k, v) => err over any [Rangeable] of (K, V)s. If
+// the return value of f is not nil, the iteration stops immediately, and
+// returns (k, err) for the given k. Otherwise, returns (zero, nil).
+//
+// Caution: invalid key types will panic at runtime. The key type must be int
+// for any type other than a map. See [Rangeable] for details. In a channel,
+// the key is always zero.
+func Range[K comparable, V any, R Rangeable[K, V]](
+    f func(K, V) error,
+    r R,
+) (K, error) {
+    switch ref := reflect.ValueOf(r); ref.Kind() {
+        case reflect.Array:
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](i)
+                v := ref.Index(i).Interface().(V)
+                if err := f(k, v); err != nil { return k, err }
+            }
+        case reflect.Chan:
+            for {
+                x, ok := ref.Recv()
+                if !ok { break }
+                k := intish[K](0)
+                v := x.Interface().(V)
+                if err := f(k, v); err != nil { return k, err }
+            }
+        case reflect.Map:
+            iter := ref.MapRange()
+            for iter.Next() {
+                k, v := iter.Key().Interface().(K), iter.Value().Interface().(V)
+                if err := f(k, v); err != nil { return k, err }
+            }
+        case reflect.Slice:
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](i)
+                v := ref.Index(i).Interface().(V)
+                if err := f(k, v); err != nil { return k, err }
+            }
+        case reflect.String:
+            runes := 0
+            for i := 0; i < ref.Len(); i++ {
+                k := intish[K](runes)
+                runes++
+                v := ref.Index(i).Interface().(byte)
+
+                if utf8.FullRune([]byte{v}) {
+                    if err := f(k, intish[V](int(v))); err != nil { return k, err }
+                    continue
+                }
+
+                if utf8.RuneStart(v) {
+                    buf := [4]byte{v, 0, 0, 0}
+                    for j := 0; j < 3; j++ {
+                        //if i + j + 1 >= ref.Len() { break }
+                        v = ref.Index(i+j+1).Interface().(byte)
+                        buf[1+j] = v
+                        if utf8.FullRune(buf[0:2+j]) {
+                            n, _ := utf8.DecodeRune(buf[0:2+j])
+                            i += j + 1
+                            if err := f(k, intish[V](int(n))); err != nil { return k, err }
+                            break
+                        }
+                    }
+                } else {
+                    return Zero[K](), fmt.Errorf("Unicode error at byte %d %x", i, v)
+                }
+            }
+    }
+    return Zero[K](), nil
 }
 
 // Rangeable defines any type of value x where it is possible to range over
@@ -239,12 +240,36 @@ type Rangeable[K comparable, V any] interface {
     ~string | ~map[K]V | ~[]V | chan V
 }
 
-// Closeable is an interface implemented by anything with a Close method.
-type Closable interface {
-    Close() error
+// TestCompletes executes f (in a goroutine), and blocks until either f returns,
+// or the provided duration has elapsed. In the latter case, calls t.Errorf to
+// fail the test. Provide optional format string and arguments to add
+// context to the test error message.
+func TestCompletes(t *testing.T, duration time.Duration, f func(), args ... interface{}) {
+    done := make(chan struct{}, 1)
+    timeout := time.After(duration)
+    go func() {
+        f()
+        done <- struct{}{}
+    }()
+
+    select {
+        case <-done: // OK
+        case <-timeout:
+            if len(args) > 0 {
+                t.Errorf("test timed out after "+duration.String()+": " + args[0].(string), args[1:]...)
+            } else {
+                t.Errorf("test timed out after %s", duration.String())
+            }
+    }
 }
 
-// With calls a function on a resource that can be opened and closed. The
+// Zero returns the zero value for any type.
+func Zero[T any]() T {
+    var t T
+    return t
+}
+
+// WithCloser calls a function on a resource that can be opened and closed. The
 // resource if automatically closed as soon as that function returns. Checks
 // for errors opening the resource, checks for errors returned by the provided
 // function, and checks for errors closing the resource.
@@ -256,30 +281,27 @@ type Closable interface {
 //      ...
 //      return nil
 //   }) // calls .Close() automatically
-func With[T Closable](opener func() (T, error), do func(v T) error) error {
+func WithCloser[T io.Closer](opener func() (T, error), do func(v T) error) error {
     var zero T
 
     f, err := opener()
-    if err != nil { return fmt.Errorf("with(%T) open error: %w", zero, err) }
+    if err != nil { return fmt.Errorf("WithCloser(%T) open error: %w", zero, err) }
 
     // TODO allow this to panic, and recover
-    err = do(f)
+    doer := CatchFunc(func() error { return do(f) })
+    err, panicErr := doer()
     if err != nil {
-        err = fmt.Errorf("with(%T) error: %w", zero, err)
+        err = fmt.Errorf("WithCloser(%T) error: %w", zero, err)
+    } else if panicErr != nil {
+        err = fmt.Errorf("WithCloser(%T) err: %w", zero, panicErr)
     }
 
     errClose := f.Close()
     if errClose != nil {
-        // TODO allow unwrapping the close error
-        err = fmt.Errorf("with(%T) close error: %v; %w", zero, errClose, err)
+        err = fmt.Errorf("WithCloser(%T) close error: %v; %w", zero, errClose, err)
     }
 
     return err
-}
-
-// MustWith is like [With], but panics if it would return an error.
-func MustWith[T Closable](opener func() (T, error), do func(v T) error) {
-    Check(With(opener, do))
 }
 
 // WrapBlock word-wraps a whitespace-delimited string to a given number of

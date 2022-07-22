@@ -11,17 +11,21 @@ This is modern code with generics, for go v1.19beta1+
 
 ## Packages
 
-|   Name   |       /v2        | /v3 | Description                                             |
-|:--------:|:----------------:|:---:|:--------------------------------------------------------|
-|  dialog  |  [stable][101]   |  -  | simple cross-platform message boxes & file pickers      |
-| digraph  | [unstable][102]  |  -  | directed graphs (including DAGs)                        |
-|   drop   |       TODO       |  -  | drop process privileges and inherit handles             |
-|  grace   |       TODO       |  -  | start and gracefully shutdown processes                 |
-| humanize |       TODO       |  -  | locale-aware parsing & formatting of times & quantities |
-|    ks    | [candidate][102] |  -  | misc helpful things                                     |
-|   lazy   | [candidate][103] |  -  | composable lazy sequences                               |
-|  loader  | [unstable][105]  |  -  | concurrent dependency graph solver                      |
-| numbers  | [candidate][106] |  -  | helpful things for number types                         |
+|     Name      |       /v2        | /v3 | Description                                               |
+|:-------------:|:----------------:|:---:|:----------------------------------------------------------|
+|    dialog     |  [stable][101]   |  -  | simple cross-platform message boxes & file pickers        |
+|    digraph    | [unstable][102]  |  -  | directed graphs (including DAGs)                          |
+|     drop      |       TODO       |  -  | drop process privileges and inherit handles               |
+|     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |
+|   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
+|      ks       | [unstable][102]  |  -  | misc helpful things                                       |
+|     lazy      | [candidate][103] |  -  | composable lazy sequences                                 |
+|    loader     | [unstable][105]  |  -  | concurrent dependency graph solver                        |
+|    numbers    | [candidate][106] |  -  | helpful things for number types                           |
+|   text/ccc    | [candidate][107] |  -  | Unicode Canonical Combining Class values                  |
+|    text/dm    | [candidate][108] |  -  | Unicode decomposition mappings & selective decompositions |
+| text/fallback | [candidate][109] |  -  | Unicode Character Fallback Substitutions                  | 
+|   text/fold   | [candidate][110] |  -  | selectively merge distinctions in Unicode text            |
 
 [101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
 [102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
@@ -29,6 +33,10 @@ This is modern code with generics, for go v1.19beta1+
 [104]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
 [105]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
 [106]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
+[107]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
+[108]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
+[109]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
+[110]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
 
 **Note:** Additional v2/legacy packages exist for users migrating from
 `tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).

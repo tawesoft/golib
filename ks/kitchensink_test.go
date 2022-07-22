@@ -25,14 +25,14 @@ func ExampleZero() {
     // The zero value is 0
 }
 
-func TestCatch(t *testing.T) {
+func TestCatchFunc(t *testing.T) {
     {
         failingFunctionWithString := func() string {
             panic("oops")
             return "something"
         }
 
-        x, err := ks.Catch[string](failingFunctionWithString)
+        x, err := ks.CatchFunc[string](failingFunctionWithString)()
         assert.Equal(t, "", x)
         assert.Error(t, err)
         assert.Equal(t, nil, errors.Unwrap(err))
@@ -44,78 +44,12 @@ func TestCatch(t *testing.T) {
             return "something"
         }
 
-        x, err := ks.Catch[string](failingFunctionWithError)
+        x, err := ks.CatchFunc[string](failingFunctionWithError)()
         assert.Equal(t, "", x)
         assert.Error(t, err)
         wrapped := errors.Unwrap(err)
         assert.Error(t, wrapped)
         assert.Equal(t, "oops", wrapped.Error())
-    }
-}
-
-func TestCheckedRange(t *testing.T) {
-    errBar := fmt.Errorf("some error")
-
-    {
-        xs := []string{"foo", "bar", "baz"}
-        failer := func(k int, v string) error {
-            result := ks.IfThenElse(v == "bar", errBar, nil)
-            return result
-        }
-        k, v, err := ks.CheckedRange(failer, xs)
-        assert.Equal(t, 1, k)
-        assert.Equal(t, "bar", v)
-        assert.Equal(t, errBar, err)
-    }
-    {
-        xs := []string{}
-        failer := func(k int, v string) error {
-            return ks.IfThenElse(v == "bar", errBar, nil)
-        }
-        k, v, err := ks.CheckedRange(failer, xs)
-        assert.Equal(t, 0, k)
-        assert.Equal(t, "", v)
-        assert.Equal(t, nil, err)
-    }
-    {
-        var xs []string = nil
-        failer := func(k int, v string) error {
-            return ks.IfThenElse(v == "bar", errBar, nil)
-        }
-        k, v, err := ks.CheckedRange(failer, xs)
-        assert.Equal(t, 0, k)
-        assert.Equal(t, "", v)
-        assert.Equal(t, nil, err)
-    }
-
-    {
-        xs := map[string]string{"FOO": "foo", "BAR": "bar", "BAZ": "baz"}
-        failer := func(k string, v string) error {
-            return ks.IfThenElse(v == "bar", errBar, nil)
-        }
-        k, v, err := ks.CheckedRange(failer, xs)
-        assert.Equal(t, "BAR", k)
-        assert.Equal(t, "bar", v)
-        assert.Equal(t, errBar, err)
-    }
-
-    {
-        xchan := make(chan string)
-        go func() {
-            xchan <- "foo"
-            xchan <- "bar"
-            xchan <- "baz"
-            close(xchan)
-        }()
-
-        failer := func(k int, v string) error {
-            return ks.IfThenElse(v == "bar", errBar, nil)
-        }
-
-        k, v, err := ks.CheckedRange(failer, xchan)
-        assert.Equal(t, 0, k) // always zero for a channel
-        assert.Equal(t, "bar", v)
-        assert.Equal(t, errBar, err)
     }
 }
 
