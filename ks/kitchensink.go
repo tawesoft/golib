@@ -93,6 +93,14 @@ func IfThenElse[X any] (
     }
 }
 
+// In returns true if x equals any of the following arguments.
+func In[X comparable](x X, xs ... X) bool {
+    for _, i := range xs {
+        if x == i { return true }
+    }
+    return false
+}
+
 // Item is any Key, Value pair. Type K is any type that would be suitable as a
 // KeyType in a Go [builtin.map].
 //

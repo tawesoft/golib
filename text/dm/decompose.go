@@ -188,7 +188,7 @@ func (d Decomposer) Except(types ... Type) Decomposer {
 // character to itself, these are not counted here (None is returned instead).
 //
 // Note also that this is a single mapping, not a full decomposition. For that,
-// call the [Decomposer.String] method.
+// call [Decomposer.String] method, or [Decomposer.Rune] for a single rune.
 //
 // For historical Unicode reasons, the longest compatibility mapping is 18
 // characters long. Compatibility mappings are guaranteed to be no longer than
@@ -242,7 +242,17 @@ func (d Decomposer) flatten_r(dest *[]rune, xs []rune) {
 // The returned transformer is stateless, so may be used concurrently.
 func (d Decomposer) Transformer() transform.Transformer {
     return transform.Chain(
-        mappingTransformer{d},
+        mappingTransformer{d, nil},
+        ccc.Transformer,
+    )
+}
+
+// TransformerWithFilter is like [Transformer], however for each input rune x
+// where filter(x) returns false, the decomposition process is skipped and that
+// rune is output normally.
+func (d Decomposer) TransformerWithFilter(filter func (x rune) bool) transform.Transformer {
+    return transform.Chain(
+        mappingTransformer{d, filter},
         ccc.Transformer,
     )
 }
@@ -250,6 +260,7 @@ func (d Decomposer) Transformer() transform.Transformer {
 // mappingTransformer applies a mapping, but doesn't reorder the input
 type mappingTransformer struct {
     d Decomposer
+    filter func(x rune) bool
 }
 
 func (m mappingTransformer) Reset() {}
@@ -261,6 +272,15 @@ func (m mappingTransformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc i
             if (rZ == 0) && (atEOF) { return nDst, nSrc, nil }
             if atEOF { return nDst, nSrc, fmt.Errorf("invalid utf8 sequence") }
             return nDst, nSrc, transform.ErrShortSrc
+        }
+
+        if (m.filter != nil) && !m.filter(r) {
+            if cap(dst) - nDst < rZ {
+                return nDst, nSrc, transform.ErrShortDst
+            }
+            nDst += utf8.EncodeRune(dst[nDst:], r)
+            nSrc += rZ
+            continue
         }
 
         dt, dm := d.Map(r)
