@@ -111,7 +111,6 @@ func (c Char) DecompositionMappingsLiteral() string {
     return sb.String()
 }
 
-
 type DT int8
 const (
     DTNone DT =  0

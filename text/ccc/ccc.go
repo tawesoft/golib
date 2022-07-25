@@ -139,8 +139,10 @@ func Ordered(xs []rune) bool {
     return true
 }*/
 
-func ReorderString(xs string) error {
-    return Reorder([]byte(xs))
+func ReorderString(xs string) (string, error) {
+    out := []byte(xs)
+    err := Reorder(out)
+    return string(out), err
 }
 
 // Reorder performs the Unicode Canonical Ordering Algorithm on a slice

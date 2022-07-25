@@ -166,6 +166,80 @@ func TestCounter(t *testing.T) {
     }
 }
 
+func TestCutString(t *testing.T) {
+    type row struct {
+        sep rune
+        input string
+        expected []string
+    }
+
+    rows := []row{
+        {'|', "",            []string{""}},
+        {'|', "a",           []string{"a"}},
+        {'|', "foo",         []string{"foo"}},
+        {'|', "a|b|c",       []string{"a", "b", "c"}},
+        {'|', "abc|def|xyz", []string{"abc", "def", "xyz"}},
+        {'|', "¹|²|³",       []string{"¹", "²", "³"}},
+        {'|',
+            string([]rune{0x0041, 0x030a, '|', 0x064, 0x0307, 0x0327}),
+            []string{
+                string([]rune{0x0041, 0x030a}),
+                string([]rune{0x0064, 0x0307, 0x0327}),
+            },
+        },
+        {'\uFFFD',
+            string([]rune{0x0041, 0x030a, 0xFFFD, 0x064, 0x0307, 0x0327}),
+            []string{
+                string([]rune{0x0041, 0x030a}),
+                string([]rune{0x0064, 0x0307, 0x0327}),
+            },
+        },
+    }
+
+    for _, r := range rows {
+        result := lazy.ToSlice(lazy.CutString(r.input, r.sep))
+        assert.Equal(t, r.expected, result)
+    }
+}
+
+func _testCutString(t *testing.T) {
+    type row struct {
+        sep string
+        input string
+        expected []string
+    }
+
+    rows := []row{
+        {"|", "",            []string{""}},
+        {"|", "|",           []string{"", ""}},
+        {"|", "a",           []string{"a"}},
+        {"|", "foo",         []string{"foo"}},
+        {"|", "a|b|c",       []string{"a", "b", "c"}},
+        {"|", "||",          []string{"", "", ""}},
+        {"|", "abc|def|xyz", []string{"abc", "def", "xyz"}},
+        {"|", "¹|²|³",       []string{"¹", "²", "³"}},
+        {"|",
+            string([]rune{0x0041, 0x030a, '|', 0x064, 0x0307, 0x0327}),
+            []string{
+                string([]rune{0x0041, 0x030a}),
+                string([]rune{0x0064, 0x0307, 0x0327}),
+            },
+        },
+        {"\uFFFD",
+            string([]rune{0x0041, 0x030a, 0xFFFD, 0x064, 0x0307, 0x0327}),
+            []string{
+                string([]rune{0x0041, 0x030a}),
+                string([]rune{0x0064, 0x0307, 0x0327}),
+            },
+        },
+    }
+
+    for _, r := range rows {
+        result := lazy.ToSlice(lazy.CutStringStr(r.input, r.sep))
+        assert.Equal(t, r.expected, result)
+    }
+}
+
 func TestEnumerate(t *testing.T) {
     abc := lazy.FromSlice([]rune("abc"))
 

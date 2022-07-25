@@ -7,6 +7,7 @@ package lazy
 
 import (
     "strings"
+    "unicode/utf8"
 
     "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/numbers"
@@ -82,7 +83,7 @@ func Any[X any](
 }
 
 // AppendToSlice appends every value produced by an iterator to dest, and
-// returns the modified dest (like [builtin.append]).
+// returns the modified dest (like the builtin append).
 func AppendToSlice[X any](
     dest []X,
     xs It[X],
@@ -204,6 +205,64 @@ func Counter(start int, step int) It[int] {
         } else {
             done = true
             return start, true
+        }
+    }
+}
+
+// Cut returns an iterator that splits the input slice on an element
+// TODO
+
+// CutString is like [Cut], but operates on a string, producing strings
+// delimited by a separator rune.
+//
+// For example, CutString("a|b|c", "|") returns an iterator that produces
+// the strings "a", "b", "c".
+func CutString(in string, sep rune) It[string] {
+    done := false
+    z := utf8.RuneLen(sep)
+    return func() (string, bool) {
+        if done { return "", false }
+        if idx := stringsIndexRune(in, sep); idx < 0 {
+            done = true
+            return in, true
+        } else {
+            left := in[0:idx]
+            right := in[idx+z:]
+            in = right
+            return left, true
+        }
+    }
+}
+
+// stringsIndexRune reimplements strings.IndexRune because that function can't
+// capture utf8.RuneError.
+func stringsIndexRune(in string, sep rune) int {
+    offset := 0
+    z := utf8.RuneLen(sep)
+    for _, r := range in {
+        rZ := utf8.RuneLen(r)
+
+        if (r == sep) && (rZ == z) {
+            return offset
+        }
+
+        offset += rZ
+    }
+    return -1
+}
+
+// CutStringStr is like [CutString], but the delimiter is a string, not just
+// a single rune.
+func CutStringStr(in string, sep string) It[string] {
+    done := false
+    return func() (string, bool) {
+        if done { return "", false }
+        if left, right, found := strings.Cut(in, sep); !found {
+            done = true
+            return in, true
+        } else {
+            in = right
+            return left, true
         }
     }
 }
