@@ -8,7 +8,7 @@ documentation, code, etc. - are welcomed.
 Open an issue on the
 [tawesoft/golib issue tracker](https://github.com/tawesoft/golib/issues).
 
-Please make the issue title start with the package relative
+Please make the issue title starts with the package relative
 path including version (or "all" for everything or misc chores), followed 
 by a colon. For example:
 

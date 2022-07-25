@@ -127,7 +127,7 @@ func Subs(x rune) []string {
 // to the input. Note that this is very expensive for large strings. Note also
 // that this does not include any Unicode Character Fallback Substitutions.
 //
-// This is a clean-room implementation Mark Davies' algorithm described at
+// This is a clean-room implementation of Mark Davies' algorithm described at
 // https://unicode.org/notes/tn5/#Enumerating_Equivalent_Strings
 func Equivalent(in string) (lazy.It[string], error) {
     // we use this as a delimiter, so it must not appear in the input
