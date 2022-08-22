@@ -19,9 +19,9 @@ This is modern code with generics, for go v1.19beta1+
 |     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |
 |   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
 |      ks       | [unstable][102]  |  -  | misc helpful things                                       |
-|     lazy      | [candidate][103] |  -  | composable lazy sequences                                 |
+|     lazy      | [unstable][103]  |  -  | composable lazy sequences                                 |
 |    loader     | [unstable][105]  |  -  | concurrent dependency graph solver                        |
-|    numbers    | [candidate][106] |  -  | helpful things for number types                           |
+|    numbers    | [unstable][106]  |  -  | helpful things for number types                           |
 |   text/ccc    | [candidate][107] |  -  | Unicode Canonical Combining Class values                  |
 |    text/dm    | [candidate][108] |  -  | Unicode decomposition mappings & selective decompositions |
 | text/fallback | [candidate][109] |  -  | Unicode Character Fallback Substitutions                  | 
@@ -57,6 +57,6 @@ Use the [tawesoft/golib issue tracker](), powered by GitHub issues.
 ### Commercial Support
 
 Open source software from Tawesoft® is backed by commercial support options.
-Email [open-source@tawesoft.co.uk](mailto:open-source@tawesoft.co.uk) or visit
+Email [opensource@tawesoft.co.uk](mailto:opensource@tawesoft.co.uk) or visit
 [tawesoft.co.uk/products/open-source-software](https://www.tawesoft.co.uk/products/open-source-software) 
 to learn more.

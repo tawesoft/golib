@@ -22,12 +22,12 @@ used by a large volume of users. Email us with the subject
 
 ## Backporting fixes
 
-Applicable security fixes will always be backported to legacy 
-packages, to the previous two major versions of normal packages, and the 
-previous one major version of candidate packages.
+Applicable security fixes will always be backported to all legacy and stable
+packages, where possible. Fixes will be backported to candidate and unstable
+packages on a case-by-case basis.
 
-Security fixes may not always be backwards compatible, even between minor 
-versions.
+Security fixes may break backwards compatibility, even between minor versions,
+if necessary.
 
 
 ## Reporting a vulnerability
@@ -35,7 +35,8 @@ versions.
 Please disclose responsibly so that we can notify the users of our software
 with a fix and/or instructions, including a pre-announcement where appropriate.
 Do not report security issues through the public issue tracker in the first
-instance, unless it is being actively exploited in the wild.
+instance, unless the vulnerability is being actively exploited in the wild or
+is already public knowledge.
 
 Instead, please email information about vulnerabilities to
 [security@tawesoft.co.uk](mailto:security@tawesoft.co.uk).
@@ -51,5 +52,6 @@ For example:
 If you don't receive an acknowledgement within 48 hours, please contact us
 through any contact method listed on the Tawesoft website.
 
-If we have not fixed or disclosed a vulnerability after 90 days, then you may
-reserve your right to disclose this publicly.
+If, after being notified, we have not fixed or disclosed a vulnerability after
+90 days, then you may exercise your right to disclose it publicly.
+

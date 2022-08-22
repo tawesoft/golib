@@ -23,15 +23,13 @@ described in the following table.
 | Unstable  | Large breaking changes to this package are likely, even between minor versions, and may not have migration instructions. |
 
 Security fixes may not always be backwards compatible, even between minor 
-versions. Applicable security fixes will always be backported to frozen 
-packages, to the previous two major versions of normal packages, and the 
-previous one major version of candidate packages.
+versions.
 
 Downstream module authors should avoid using a candidate package
 in a stable release of their module, particularly in their public API. 
 Candidate packages are appropriate for "release candidate" pre-release 
 versions of modules, development versions of modules, and `main()` programs. 
-Alternatively, please vendor the package.
+Alternatively, please vendor the package as a temporary measure.
 
 
 ## Updating `github.com/tawesoft/golib`
@@ -45,7 +43,7 @@ Placeholder
 ## Migrating from `tawesoft.co.uk/go`
 
 There are no breaking changes, but you should update your imports as indicated
-for each package.
+below for each package.
 
 
 ### Package **tawesoft.co.uk/go/dialog:**
@@ -78,16 +76,7 @@ Although the new package is API-compatible with the old one, check out the
 ```
 
 This `golib/v2/legacy/humanize` package is frozen and will not appear 
-in v3. It will always be available at the v2 import path. Note that this
-is different to the new (non-legacy) humanize package, which is not directly
-compatible with existing code.
-
-### (Optional) migrate **humanize** → **goblib/v2/humanize:**
-
-Package `goblib/v2/humanize` provides similar features to the old
-`tawesoft.co.uk/go/humanize` package, but migrating will require changes to 
-existing code. Note that this package is different to the legacy humanize 
-package, which is compatible with existing code.
+in v3. It will always be available at the v2 import path.
 
 
 ### Package **tawesoft.co.uk/go/lxstrconv:**
@@ -101,13 +90,6 @@ package, which is compatible with existing code.
 
 This `golib/v2/legacy/localize` package is frozen and will not appear 
 in v3. It will always be available at the v2 import path.
-
-### (Optional) migrate **lxstrconv** → **goblib/v2/humanize:**
-
-Package `goblib/v2/humanize` provides similar features to the old
-`tawesoft.co.uk/go/lxstrconv` package, but migrating will require changes to 
-existing code. Note that this package is different to the legacy humanize 
-package, which is compatible with existing code.
 
 
 ### Package **tawesoft.co.uk/go/operator:**
