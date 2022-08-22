@@ -127,6 +127,15 @@ func Must[T any](t T, err error) T {
     return t
 }
 
+// MustOk accepts a (value, ok bool) tuple as input and panics if ok is false,
+// otherwise returns value.
+func MustOk[T any](t T, ok bool) T {
+    if !ok {
+        panic(fmt.Errorf("unexpected error in MustOk[%T]: not ok", t))
+    }
+    return t
+}
+
 // MustFunc accepts a function f(x) => (y, err) and returns a function
 // g(x) => y that panics if f(x) returned an error, otherwise returns y.
 //

@@ -217,6 +217,15 @@ func Counter(start int, step int) It[int] {
 //
 // For example, CutString("a|b|c", "|") returns an iterator that produces
 // the strings "a", "b", "c".
+//
+// Unlike some Go functions, CutString does not also treat invalid Unicode or
+// invalid Utf8 byte sequences as a valid delimiter when the separator is
+// utf8.RuneError.
+//
+// Note that in many situations, it is probably faster, simpler, clearer, and
+// more idiomatic to use a [bufio.Scanner]. Prefer CutString only if you are
+// combining the result iterator with other higher-order functions in this
+// package.
 func CutString(in string, sep rune) It[string] {
     done := false
     z := utf8.RuneLen(sep)
@@ -267,6 +276,14 @@ func CutStringStr(in string, sep string) It[string] {
     }
 }
 
+// Empty returns an iterator that is typed, but empty.
+func Empty[X any]() It[X] {
+    zero := ks.Zero[X]()
+    return func () (X, bool) {
+        return zero, false
+    }
+}
+
 // Enumerate produces an [Item] for each value produced by the input iterator,
 // where Item.Key is an integer that starts at zero and increases by one with
 // each produced value. The input iterator should not be used anywhere else
@@ -285,6 +302,15 @@ func Enumerate[X any, Y Item[int, X]](
             return y, true
         }
         return Y{}, false
+    }
+}
+
+// Exhaust consumes an iterator and discards the produced values. As a special
+// case, a nil iterator safely returns immediately.
+func Exhaust[X any](it It[X]) {
+    if it == nil { return }
+    for {
+        if _, ok := it(); !ok { break }
     }
 }
 
