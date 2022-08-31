@@ -64,3 +64,12 @@ func Func[X any](
         return Result(f())
     }
 }
+
+// Never signifies code that should never be reached. It raises a panic when
+// called.
+func Never(args ... interface{}) {
+    if len(args) > 0 {
+        panic(fmt.Errorf("must.Never: this should never happen: " + args[0].(string), args[1:]...))
+    }
+    panic(fmt.Errorf("must.Never: this should never happen"))
+}

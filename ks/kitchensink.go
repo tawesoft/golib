@@ -179,6 +179,8 @@ TODO replace with Else
 
 // Never signifies code that should never be reached. It raises a panic when
 // called.
+//
+// Deprecated: use [must.Never] instead.
 func Never(args ... interface{}) {
     if len(args) > 0 {
         panic(fmt.Errorf("this should never happen: " + args[0].(string), args[1:]...))

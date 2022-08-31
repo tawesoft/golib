@@ -140,7 +140,7 @@ func pwidePermitNul(input string) uintptr {
 
 func wide(input string) *uint16 {
     if result, err := windows.UTF16PtrFromString(input); err != nil {
-        return ks.Must(windows.UTF16PtrFromString("Unicode error"))
+        return must.Result(windows.UTF16PtrFromString("Unicode error"))
     } else {
         return result
     }
