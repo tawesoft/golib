@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/alessio/shellescape v1.4.1
-	github.com/stretchr/testify v1.7.5
-	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
-	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
+	github.com/stretchr/testify v1.8.0
+	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
 	golang.org/x/text v0.3.7
 )
 
