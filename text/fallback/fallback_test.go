@@ -4,8 +4,8 @@ import (
     "fmt"
     "strings"
 
-    "github.com/tawesoft/golib/v2/ks"
-    "github.com/tawesoft/golib/v2/lazy"
+    lazy "github.com/tawesoft/golib/v2/iter"
+    "github.com/tawesoft/golib/v2/must"
     "github.com/tawesoft/golib/v2/text/fallback"
     "golang.org/x/text/unicode/runenames"
 )
@@ -71,7 +71,7 @@ func ExampleSubs() {
 func ExampleEquivalent() {
     input := "\u0041\u030A\u0064\u0307\u0327"
     fmt.Printf("Input: %s %x %x\n", input, []rune(input), []byte(input))
-    eq := ks.Must(fallback.Equivalent(input))
+    eq := must.Result(fallback.Equivalent(input))
 
     lazy.Walk(func (x string) {
         fmt.Printf("%s: %x = %s\n", x, []rune(x),
@@ -112,7 +112,8 @@ func ExampleEquivalent() {
 
      */
 
-    // TODO for some reason our implementation is missing the two variants with an Angstrom Sign
+    // TODO for some reason our implementation is missing the two variants with an Angstrom Sign.
+    //   This is probably due to Go's Unicode version being older than the example.
 
     // output:
     // Input: Åḑ̇ [41 30a 64 307 327] 41cc8a64cc87cca7

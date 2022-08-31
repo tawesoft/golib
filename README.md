@@ -6,37 +6,46 @@
 A monorepo for small Go modules maintained by
 [Tawesoft®](https://www.tawesoft.co.uk). Open source ([MIT](/LICENSE.txt)).
 
-This is modern code with generics, for go v1.19beta1+
-
+This is modern code with generics, for go v1.19
 
 ## Packages
 
 |     Name      |       /v2        | /v3 | Description                                               |
 |:-------------:|:----------------:|:---:|:----------------------------------------------------------|
-|    dialog     |  [stable][101]   |  -  | simple cross-platform message boxes & file pickers        |
-|    digraph    | [unstable][102]  |  -  | directed graphs (including DAGs)                          |
+|    dialog     |  [stable][d01]   |  -  | cross-platform message boxes & file pickers               |
+|    digraph    | [unstable][d02]  |  -  | directed graphs (including DAGs)                          |
 |     drop      |       TODO       |  -  | drop process privileges and inherit handles               |
+|   fun/maybe   | [candidate][f01] |  -  | Maybe sum type                                            |
+|  fun/partial  | [candidate][f02] |  -  | partial function application                              |
+|  fun/result   | [candidate][f03] |  -  | Result sum type                                           |
 |     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |
 |   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
-|      ks       | [unstable][102]  |  -  | misc helpful things                                       |
-|     lazy      | [unstable][103]  |  -  | composable lazy sequences                                 |
-|    loader     | [unstable][105]  |  -  | concurrent dependency graph solver                        |
-|    numbers    | [unstable][106]  |  -  | helpful things for number types                           |
-|   text/ccc    | [candidate][107] |  -  | Unicode Canonical Combining Class values                  |
-|    text/dm    | [candidate][108] |  -  | Unicode decomposition mappings & selective decompositions |
-| text/fallback | [candidate][109] |  -  | Unicode Character Fallback Substitutions                  | 
-|   text/fold   | [candidate][110] |  -  | selectively merge distinctions in Unicode text            |
+|     iter      | [unstable][i01]  |  -  | composable lazy iteration over sequences                  |
+|      ks       | [unstable][k01]  |  -  | "kitchen sink" of misc helpful things                     |
+|    loader     | [unstable][l01]  |  -  | concurrent dependency graph solver                        |
+|     must      | [candidate][m01] |  -  | assertions                                                |
+|    numbers    | [unstable][n01]  |  -  | helpful things for number types                           |
+|   text/ccc    | [candidate][t01] |  -  | Unicode Canonical Combining Class values                  |
+|    text/dm    | [candidate][t02] |  -  | Unicode decomposition mappings & selective decompositions |
+| text/fallback | [candidate][t03] |  -  | Unicode Character Fallback Substitutions                  | 
+|   text/fold   | [candidate][t04] |  -  | selectively merge distinctions in Unicode text            |
+|     view      | [unstable][v01]  |  -  | dynamic views over collections                            |
 
-[101]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
-[102]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
-[103]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
-[104]: https://pkg.go.dev/github.com/tawesoft/golib/v2/lazy
-[105]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
-[106]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
-[107]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
-[108]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
-[109]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
-[110]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
+[d01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
+[d02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
+[f01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/maybe
+[f02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/partial
+[f03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/result
+[i01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/iter
+[k01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
+[l01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
+[m01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
+[n01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
+[t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
+[t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
+[t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
+[t04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
+[v01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/view
 
 **Note:** Additional v2/legacy packages exist for users migrating from
 `tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).

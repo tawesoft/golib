@@ -11,6 +11,7 @@ import (
     "time"
     "unicode/utf8"
 
+    "github.com/tawesoft/golib/v2/must"
     "golang.org/x/exp/utf8string"
 )
 
@@ -26,15 +27,7 @@ func Assert(q bool, args ... interface{}) {
     }
 }
 
-// Check panics if the error is not nil. Otherwise, it returns a nil error (so
-// that it is convenient to chain).
-func Check(err error) error {
-    if err != nil {
-        panic(fmt.Errorf("unexpected error: %w", err))
-    }
-    return nil
-}
-
+/*
 // CatchFunc returns a function that wraps input function f. When called, if f
 // is successful, CatchFunc passes on the return value from f and also returns
 // a nil error. If f panics, CatchFunc recovers from the panic and returns a
@@ -60,6 +53,7 @@ func CatchFunc[X any](f func() X) func() (x X, err error) {
         return f(), nil
     }
 }
+*/
 
 // FirstNonZero returns the first argument that isn't equal to the zero value
 // of T, or otherwise the zero value.
@@ -72,13 +66,18 @@ func FirstNonZero[T comparable](args ... T) T {
     return zero
 }
 
+// Identity implements the function f(x) => x.
+func Identity[X any](x X) X {
+    return x
+}
+
 // IfThenElse returns a value based on a boolean condition, q. Iff q is true,
 // returns the ifTrue. Iff q is false, returns ifFalse. This [IfThenElse
 // expression] (as distinct from If-Then-Else statements) is much like the
 // ternary operator in some other languages, however it is not short-circuited
 // and both arguments are evaluated.
 //
-// For a lazily-evaluated version, see [lazy.IfThenElse].
+// For a lazily-evaluated version, see [IfThenElseLazy].
 //
 // [IfThenElse expression]: https://en.wikipedia.org/wiki/Conditional_(computer_programming)#If%E2%80%93then%E2%80%93else_expressions
 func IfThenElse[X any] (
@@ -93,6 +92,27 @@ func IfThenElse[X any] (
     }
 }
 
+// IfThenElseLazy returns a lazily-evaluated value based on a boolean
+// condition, q. Iff q is true, returns the return value of ifTrue(). Iff q is
+// false, returns the return value of ifFalse(). This [IfThenElse expression]
+// (as distinct from If-Then-Else statements) is much like the ternary operator
+// in some other languages.
+//
+// For a non-lazy version, see [IfThenElse].
+//
+// [IfThenElse expression]: https://en.wikipedia.org/wiki/Conditional_(computer_programming)#If%E2%80%93then%E2%80%93else_expressions
+func IfThenElseLazy[X any] (
+    q       bool,
+    ifTrue  func() X,
+    ifFalse func() X,
+) X {
+    if q {
+        return ifTrue()
+    } else {
+        return ifFalse()
+    }
+}
+
 // In returns true if x equals any of the following arguments.
 func In[X comparable](x X, xs ... X) bool {
     for _, i := range xs {
@@ -101,17 +121,7 @@ func In[X comparable](x X, xs ... X) bool {
     return false
 }
 
-// Item is any Key, Value pair. Type K is any type that would be suitable as a
-// KeyType in a Go [builtin.map].
-//
-// A downstream package should use this to define its own number type (e.g.
-// type Item[K comparable, V any] ks.Item[K, V]) rather than use the type
-// directly from here in its exported interface.
-type Item[K comparable, V any] struct {
-    Key   K
-    Value V
-}
-
+/*
 // Must accepts a (value, err) tuple as input and panics if err != nil,
 // otherwise returns value. The error raised by panic is wrapped in another
 // error.
@@ -135,12 +145,14 @@ func MustOk[T any](t T, ok bool) T {
     }
     return t
 }
+*/
 
 // MustFunc accepts a function f(x) => (y, err) and returns a function
 // g(x) => y that panics if f(x) returned an error, otherwise returns y.
 //
 // The opposite of MustFunc is CatchFunc - e.g.
 //   CatchFunc(MustFunc(os.Open))("example.txt")
+/*
 func MustFunc[X any, Y any](
     f func (x X) (Y, error),
 ) func (x X) Y {
@@ -148,10 +160,12 @@ func MustFunc[X any, Y any](
         return Must(f(x))
     }
 }
+*/
 
 // MustInit calls f, a function that returns a (value, error) tuple. If the
 // error is nil, returns the value. Otherwise, returns the default value d.
 // Intended to be used to initialise package-level constants.
+/*
 func MustInit[K any](f func () (value K, err error), d K) K {
     if v, err := f(); err == nil {
         return v
@@ -159,6 +173,9 @@ func MustInit[K any](f func () (value K, err error), d K) K {
         return d
     }
 }
+TODO replace with Else
+*/
+
 
 // Never signifies code that should never be reached. It raises a panic when
 // called.
@@ -304,8 +321,7 @@ func WithCloser[T io.Closer](opener func() (T, error), do func(v T) error) error
     f, err := opener()
     if err != nil { return fmt.Errorf("WithCloser(%T) open error: %w", zero, err) }
 
-    // TODO allow this to panic, and recover
-    doer := CatchFunc(func() error { return do(f) })
+    doer := must.CatchFunc(func() error { return do(f) })
     err, panicErr := doer()
     if err != nil {
         err = fmt.Errorf("WithCloser(%T) error: %w", zero, err)

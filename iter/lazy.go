@@ -3,7 +3,7 @@
 // To avoid confusion, between the higher-order function "map" and the Go map
 // data structure, the latter is referred to as a [builtin.map] in this
 // package.
-package lazy
+package iter
 
 import (
     "strings"
@@ -17,6 +17,9 @@ import (
 // Item is any Key, Value pair. Type K is any type that would be suitable as a
 // KeyType in a Go [builtin.map].
 type Item[K comparable, V any] ks.Item[K, V]
+
+// Result is
+type Result[V any] ks.Result[V]
 
 // It is an iterator, defined as a function that lazily produces a (possibly
 // infinite) sequence of (value, true) tuples through successive calls. If the
@@ -44,12 +47,10 @@ type Item[K comparable, V any] ks.Item[K, V]
 // produces values.
 type It[X any] func()(X, bool)
 
-/*
-// Next implements an interface
-func (it It[X]) Next() (X, bool) {
+// Next implements a proposed Iter interface.
+func (it It[X]) Next()(X, bool) {
     return it()
 }
-*/
 
 // All calls function f for each value x produced by an iterator until either f
 // returns false, or the iterator is exhausted. All returns true iff f(x) was

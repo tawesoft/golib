@@ -11,5 +11,5 @@ wget -P "DATA" -nc "http://unicode.org/Public/cldr/$CLDR_VERSION/cldr-common-$CL
 
 unzip -o "DATA/cldr-common-$CLDR_VERSION.$CLDR_VERSION_MINOR.zip" -d "DATA/cldr-$CLDR_VERSION.$CLDR_VERSION_MINOR"
 
-wget -O "DATA/NormalizationTest.$UNICODE_VERSION.txt" -nc "https://www.unicode.org/Public/13.0.0/ucd/NormalizationTest.txt"
+wget -O "DATA/NormalizationTest.$UNICODE_VERSION.txt" -nc "https://www.unicode.org/Public/$UNICODE_VERSION/ucd/NormalizationTest.txt"
 cp "DATA/NormalizationTest.$UNICODE_VERSION.txt" ../../text/dm/testdata

@@ -12,6 +12,7 @@ import (
     "strconv"
 
     "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 type Char struct {
     codepoint rune
@@ -20,7 +21,7 @@ type Char struct {
 }
 
 func ParseCodepoint(x string) rune {
-    return rune(ks.Must(strconv.ParseInt(x, 16, 32)))
+    return rune(must.Result(strconv.ParseInt(x, 16, 32)))
 }
 
 func (c Char) IsRange() bool {
@@ -39,7 +40,7 @@ func CharFromAttrs(attr []xml.Attr, parent Char) Char {
             case "last-cp":
                 c.coderange[1] = ParseCodepoint(a.Value)
             case "ccc":
-                v := ks.Must(strconv.ParseUint(a.Value, 10, 8))
+                v := must.Result(strconv.ParseUint(a.Value, 10, 8))
                 c.ccc = uint8(v)
         }
     }
@@ -47,7 +48,7 @@ func CharFromAttrs(attr []xml.Attr, parent Char) Char {
 }
 
 func main() {
-    zr := ks.Must(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
+    zr := must.Result(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
 
     opener := func(name string) func() (io.ReadCloser, error) {
         return func() (io.ReadCloser, error) {
@@ -57,7 +58,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    ks.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -144,7 +145,7 @@ func main() {
     }
 
     {
-        dest := ks.Must(os.Create("../../../../text/ccc/ccc.bin"))
+        dest := must.Result(os.Create("../../../../text/ccc/ccc.bin"))
         cccEncode(dest, ranges)
         defer dest.Close()
     }
@@ -223,7 +224,7 @@ func cccEncode(dest io.Writer, ranges []rng) {
         b2 := (x >> 16) & 0xFF
         b3 := (x >> 24) & 0xFF
         b4 := (x >> 32) & 0xFF
-        ks.Must(dest.Write([]byte{
+        must.Result(dest.Write([]byte{
             uint8(b0),
             uint8(b1),
             uint8(b2),

@@ -29,8 +29,8 @@ import (
     "strings"
     "unicode/utf8"
 
+    lazy "github.com/tawesoft/golib/v2/iter"
     "github.com/tawesoft/golib/v2/ks"
-    "github.com/tawesoft/golib/v2/lazy"
     "github.com/tawesoft/golib/v2/numbers"
     "github.com/tawesoft/golib/v2/text/ccc"
     "golang.org/x/text/unicode/norm"

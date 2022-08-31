@@ -7,6 +7,7 @@ import (
     "sort"
 
     "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 // dstarts contains packed Unicode data (not worth gziping) mapping the first
@@ -71,7 +72,7 @@ func getsubs(x rune) []string {
 func init() {
     rdr := bytes.NewReader(dstartsBin[0:4])
     var nIdx int32
-    ks.Check(binary.Read(rdr, binary.LittleEndian, &nIdx))
+    must.Check(binary.Read(rdr, binary.LittleEndian, &nIdx))
 
     in := dstartsBin[4:4+(nIdx*5)]
 

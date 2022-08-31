@@ -1,11 +1,11 @@
-package lazy_test
+package iter_test
 
 import (
     "fmt"
     "strconv"
     "strings"
 
-    "github.com/tawesoft/golib/v2/lazy"
+    lazy "github.com/tawesoft/golib/v2/iter"
 )
 
 func ExampleFromMap() {

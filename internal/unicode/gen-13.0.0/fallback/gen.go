@@ -19,6 +19,7 @@ import (
     "strings"
 
     "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 type Char struct {
@@ -34,7 +35,7 @@ func (c Char) Codepoint() rune {
 }
 
 func ParseCodepoint(x string) rune {
-    return rune(ks.Must(strconv.ParseInt(x, 16, 32)))
+    return rune(must.Result(strconv.ParseInt(x, 16, 32)))
 }
 
 func (c Char) IsRange() bool {
@@ -88,7 +89,7 @@ func (c Char) DecompositionType() DT {
 }
 
 func main() {
-    zr := ks.Must(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
+    zr := must.Result(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
 
     opener := func(name string) func() (io.ReadCloser, error) {
         return func() (io.ReadCloser, error) {
@@ -98,7 +99,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    ks.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -172,10 +173,10 @@ func main() {
 
     {
         // dstarts = decomposition starters
-        dest := ks.Must(os.Create("../../../../text/fallback/dstarts.bin"))
+        dest := must.Result(os.Create("../../../../text/fallback/dstarts.bin"))
         defer dest.Close()
 
-        ks.Check(binary.Write(dest, binary.LittleEndian, int32(len(sortedKeys))))
+        must.Check(binary.Write(dest, binary.LittleEndian, int32(len(sortedKeys))))
 
         // decomposition starters index
         dstartsEncode(dest, sortedKeys, dmToCodepoints)

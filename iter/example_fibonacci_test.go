@@ -1,9 +1,9 @@
-package lazy_test
+package iter_test
 
 import (
     "fmt"
 
-    "github.com/tawesoft/golib/v2/lazy"
+    lazy "github.com/tawesoft/golib/v2/iter"
 )
 
 // FibFunc lazily generates a sequence of fibonacci numbers.

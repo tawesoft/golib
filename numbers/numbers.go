@@ -37,9 +37,10 @@ type Real interface {
                       ~float32 | ~float64
 }
 
-// Epsilon returns the smallest representable real number greater than zero.
-// For all integer types, this is always 1.
-func Epsilon[N Real]() N {
+// Smallest returns the smallest representable real number greater than zero.
+// For all integer types, this is always 1. For float types, this is
+// math.SmallestNonzeroFloat32 or math.SmallestNonzeroFloat64.
+func Smallest[N Real]() N {
     var n N
     switch x := any(&n).(type) {
         case      *int:   *x = 1
@@ -128,72 +129,89 @@ type RealInfo[N Real] struct {
     Signed bool
 }
 
-// Filled-in information about different number types.
+// Filled-in [RealInfo] information about different [Real] number types.
 var (
-    Int =         RealInfo[int]{
+    Int   = nInt
+    Int8  = nInt8
+    Int16 = nInt16
+    Int32 = nInt32
+    Int64 = nInt64
+
+    Uint   = nUint
+    Uint8  = nUint8
+    Uint16 = nUint16
+    Uint32 = nUint32
+    Uint64 = nUint64
+
+    Float32 = nFloat32
+    Float64 = nFloat64
+)
+
+var (
+    nInt =        RealInfo[int]{
         Min:           Min[int](),
         Max:           Max[int](),
         Epsilon:   Epsilon[int](),
         Signed:    true,
     }
-    Int8 =        RealInfo[int8]{
+    nInt8 =       RealInfo[int8]{
         Min:           Min[int8](),
         Max:           Max[int8](),
         Epsilon:   Epsilon[int8](),
         Signed:    true,
     }
-    Int16 =      RealInfo[int16]{
+    nInt16 =     RealInfo[int16]{
         Min:          Min[int16](),
         Max:          Max[int16](),
         Epsilon:  Epsilon[int16](),
         Signed:    true,
     }
-    Int32 =      RealInfo[int32]{
+    nInt32 =     RealInfo[int32]{
         Min:          Min[int32](),
         Max:          Max[int32](),
         Epsilon:  Epsilon[int32](),
         Signed:    true,
     }
-    Int64 =      RealInfo[int64]{
+    nInt64 =     RealInfo[int64]{
         Min:          Min[int64](),
         Max:          Max[int64](),
         Epsilon:  Epsilon[int64](),
         Signed:    true,
     }
 
-    Uint =        RealInfo[uint]{
+    nUint =       RealInfo[uint]{
         Min:           Min[uint](),
         Max:           Max[uint](),
         Epsilon:   Epsilon[uint](),
     }
-    Uint8 =       RealInfo[uint8]{
+    nUint8 =      RealInfo[uint8]{
         Min:           Min[uint8](),
         Max:           Max[uint8](),
         Epsilon:   Epsilon[uint8](),
     }
-    Uint16 =     RealInfo[uint16]{
+    nUint16 =    RealInfo[uint16]{
         Min:          Min[uint16](),
         Max:          Max[uint16](),
         Epsilon:  Epsilon[uint16](),
     }
-    Uint32 =     RealInfo[uint32]{
+    nUint32 =    RealInfo[uint32]{
         Min:          Min[uint32](),
         Max:          Max[uint32](),
         Epsilon:  Epsilon[uint32](),
     }
-    Uint64 =     RealInfo[uint64]{
+    nUint64 =    RealInfo[uint64]{
         Min:          Min[uint64](),
         Max:          Max[uint64](),
         Epsilon:  Epsilon[uint64](),
     }
 
-    Float32 =   RealInfo[float32]{
+    nFloat32 =  RealInfo[float32]{
         Min:         Min[float32](),
         Max:         Max[float32](),
         Epsilon: Epsilon[float32](),
         Signed:    true,
     }
-    Float64 =   RealInfo[float64]{
+    nFloat64 =  RealInfo[float64]{
         Min:         Min[float64](),
         Max:         Max[float64](),
         Epsilon: Epsilon[float64](),

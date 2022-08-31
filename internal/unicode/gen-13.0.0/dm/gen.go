@@ -21,6 +21,7 @@ import (
     "strings"
 
     "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 type Char struct {
@@ -59,7 +60,7 @@ func (c Char) Pack() uint64 {
 }
 
 func ParseCodepoint(x string) rune {
-    return rune(ks.Must(strconv.ParseInt(x, 16, 32)))
+    return rune(must.Result(strconv.ParseInt(x, 16, 32)))
 }
 
 func (c Char) IsRange() bool {
@@ -169,7 +170,7 @@ func (c Char) DecompositionType() DT {
 }
 
 func main() {
-    zr := ks.Must(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
+    zr := must.Result(zip.OpenReader("../../DATA/ucd.nounihan.grouped.13.0.0.zip"))
 
     opener := func(name string) func() (io.ReadCloser, error) {
         return func() (io.ReadCloser, error) {
@@ -179,7 +180,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    ks.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -237,12 +238,12 @@ func main() {
     }
 
     {
-        dest := ks.Must(os.Create("../../../../text/dm/dti.bin"))
+        dest := must.Result(os.Create("../../../../text/dm/dti.bin"))
         defer dest.Close()
         dtiEncode(dest, chars)
     }
     {
-        dest := ks.Must(os.Create("../../../../text/dm/dms.bin.gz"))
+        dest := must.Result(os.Create("../../../../text/dm/dms.bin.gz"))
         defer dest.Close()
 
         zdest := gzip.NewWriter(dest)
@@ -261,7 +262,7 @@ func dtiEncode(dest io.Writer, chars []Char) {
         b3 := (p >> 24) & 0xFF
         b4 := (p >> 32) & 0xFF
         b5 := (p >> 40) & 0xFF
-        ks.Must(dest.Write([]byte{
+        must.Result(dest.Write([]byte{
             uint8(b0),
             uint8(b1),
             uint8(b2),
@@ -279,7 +280,7 @@ func dmsEncode(dest io.Writer, chars []Char) {
             b0 :=       (x) & 0xFF
             b1 := (x >>  8) & 0xFF
             b2 := (x >> 16) & 0xFF
-            ks.Must(dest.Write([]byte{
+            must.Result(dest.Write([]byte{
                 uint8(b0),
                 uint8(b1),
                 uint8(b2),

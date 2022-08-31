@@ -6,7 +6,7 @@ import (
     _ "embed"
     "io"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 // dtiBin contains packed Unicode decomposition type data (not worth gziping)
@@ -32,9 +32,9 @@ var dms []rune
 
 // ungz unpacks gzipped data
 func ungz(src []byte) []byte {
-    rdr := ks.Must(gzip.NewReader(bytes.NewReader(src)))
+    rdr := must.Result(gzip.NewReader(bytes.NewReader(src)))
     defer rdr.Close()
-    return ks.Must(io.ReadAll(rdr))
+    return must.Result(io.ReadAll(rdr))
 }
 
 func dtiDecode(x uint64) dti {

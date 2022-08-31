@@ -5,8 +5,8 @@ import (
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/ks"
-    "github.com/tawesoft/golib/v2/lazy"
+    lazy "github.com/tawesoft/golib/v2/iter"
+    "github.com/tawesoft/golib/v2/must"
     "golang.org/x/text/unicode/norm"
 )
 
@@ -50,7 +50,7 @@ func Example_combinations() {
         "x�y�z",
     }
 
-    it := ks.Must(combinations(input))
+    it := must.Result(combinations(input))
     lazy.Walk(func (x string) {
         fmt.Println(x)
     }, it)

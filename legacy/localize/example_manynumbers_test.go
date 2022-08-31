@@ -3,8 +3,8 @@ package localize_test
 import (
     "fmt"
 
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/legacy/localize"
+    "github.com/tawesoft/golib/v2/must"
     "golang.org/x/text/language"
     "golang.org/x/text/language/display"
     "golang.org/x/text/message"
@@ -33,7 +33,7 @@ func Example_ManyNumbers() {
         localized := printer.Sprintf("%.4f", number.Decimal(input))
 
         parser := localize.NewDecimalFormat(t)
-        result := ks.Must(parser.ParseFloat(localized))
+        result := must.Result(parser.ParseFloat(localized))
 
         fmt.Printf("Language: %s\nPrints %T %.4f as %q\nParses %q back to %T %.4f\n\n",
             namer.Name(t), input, input, localized, localized, result, result)

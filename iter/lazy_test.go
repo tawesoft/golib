@@ -1,4 +1,4 @@
-package lazy_test
+package iter_test
 
 import (
     "fmt"
@@ -8,7 +8,7 @@ import (
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/lazy"
+    lazy "github.com/tawesoft/golib/v2/iter"
     "golang.org/x/exp/maps"
 )
 
