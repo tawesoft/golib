@@ -11,11 +11,11 @@ import (
     "time"
 
     "github.com/tawesoft/golib/v2/dialog"
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 func main() {
-    supported := ks.Must(dialog.Supported())
+    supported := must.Result(dialog.Supported())
     fmt.Printf("Supported features: %+v\n", supported)
 
     // For windows, enable modern styles. Does nothing on other platforms. Also
