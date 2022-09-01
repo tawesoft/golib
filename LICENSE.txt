@@ -3,7 +3,7 @@ github.com/tawesoft/golib
 Copyright © 2019 - 2022 Ben Golightly <ben@tawesoft.co.uk>
 Copyright © 2019 - 2022 Tawesoft Ltd <opensource@tawesoft.co.uk>
 Copyright © CONTRIBUTORS (api.github.com/repos/tawesoft/golib/contributors)
-Portions copyright © 1991 - 2022 Unicode, Inc. (see also UNICODE.txt)
+Portions copyright © 1991 - 2022 Unicode, Inc. (see UNICODE.txt)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

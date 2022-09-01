@@ -14,7 +14,7 @@ import (
 // file or directory". On success, returns *os.File
 func Result[T any](t T, err error) T {
     if err != nil {
-        panic(fmt.Errorf("error in must.Result[%T]: %w", t, err))
+        panic(fmt.Errorf("error in must.Result[%T]: got error: %w", t, err))
     }
     return t
 }
@@ -22,19 +22,21 @@ func Result[T any](t T, err error) T {
 // Ok accepts a (value, ok) tuple as input and panics if ok is false, otherwise
 // returns value.
 func Ok[T any](t T, ok bool) T {
-    if ok == false {
-        panic(fmt.Errorf("error in must.Ok[%T]: not ok", t))
-    }
-    return t
+    if ok { return t }
+    panic(fmt.Errorf("error in must.Ok[%T]: not ok", t))
+}
+
+// True panics if the provided boolean is false.
+func True(q bool) {
+    if q { return }
+    panic(errorf("error in must.True: not true"))
 }
 
 // Check panics if the error is not nil. Otherwise, it returns a nil error (so
 // that it is convenient to chain).
 func Check(err error) error {
-    if err != nil {
-        panic(fmt.Errorf("must.Check: unexpected error: %w", err))
-    }
-    return nil
+    if err == nil { return nil }
+    panic(fmt.Errorf("must.Check: unexpected error: %w", err))
 }
 
 // CatchFunc takes a function f() => x that may panic, and instead returns a
@@ -67,9 +69,16 @@ func Func[X any](
 
 // Never signifies code that should never be reached. It raises a panic when
 // called.
+//
+// The args parameter defines an optional fmt.Sprintf-style format string and
+// arguments.
 func Never(args ... interface{}) {
+    panic(errorf("must.Never: this should never happen", args...))
+}
+
+func errorf(format string, args ... interface{}) error {
     if len(args) > 0 {
-        panic(fmt.Errorf("must.Never: this should never happen: " + args[0].(string), args[1:]...))
+        return fmt.Errorf(format + ": " + args[0].(string), args[1:]...)
     }
-    panic(fmt.Errorf("must.Never: this should never happen"))
+    return fmt.Errorf(format)
 }

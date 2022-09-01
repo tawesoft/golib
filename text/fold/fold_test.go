@@ -40,6 +40,15 @@ func Test(t *testing.T) {
         {fold.Dashes,               "a\u2011b\u2010c", "a-b-c"},   // non-breaking hyphen, hyphen, to hyphen-minus
         {fold.Dashes,               "a⸺b⸺c",     "a-b-c"},  // to hyphen-minus
 
+        {fold.Digit,                "",             ""},           // same
+        {fold.Digit,                "abcdef",       "abcdef"},     // same
+        {fold.Digit,                "0123456789",   "0123456789"}, // same
+        {fold.Digit,                "٠١٢٣٤٥٦٧٨٩",   "0123456789"},
+        {fold.Digit,                "۰۱۲۳۴۵۶۷۸۹",   "0123456789"},
+        {fold.Digit,                "⓪①②③④⑤⑥⑦⑧⑨",   "0123456789"},
+        {fold.Digit,                "⁵₅",           "55"},
+
+
         {fold.GreekLetterforms,     "",             ""},        // same
         {fold.GreekLetterforms,     "café",         "café"},    // same
         {fold.GreekLetterforms,     "ϐϑϒ",          "βθΥ"},

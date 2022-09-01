@@ -22,6 +22,7 @@ import (
 
     "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/text/dm"
+    "github.com/tawesoft/golib/v2/text/np"
     "golang.org/x/text/runes"
     "golang.org/x/text/transform"
 )
@@ -64,6 +65,20 @@ var dashes = runes.Map(func(r rune) rune {
     return r
 })
 
+// Digit folds native digits to a substitute ASCII digit. Note that this maps
+// to Unicode code points for the digits '0' to '9', not to the codepoints with
+// integer values 0 to 9.
+var Digit = digit
+var digit = runes.Map(func(r rune) rune {
+    ty, value := np.Get(r)
+    if ty == np.Decimal || ty == np.Digit {
+        if (value.Denominator == 1) && (value.Numerator >= 0) && (value.Numerator <= 9) {
+            return '0' + rune(value.Numerator)
+        }
+    }
+    return r
+})
+
 // GreekLetterforms is a transformer that folds alternative Greek letterforms
 // e.g. 'ϐ' to 'β'.
 var GreekLetterforms = greekLetterforms
@@ -77,7 +92,7 @@ var greekLetterforms = dm.KD.TransformerWithFilter(func (r rune) bool {
     }
 })
 
-// HebrewAlternates is a transformer that folds e.g. wide Hebrew charachters
+// HebrewAlternates is a transformer that folds e.g. wide Hebrew characters
 // to non-wide variants.
 var HebrewAlternates = hebrewAlternates
 var hebrewAlternates = dm.KD.TransformerWithFilter(func (r rune) bool {
@@ -96,9 +111,6 @@ var Math = math
 var math = dm.New(dm.Font).TransformerWithFilter(func (r rune) bool {
     return (r < 0xFB20) || (r > 0xFB28)
 })
-
-// Native digit folding from Nd => substitute ASCII digit.
-// TODO requires either Go /x/text/number exports this, or we parse the Unicode data ourselves
 
 // NoBreak folding converts non-breaking space and non-breaking hyphens.
 var NoBreak = dm.New(dm.NoBreak).Transformer()

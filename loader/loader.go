@@ -56,7 +56,6 @@ func (n *Inputs) AssertNoneNamed() {
     }
 }
 
-
 // AssertNoErrors panics unless all the inputs (if any) have nil error values.
 func (n *Inputs) AssertNoErrors() {
     for i, v := range n.Direct {

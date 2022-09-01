@@ -29,6 +29,7 @@ This is modern code with generics, for go v1.19
 |    text/dm    | [candidate][t02] |  -  | Unicode decomposition mappings & selective decompositions |
 | text/fallback | [candidate][t03] |  -  | Unicode Character Fallback Substitutions                  | 
 |   text/fold   | [candidate][t04] |  -  | selectively merge distinctions in Unicode text            |
+|    text/np    | [candidate][t05] |  -  | Unicode numeric properties                                |
 |     view      | [unstable][v01]  |  -  | dynamic views over collections                            |
 
 [d01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
@@ -45,6 +46,7 @@ This is modern code with generics, for go v1.19
 [t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
 [t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
 [t04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
+[t05]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/np
 [v01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/view
 
 **Note:** Additional v2/legacy packages exist for users migrating from
