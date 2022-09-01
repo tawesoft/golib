@@ -67,11 +67,12 @@ var dashes = runes.Map(func(r rune) rune {
     return r
 })
 
-// Digit folds native digits to a substitute ASCII digit. Note that this maps
-// to Unicode code points for the digits '0' to '9', not to the codepoints with
+// Digits is a transformer that folds digits in a native language or a
+// typographical context to a substitute ASCII digit. Note that this maps to
+// Unicode code points for the digits '0' to '9', not to the codepoints with
 // integer values 0 to 9.
-var Digit = digit
-var digit = runes.Map(func(r rune) rune {
+var Digits = digits
+var digits = runes.Map(func(r rune) rune {
     ty, value := np.Get(r)
     if ty == np.Decimal || ty == np.Digit {
         if (value.Denominator == 1) && (value.Numerator >= 0) && (value.Numerator <= 9) {
