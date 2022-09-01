@@ -2,6 +2,8 @@
 // target. These operations are called character foldings, and can be used
 // to ignore certain distinctions between similar characters.
 //
+// Each folder implements the [transform.Transform] interface.
+//
 // DISCLAIMER: these folders are based on suggested foldings that appear in
 // withdrawn drafts of Unicode technical reports. They may not be complete.
 // Their names come from those technical reports.
@@ -113,13 +115,16 @@ var math = dm.New(dm.Font).TransformerWithFilter(func (r rune) bool {
 })
 
 // NoBreak folding converts non-breaking space and non-breaking hyphens.
-var NoBreak = dm.New(dm.NoBreak).Transformer()
+var NoBreak = noBreak
+var noBreak = dm.New(dm.NoBreak).Transformer()
 
 // Positional folding performs positional forms folding including Arabic ligatures.
-var Positional = dm.New(dm.Initial, dm.Medial, dm.Final, dm.Isolated).Transformer()
+var Positional = positional
+var positional = dm.New(dm.Initial, dm.Medial, dm.Final, dm.Isolated).Transformer()
 
 // Space folding converts all spaces to a single 0x0020 space.
-var Space = runes.Map(func(r rune) rune {
+var Space = space
+var space = runes.Map(func(r rune) rune {
     if unicode.Is(unicode.Zs, r) {
         return 0x0020
     }
@@ -127,4 +132,5 @@ var Space = runes.Map(func(r rune) rune {
 })
 
 // Small folding converts small variant forms into normal forms.
-var Small = dm.New(dm.Small).Transformer()
+var Small = small
+var small = dm.New(dm.Small).Transformer()
