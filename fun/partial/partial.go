@@ -14,6 +14,25 @@
 //
 package partial
 
+// Single takes a function with a single argument and return value and
+// constructs a function that takes a single argument and returns a function
+// that takes no arguments and returns a single value.
+//
+// For example,
+//
+//    opener :=  partial.Single(result.WrapFunc(os.Open))
+//    openFoo := opener("foo.txt")
+//    f, err := openFoo().Unpack()
+func Single[T any, Return any](
+    f func(t T) Return,
+) func (t T) func () Return {
+    return func (t T) func () Return {
+        return func() Return {
+            return f(t)
+        }
+    }
+}
+
 func Left2[A any, B any, Return any](
     f func(a A, b B) Return,
 ) func (a A) func (b B) Return {

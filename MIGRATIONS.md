@@ -34,7 +34,7 @@ Alternatively, please vendor the package as a temporary measure.
 
 ## Updating `github.com/tawesoft/golib`
 
-### Migrating v2.0 → v2.1
+### Migrating v2.? → v2.?
 
 Placeholder
 

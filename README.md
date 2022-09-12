@@ -15,9 +15,10 @@ This is modern code with generics, for go v1.19
 |    dialog     |  [stable][d01]   |  -  | cross-platform message boxes & file pickers               |
 |    digraph    | [unstable][d02]  |  -  | directed graphs (including DAGs)                          |
 |     drop      |       TODO       |  -  | drop process privileges and inherit handles               |
-|   fun/maybe   | [candidate][f01] |  -  | Maybe sum type                                            |
+|   fun/maybe   | [candidate][f01] |  -  | implements a "Maybe" sum type                             |
 |  fun/partial  | [candidate][f02] |  -  | partial function application                              |
-|  fun/result   | [candidate][f03] |  -  | Result sum type                                           |
+|  fun/result   | [candidate][f03] |  -  | implements a "Result" sum type                            |
+|  fun/slices   | [candidate][f04] |  -  | higher-order functions (map, flatmap) for slices          |
 |     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |
 |   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
 |     iter      | [unstable][i01]  |  -  | composable lazy iteration over sequences                  |
@@ -37,6 +38,7 @@ This is modern code with generics, for go v1.19
 [f01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/maybe
 [f02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/partial
 [f03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/result
+[f04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/slices
 [i01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/iter
 [k01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
 [l01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader

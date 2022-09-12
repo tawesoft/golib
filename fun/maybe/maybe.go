@@ -1,174 +1,134 @@
-// Package maybe implements a Maybe{value, ok} "sum type" that has a value only
+// Package maybe implements a M{value, ok} "sum type" that has a value only
 // when ok is true.
 //
 // Note that in many cases, it is more idiomatic for a function to return a
 // naked (value, ok). Use [WrapFunc] to convert such a function to return
-// a Maybe type.
+// a M type.
 package maybe
 
 import (
     "fmt"
 )
 
-// Maybe is a (value, ok) "sum type" that has a value only when ok is
+// M is a (value, ok) "sum type" that has a value only when ok is
 // true.
-type Maybe[V any] struct {
+type M[V any] struct {
     Value V
     Ok bool
 }
 
-// New returns a Maybe. It is syntax sugar for Maybe{value, ok}. If ok is
+// New returns a M. It is syntax sugar for M{value, ok}. If ok is
 // a known constant, use [Some] or [Nothing] instead.
-func New[V any](value V, ok bool) Maybe[V] {
+func New[V any](value V, ok bool) M[V] {
     if !ok { return Nothing[V]() }
     return Some(value)
 }
 
-// Unpack returns a plain (value, ok) tuple from a Maybe.
-func (m Maybe[V]) Unpack() (V, bool) {
+// Unpack returns a plain (value, ok) tuple from a M.
+func (m M[V]) Unpack() (V, bool) {
     return m.Value, m.Ok
 }
 
-// Else returns the Maybe's value (if ok), otherwise returns the provided
-// argument instead.
-func (m Maybe[V]) Else(v V) V {
-    if m.Ok { return m.Value }
-    return v
-}
-
-// Filter examines a Maybe. If ok and f(value) returns true, returns
-// Some(value), otherwise returns Nothing.
-func (m Maybe[V]) Filter(f func(v V) bool) Maybe[V] {
-    if !m.Ok { return Nothing[V]() }
-    if f(m.Value) { return m }
-    return Nothing[V]()
-}
-
-// Match examines a Maybe and returns true if ok and if the provided predicate
-// returns true for the value.
-func (m Maybe[V]) Match(f func(v V) bool) bool {
-    if !m.Ok { return false }
-    return f(m.Value)
-}
-
-// Must returns a Maybe's value. If the Maybe is not ok, panics.
-func (m Maybe[V]) Must() V {
+// Must returns a M's value. If the M is not ok, panics.
+func (m M[V]) Must() V {
     if !m.Ok {
-        panic(fmt.Sprintf("Maybe[%T].Must called on missing value.", m))
+        panic(fmt.Sprintf("maybe.M[%T].Must called, but value missing.", m))
     }
     return m.Value
 }
 
-// MustNot panics if the Maybe is ok.
-func (m Maybe[V]) MustNot() {
+// MustNot panics if the M is ok.
+func (m M[V]) MustNot() {
     if m.Ok {
-        panic(fmt.Sprintf("Maybe[%T].MustNot called but value present.", m))
+        panic(fmt.Sprintf("maybe.M[%T].MustNot called, but value present.", m))
     }
 }
 
-// Nothing returns a (typed) Maybe that has no value.
-func Nothing[V any]() Maybe[V] {
-    return Maybe[V]{}
+// Nothing returns a (typed) M that has no value.
+func Nothing[V any]() M[V] {
+    return M[V]{}
 }
 
-// Some (a.k.a. "Just") returns a Maybe that contains a value.
-func Some[V any](value V) Maybe[V] {
-    return Maybe[V]{
+// Some returns a M that contains a value.
+func Some[V any](value V) M[V] {
+    return M[V]{
         Value: value,
         Ok:    true,
     }
 }
 
-// WrapFunc converts a function of the form f(x) => (value, ok) to the form
-// f(x) => Maybe{value, ok}.
-func WrapFunc[A any, B any](
-    f func(a A) (B, bool),
-) func(a A) Maybe[B] {
-    return func(a A) Maybe[B] {
-        return New(f(a))
+// Else returns M.value if ok, otherwise returns the provided argument instead.
+func (m M[V]) Else(v V) V {
+    if m.Ok { return m.Value }
+    return v
+}
+
+// Map turns function "f: X => Y" into "f: M(X) => M[Y]".
+func Map[X any, Y any](
+    f func(x X) Y,
+) func(x2 M[X]) M[Y] {
+    return func(x2 M[X]) M[Y] {
+        if (!x2.Ok) { return Nothing[Y]() }
+        return Some(f(x2.Value))
     }
 }
 
-// UnwrapFunc converts a function of the form f(x) => Maybe{value, ok} to the
-// form f(x) => (value, ok)
-func UnwrapFunc[A any, B any](
-    f func(a A) Maybe[B],
-) func(a A) (B, bool) {
-    return func(a A) (B, bool) {
-        return f(a).Unpack()
+// FlatMap turns function "f: X => M[Y]" into "f: M(X) => M[Y]".
+func FlatMap[X any, Y any](
+    f func(x X) M[Y],
+) func(x2 M[X]) M[Y] {
+    return func(x2 M[X]) M[Y] {
+        if (!x2.Ok) { return Nothing[Y]() }
+        return f(x2.Value)
     }
 }
 
-// Apply applies a function f(x) => y, but function f is itself a Maybe. If
-// either a or f are Nothing, returns Nothing. Otherwise, returns
-// Some(f(a.Value)).
-//
-// This is useful for working with partial function application.
-//
-//     doubler := partial.Left2(mul, 2)
-//     maybe.Apply(Some(x), maybe.Map(Some(y), doubler))
-//
-// For a function that applies f(x) => Maybe(y) instead, see [FlatApply].
-func Apply[A any, B any](
-    a Maybe[A],
-    f Maybe[func(a A) B],
-) Maybe[B] {
-    if !a.Ok { return Nothing[B]() }
-    if !f.Ok { return Nothing[B]() }
-    return Some(f.Value(a.Value))
+// Applicator turns function "M[f]: X => Y" into "f: X => M[Y]".
+func Applicator[X any, Y any](
+    f M[func(x X) Y],
+) func(x X) M[Y] {
+    if !f.Ok { return func(x X) M[Y] { return Nothing[Y]() } }
+    return func(x X) M[Y] { return Some(f.Value(x)) }
 }
 
-// Map applies a function f(x) => y. If a is Nothing, returns Nothing.
-// Otherwise, returns Some(f(a.Value)).
-//
-// For a function that applies f(x) => Maybe(y) instead, see [FlatMap].
-func Map[A any, B any](
-    a Maybe[A],
-    f func(a A) B,
-) Maybe[B] {
-    if !a.Ok { return Nothing[B]() }
-    return Some(f(a.Value))
+// WrapFunc converts a function of the form "f: X => (Y, ok bool)" to the form
+// "f: X => M[X].
+func WrapFunc[X any, Y any](
+    f func(x X) (Y, bool),
+) func(x X) M[Y] {
+    return func(x X) M[Y] {
+        return New(f(x))
+    }
 }
 
-// FlatMap applies a function f(x) => Maybe(y). If a is Nothing, returns
-// Nothing, otherwise returns f(a.Value).
-//
-// This is called "flat" because applying function f with the ordinary map
-// would give Maybe(Maybe(y)).
-//
-// For a function that applies f(x) => y instead, see [Map].
-func FlatMap[A any, B any](
-    a Maybe[A],
-    f func(a A) Maybe[B],
-) Maybe[B] {
-    if !a.Ok { return Nothing[B]() }
-    return f(a.Value)
+// UnwrapFunc converts a function of the form "f: X => M[Y]" to the
+// form "f: X => ([Y], ok bool)".
+func UnwrapFunc[X any, Y any](
+    f func(x X) M[Y],
+) func(x X) (Y, bool) {
+    return func(x X) (Y, bool) {
+        return f(x).Unpack()
+    }
 }
 
-// FlatApply applies Maybe(f(x)) => Maybe(y). That is, function f is itself a
-// Maybe. If either a or f are Nothing, returns Nothing. Otherwise, returns
-// f(a.Value).
-//
-// This is useful for working with partial function application.)
-//
-// This is called "flat" because applying function f with the ordinary apply
-// would give Maybe(Maybe(y)).
-//
-// For a function that applies f(x) => y instead, see [Apply].
-func FlatApply[A any, B any](
-    a Maybe[A],
-    f Maybe[func(a A) Maybe[B]],
-) Maybe[B] {
-    if !a.Ok { return Nothing[B]() }
-    if !f.Ok { return Nothing[B]() }
-    return f.Value(a.Value)
+// Lift converts a function of the form "f: X => Y" to the form "f: X => M[Y]"
+// where M[Y] == Some(y).
+func Lift[X any, Y any](
+    f func(x X) Y,
+) func(x X) M[Y] {
+    return func(x X) M[Y] {
+        return Some(f(x))
+    }
 }
 
-// Lift converts a function of the form f(a) => b to the form f(a) => Maybe(b).
-func Lift[A any, B any](
-    f func(a A) B,
-) func(a A) Maybe[B] {
-    return func(a A) Maybe[B] {
-        return Some(f(a))
+// Compose takes two functions of the form "f: M[X] => M[Y]" and
+//  "g: M[Y] => M[Z]" and returns a function "h(M[X]) => M[Z]" where M[Z] is
+//  the result of "g(f(M[X]))".
+func Compose[X any, Y any, Z any](
+    f func(M[X]) M[Y],
+    g func(M[Y]) M[Z],
+) func(M[X]) M[Z] {
+    return func(x M[X]) M[Z] {
+        return g(f(x))
     }
 }

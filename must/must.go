@@ -32,6 +32,12 @@ func True(q bool) {
     panic(errorf("error in must.True: not true"))
 }
 
+// False panics if the provided boolean is true.
+func False(q bool) {
+    if !q { return }
+    panic(errorf("error in must.False: not false"))
+}
+
 // Check panics if the error is not nil. Otherwise, it returns a nil error (so
 // that it is convenient to chain).
 func Check(err error) error {

@@ -305,35 +305,26 @@ func Zero[T any]() T {
     return t
 }
 
-// WithCloser calls a function on a resource that can be opened and closed. The
-// resource if automatically closed as soon as that function returns. Checks
-// for errors opening the resource, checks for errors returned by the provided
-// function, and checks for errors closing the resource.
+// WithCloser.
 //
-// For example:
-//
-//   opener := func(name) func() (*os.File, error) { return os.Open(name) }
-//   err := With(opener("example.txt"), func(f *os.File) error {
-//      ...
-//      return nil
-//   }) // calls .Close() automatically
+// Deprecated: use [with.Closer].
 func WithCloser[T io.Closer](opener func() (T, error), do func(v T) error) error {
     var zero T
 
     f, err := opener()
-    if err != nil { return fmt.Errorf("WithCloser(%T) open error: %w", zero, err) }
+    if err != nil { return fmt.Errorf("WithCloser[%T] open error: %w", zero, err) }
 
     doer := must.CatchFunc(func() error { return do(f) })
     err, panicErr := doer()
     if err != nil {
-        err = fmt.Errorf("WithCloser(%T) error: %w", zero, err)
+        err = fmt.Errorf("WithCloser[%T] error: %w", zero, err)
     } else if panicErr != nil {
-        err = fmt.Errorf("WithCloser(%T) err: %w", zero, panicErr)
+        err = fmt.Errorf("WithCloser[%T] error: panic: %w", zero, panicErr)
     }
 
     errClose := f.Close()
     if errClose != nil {
-        err = fmt.Errorf("WithCloser(%T) close error: %v; %w", zero, errClose, err)
+        err = fmt.Errorf("WithCloser[%T] close error: %v; %w", zero, errClose, err)
     }
 
     return err
