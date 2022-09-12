@@ -16,7 +16,7 @@ This is modern code with generics, for go v1.19
 |    digraph    | [unstable][d02]  |  -  | directed graphs (including DAGs)                          |
 |     drop      |       TODO       |  -  | drop process privileges and inherit handles               |
 |   fun/maybe   | [candidate][f01] |  -  | implements a "Maybe" sum type                             |
-|  fun/partial  | [candidate][f02] |  -  | partial function application                              |
+|  fun/partial  |  [stable][f02]   |  -  | partial function application                              |
 |  fun/result   | [candidate][f03] |  -  | implements a "Result" sum type                            |
 |  fun/slices   | [candidate][f04] |  -  | higher-order functions (map, flatmap) for slices          |
 |     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |

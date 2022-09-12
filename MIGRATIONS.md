@@ -34,9 +34,9 @@ Alternatively, please vendor the package as a temporary measure.
 
 ## Updating `github.com/tawesoft/golib`
 
-### Migrating v2.? → v2.?
+### Migrating v2.1 → v2.2
 
-Placeholder
+* `fun/maybe` and `fun/result` packages have been redone
 
 
 
