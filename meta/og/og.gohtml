@@ -1,0 +1,43 @@
+{{with .Type }}<meta property="og:type" content="{{.}}" />{{end}}
+{{with .Url}}<meta property="og:url" content="{{.}}" />{{end}}
+{{with .Locale }}<meta property="og:locale" content="{{.}}" />{{end}}
+{{with .SiteName }}<meta property="og:site_name" content="{{.}}" />{{end}}
+{{with .Title}}<meta property="og:title" content="{{.}}" />{{end}}
+{{with .Description}}<meta property="og:description" content="{{.}}" />{{end}}
+
+{{range .Media}}
+{{if eq .Type "audio" -}}
+    {{- with .Url}}<meta property="og:audio" content="{{.}}" />{{end}}
+    {{with .Mime}}<meta property="og:audio:type" content="{{.}}" />{{end}}
+    {{with .Alt}}<meta property="og:audio:alt" content="{{.}}" />{{end}}
+{{- end}}
+{{- if eq .Type "image" -}}
+    {{- with .Url}}<meta property="og:image" content="{{.}}" />{{end}}
+    {{with .Mime}}<meta property="og:image:type" content="{{.}}" />{{end}}
+    {{with .Alt}}<meta property="og:image:alt" content="{{.}}" />{{end}}
+    {{with .Width}}<meta property="og:image:width" content="{{.}}" />{{end}}
+    {{with .Height}}<meta property="og:image:height" content="{{.}}" />{{end}}
+{{- end}}
+{{- if eq .Type "video" -}}
+    {{- with .Url}}<meta property="og:video" content="{{.}}" />{{end}}
+    {{with .Mime}}<meta property="og:video:type" content="{{.}}" />{{end}}
+    {{with .Alt}}<meta property="og:video:alt" content="{{.}}" />{{end}}
+    {{with .Width}}<meta property="og:video:width" content="{{.}}" />{{end}}
+    {{with .Height}}<meta property="og:video:height" content="{{.}}" />{{end}}
+{{- end}}
+{{end}}
+
+{{if eq .Type "article" }}{{with .Article }}
+{{- with ISO8601 .Published}}<meta property="article:published_time" content="{{ . }}" />{{end}}
+{{- with ISO8601 .Modified}}<meta property="article:modified_time" content="{{ . }}" />{{end}}
+{{- with ISO8601 .Expires}}<meta property="article:expiration_time" content="{{ . }}" />{{end}}
+{{with .Section}}<meta property="article:section" content="{{.}}" />{{end}}
+{{range .Authors }}
+    <meta property="article:author" content="{{ .Url }}"/>
+    {{with .FirstName}}<meta property="article:author:first_name" content="{{ . }}"/>{{end}}
+    {{with .LastName}}<meta property="article:author:first_name" content="{{ . }}"/>{{end}}
+{{end}}
+{{- range .Tags }}
+    <meta property="article:tag" content="{{ . }}" />
+{{- end}}
+{{end}}{{end}}

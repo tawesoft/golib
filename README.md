@@ -21,17 +21,18 @@ This is modern code with generics, for go v1.19
 |  fun/slices   | [candidate][f04] |  -  | higher-order functions (map, flatmap) for slices          |
 |     grace     |       TODO       |  -  | start and gracefully shutdown processes                   |
 |   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
-|     iter      | [unstable][i01]  |  -  | composable lazy iteration over sequences                  |
+|     iter      | [candidate][i01] |  -  | composable lazy iteration over sequences                  |
 |      ks       | [unstable][k01]  |  -  | "kitchen sink" of misc helpful things                     |
 |    loader     |       TODO       |  -  | concurrent dependency graph solver                        |
-|     must      | [candidate][m01] |  -  | assertions                                                |
-|    numbers    | [unstable][n01]  |  -  | helpful things for number types                           |
+|   meta/og     | [candidate][m01] |  -  | render Open Graph protocol HTML meta tags                 | 
+|     must      | [candidate][m02] |  -  | assertions                                                |
+|    numbers    | [candidate][n01] |  -  | helpful things for number types                           |
 |   text/ccc    | [candidate][t01] |  -  | Unicode Canonical Combining Class values                  |
 |    text/dm    | [candidate][t02] |  -  | Unicode decomposition mappings & selective decompositions |
 | text/fallback | [candidate][t03] |  -  | Unicode Character Fallback Substitutions                  | 
 |   text/fold   | [candidate][t04] |  -  | selectively merge distinctions in Unicode text            |
 |    text/np    | [candidate][t05] |  -  | Unicode numeric properties                                |
-|     view      | [unstable][v01]  |  -  | dynamic views over collections                            |
+|     view      | [candidate][v01] |  -  | dynamic views over collections                            |
 
 [d01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
 [d02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
@@ -41,7 +42,8 @@ This is modern code with generics, for go v1.19
 [f04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/slices
 [i01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/iter
 [k01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
-[m01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
+[m01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/meta/og
+[m02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
 [n01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
 [t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
 [t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
