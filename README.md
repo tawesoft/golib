@@ -23,7 +23,7 @@ This is modern code with generics, for go v1.19
 |   humanize    |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
 |     iter      | [unstable][i01]  |  -  | composable lazy iteration over sequences                  |
 |      ks       | [unstable][k01]  |  -  | "kitchen sink" of misc helpful things                     |
-|    loader     | [unstable][l01]  |  -  | concurrent dependency graph solver                        |
+|    loader     |       TODO       |  -  | concurrent dependency graph solver                        |
 |     must      | [candidate][m01] |  -  | assertions                                                |
 |    numbers    | [unstable][n01]  |  -  | helpful things for number types                           |
 |   text/ccc    | [candidate][t01] |  -  | Unicode Canonical Combining Class values                  |
@@ -41,7 +41,6 @@ This is modern code with generics, for go v1.19
 [f04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/slices
 [i01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/iter
 [k01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/ks
-[l01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/loader
 [m01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
 [n01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
 [t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc

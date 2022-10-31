@@ -23,7 +23,7 @@ func ExampleFromMap() {
     })
 
     // this filter function returns true for people under thirty
-    underThirty := func(kv lazy.Item[ID, Person]) bool {
+    underThirty := func(kv lazy.Pair[ID, Person]) bool {
         return kv.Value.age < 30
     }
 
@@ -128,8 +128,8 @@ func ExampleToMap() {
     })
 
     // for a person input, this function returns (id, person)
-    personToTuple := func (person Person) lazy.Item[ID, Person] {
-        return lazy.Item[ID, Person]{person.id, person}
+    personToTuple := func (person Person) lazy.Pair[ID, Person] {
+        return lazy.Pair[ID, Person]{person.id, person}
     }
 
     // apply the function over all people (lazily...)

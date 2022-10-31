@@ -1,8 +1,8 @@
-// Package lazy implements lazy evaluation (strictly typed with Go generics).
+// Package iter implements iteration over sequences, including lazy evaluation.
 //
 // To avoid confusion, between the higher-order function "map" and the Go map
-// data structure, the latter is referred to as a [builtin.map] in this
-// package.
+// data structure, the former will always be referred to as a "map function"
+// and the latter will always be referred to as a "map collection".
 package iter
 
 import (
@@ -14,16 +14,13 @@ import (
     "golang.org/x/exp/maps"
 )
 
-// Item is any Key, Value pair. Type K is any type that would be suitable as a
-// KeyType in a Go [builtin.map].
-type Item[K comparable, V any] ks.Item[K, V]
+// Pair is any Key, Value pair. Type K is any type that would be suitable as a
+// KeyType in a map collection.
+type Pair[K comparable, V any] ks.Item[K, V]
 
-// Result is
-type Result[V any] ks.Result[V]
-
-// It is an iterator, defined as a function that lazily produces a (possibly
-// infinite) sequence of (value, true) tuples through successive calls. If the
-// sequence has ended then returned tuple is always (undefined, false).
+// It is an iterator, defined as a function that produces a (possibly infinite)
+// sequence of (value, true) tuples through successive calls. If the sequence
+// has ended then returned tuple is always (undefined, false).
 //
 // In this package, an iterator returning a sequence of (value, true) tuples is
 // said to be "producing" values. An iterator returning (undefined, false) is
@@ -47,7 +44,7 @@ type Result[V any] ks.Result[V]
 // produces values.
 type It[X any] func()(X, bool)
 
-// Next implements a proposed Iter interface.
+// Next implements the proposed Iter interface.
 func (it It[X]) Next()(X, bool) {
     return it()
 }
@@ -285,14 +282,14 @@ func Empty[X any]() It[X] {
     }
 }
 
-// Enumerate produces an [Item] for each value produced by the input iterator,
-// where Item.Key is an integer that starts at zero and increases by one with
+// Enumerate produces an [Pair] for each value produced by the input iterator,
+// where Pair.Key is an integer that starts at zero and increases by one with
 // each produced value. The input iterator should not be used anywhere else
 // once provided to this function.
 //
 // For example, for an iterator abc that produces the runes 'a', 'b', 'c',
-// Enumerate(abc) produces the values Item[0, 'a'], Item[1, 'b'], Item[2, 'c'].
-func Enumerate[X any, Y Item[int, X]](
+// Enumerate(abc) produces the values Pair[0, 'a'], Pair[1, 'b'], Pair[2, 'c'].
+func Enumerate[X any, Y Pair[int, X]](
     it It[X],
 ) It[Y] {
     var n int
@@ -318,6 +315,8 @@ func Exhaust[X any](it It[X]) {
 // Filter returns an iterator that consumes an input iterator and only
 // produces those values where the provided filter function f returns true.
 //
+// As a special case, if f is nil, it is treated as the function f(x) => true.
+//
 // For example:
 //
 //     function isOdd := func(x int) bool { return x % 2 == 1 }
@@ -328,6 +327,10 @@ func Filter[X any](
     it It[X],
 ) It[X] {
     zero := ks.Zero[X]()
+
+    if f == nil {
+        f = func(x X) bool { return true }
+    }
 
     return func() (X, bool) {
         for {
@@ -381,19 +384,19 @@ type FinalValue[X any] struct {
 
 // FromMap returns an iterator that produces each (key, value) pair from the
 // input [builtin.Map] (of Go type map[X]Y, not to be confused with the higher
-// order function [Map]) as an Item. Do not modify the underlying map's keys
+// order function [Map]) as an Pair. Do not modify the underlying map's keys
 // until no longer using the returned iterator.
-func FromMap[X comparable, Y any](kvs map[X]Y) It[Item[X, Y]] {
+func FromMap[X comparable, Y any](kvs map[X]Y) It[Pair[X, Y]] {
     rest := maps.Keys(kvs)
-    zero := ks.Zero[Item[X, Y]]()
+    zero := ks.Zero[Pair[X, Y]]()
 
-    return func() (Item[X, Y], bool) {
+    return func() (Pair[X, Y], bool) {
         if len(rest) == 0 {
             return zero, false
         } else {
             key := rest[0]
             rest = rest[1:]
-            return Item[X, Y]{
+            return Pair[X, Y]{
                 Key: key,
                 Value: kvs[key],
             }, true
@@ -430,8 +433,8 @@ func Func[X any](f func() (X, bool)) It[X] {
 }
 
 // InsertToMap modifies a [builtin.Map] (of Go type map[X]Y, not to be confused
-// with the higher order function [Map]). For each Item produced by the input
-// iterator, Item.Key is used as a map key and Item.Value is used as the
+// with the higher order function [Map]). For each Pair produced by the input
+// iterator, Pair.Key is used as a map key and Pair.Value is used as the
 // matching value.
 //
 // If a key already exists in the destination map (either originally, or as a
@@ -443,7 +446,7 @@ func Func[X any](f func() (X, bool)) It[X] {
 func InsertToMap[X comparable, Y any](
     dest map[X]Y,
     choose func(key X, original Y, new Y) Y,
-    kvs It[Item[X,Y]],
+    kvs It[Pair[X,Y]],
 ) {
     for {
         kv, ok := kvs()
@@ -684,9 +687,9 @@ func Tee[X any](
 }
 
 // ToMap returns a new [builtin.map] (of Go type map[X]Y, not to be confused
-// with the higher order function [Map]). For each Item produced by the input
-// iterator, Item.Key is used as a map key and Item.Value is used as the
-// matching value. If the iterator produces two Items with the same Item.Key,
+// with the higher order function [Map]). For each Pair produced by the input
+// iterator, Pair.Key is used as a map key and Pair.Value is used as the
+// matching value. If the iterator produces two Items with the same Pair.Key,
 // only the last value is kept.
 //
 // If a key already exists in the destination map (as a result of the input
@@ -697,7 +700,7 @@ func Tee[X any](
 // recently produced by the iterator.
 func ToMap[X comparable, Y any](
     choose func(key X, original Y, new Y) Y,
-    kvs It[Item[X,Y]],
+    kvs It[Pair[X,Y]],
 ) map[X]Y {
     result := make(map[X]Y)
     InsertToMap(result, choose, kvs)

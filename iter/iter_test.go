@@ -243,7 +243,7 @@ func _testCutString(t *testing.T) {
 func TestEnumerate(t *testing.T) {
     abc := lazy.FromSlice([]rune("abc"))
 
-    expected := []lazy.Item[int, rune]{
+    expected := []lazy.Pair[int, rune]{
         {0, 'a'},
         {1, 'b'},
         {2, 'c'},
@@ -305,7 +305,7 @@ func TestFromMap(t *testing.T) {
         return kvs[i].Key < kvs[j].Key
     })
 
-    expected := []lazy.Item[string, string]{
+    expected := []lazy.Pair[string, string]{
         {Key: "cat", Value: "meow"},
         {Key: "cow", Value: "moo"},
         {Key: "dog", Value: "woof"},
@@ -644,16 +644,16 @@ func TestTee(t *testing.T) {
 }
 
 func TestToMap(t *testing.T) {
-    f := func() lazy.It[lazy.Item[string, int]] {
+    f := func() lazy.It[lazy.Pair[string, int]] {
         i := 0
-        return func() (lazy.Item[string, int], bool) {
+        return func() (lazy.Pair[string, int], bool) {
             i++
             switch i {
-                case 1: return lazy.Item[string, int]{"foo", 1}, true
-                case 2: return lazy.Item[string, int]{"bar", 2}, true
-                case 3: return lazy.Item[string, int]{"baz", 3}, true
-                case 4: return lazy.Item[string, int]{"baz", 4}, true
-                default: return lazy.Item[string, int]{}, false
+                case 1: return lazy.Pair[string, int]{"foo", 1}, true
+                case 2: return lazy.Pair[string, int]{"bar", 2}, true
+                case 3: return lazy.Pair[string, int]{"baz", 3}, true
+                case 4: return lazy.Pair[string, int]{"baz", 4}, true
+                default: return lazy.Pair[string, int]{}, false
             }
         }
     }
@@ -672,8 +672,8 @@ func TestToMap(t *testing.T) {
 }
 
 func TestToMap_empty(t *testing.T) {
-    f := func() (lazy.Item[string, int], bool) {
-        return lazy.Item[string, int]{}, false
+    f := func() (lazy.Pair[string, int], bool) {
+        return lazy.Pair[string, int]{}, false
     }
     assert.Equal(t, map[string]int{}, lazy.ToMap(nil, f))
 }

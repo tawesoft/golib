@@ -27,6 +27,11 @@ func Assert(q bool, args ... interface{}) {
     }
 }
 
+func Cast[X any, Y any](x X) Y {
+    ref := reflect.ValueOf(&x).Elem()
+    return ref.Interface().(Y)
+}
+
 /*
 // CatchFunc returns a function that wraps input function f. When called, if f
 // is successful, CatchFunc passes on the return value from f and also returns

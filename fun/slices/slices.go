@@ -1,4 +1,4 @@
-// Slices provides generic higher-order functions over slices of values.
+// Package slices provides generic higher-order functions over slices of values.
 package slices
 
 // Map applies function "f : X => Y" to each value of the input slice, and

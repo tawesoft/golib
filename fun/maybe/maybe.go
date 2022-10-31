@@ -121,14 +121,13 @@ func Lift[X any, Y any](
     }
 }
 
-// Compose takes two functions of the form "f: M[X] => M[Y]" and
-//  "g: M[Y] => M[Z]" and returns a function "h(M[X]) => M[Z]" where M[Z] is
-//  the result of "g(f(M[X]))".
+// Compose takes two functions of the form "xy: M[X] => M[Y]" and
+// "yz: M[Y] => M[Z]" and returns a function "xz(M[X]) => M[Z]".
 func Compose[X any, Y any, Z any](
-    f func(M[X]) M[Y],
-    g func(M[Y]) M[Z],
+    xy func(M[X]) M[Y],
+    yz func(M[Y]) M[Z],
 ) func(M[X]) M[Z] {
     return func(x M[X]) M[Z] {
-        return g(f(x))
+        return yz(xy(x))
     }
 }

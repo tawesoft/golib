@@ -1,28 +1,11 @@
 // Package view provides customisable abstractions over collections. Changes to
-// an underlying collection are reflected in its views.
+// an underlying collection are reflected in its views, and vice-versa.
 package view
 
 import (
     "github.com/tawesoft/golib/v2/iter"
     "github.com/tawesoft/golib/v2/ks"
 )
-
-// Key is a shorthand to create a new [Keyer].
-func Key[A comparable, B comparable](AtoB func(A) B, BtoA func(B) A) Keyer[A, B] {
-    return Keyer[A, B]{
-        To: AtoB,
-        From: BtoA,
-    }
-}
-
-// Value is a shorthand to create a new [Valuer].
-func Value[A any, B any](AtoB func(A) B, BtoA func(B) A) Valuer[A, B] {
-    return Valuer[A, B]{
-        To: AtoB,
-        From: BtoA,
-    }
-}
-
 // Keyer defines a mapping between comparable types A and B.
 type Keyer[A comparable, B comparable] struct {
     To func(A) B
@@ -35,37 +18,32 @@ type Valuer[A any, B any] struct {
     From func(B) A
 }
 
-type Iter[T any] interface {
-    Next() (T, bool)
-}
-
-type Pair[K comparable, V any] struct {
-    Key K
-    Value V
-}
-
+// View is an abstraction over a collection. In the case of a slice, the key
+// is an int.
 type View[K comparable, V any] interface {
     Get(K) (V, bool)
     Set(K, V)
     Delete(K)
-    Iter() Iter[Pair[K, V]]
+    Iter() iter.It[iter.Pair[K, V]]
 }
 
+// view is a concrete implementation of View.
 type view[K comparable, V any] struct {
     get func(K) (V, bool)
     set func(K, V)
     delete func(K)
-    iter func() Iter[Pair[K, V]]
+    iter func() iter.It[iter.Pair[K, V]]
 }
 
-// Mapper defines how a collection is mapped to and from a view. Call the View
-// method to get a new view based on this map.
-type Mapper[K comparable, V any, ToK comparable, ToV any] struct {
+// mapper defines how a collection is mapped to and from a view.
+//
+// Call the [mapper.View] method to construct a view from a mapper.
+type mapper[K comparable, V any, ToK comparable, ToV any] struct {
     // Filterer defines a function that "hides" the given value from the view
     // when accessed through Get or Iter. It is implemented in terms of the
     // types of the underlying collection, and should not implement the keyer
     // or valuer logic.
-    Filterer func(K, V) bool
+    Filterer func(iter.Pair[K, V]) bool
 
     // Getter defines a function that accesses a given value from the
     // underlying collection. It is implemented in terms of the types of the
@@ -98,19 +76,32 @@ type Mapper[K comparable, V any, ToK comparable, ToV any] struct {
     // underlying collection. It is implemented in terms of the types of the
     // underlying collection, and should not implement the filtering, keyer or
     // valuer logic.
-    Iterer func() Iter[Pair[K, V]]
+    Iterer func() iter.It[iter.Pair[K, V]]
 }
 
-// FromMap returns a View from a Go map type. See [Mapper] for details on
-// the function arguments.
+// FromMap returns a View from a Go map collection type.
+//
+// Filterer defines a function that "hides" the given value from the view
+// when accessed through Get or Iter. It is implemented in terms of the
+// types of the underlying collection, and should not implement the keyer
+// or valuer logic.
+//
+// Keyer defines a mapping to and from the keys in the underlying
+// collection to the view.
+//
+// Valuer defines a mapping to and from the values in the underlying
+// collection to the view.
 func FromMap[K comparable, V any, ToK comparable, ToV any](
     m map[K]V,
     filterer func(K, V) bool,
-    Keyer Keyer[K, ToK],
-    Valuer Valuer[V, ToV],
+    keyer Keyer[K, ToK],
+    valuer Valuer[V, ToV],
 ) View[ToK, ToV] {
-    return Mapper[K, V, ToK, ToV]{
-        Filterer: filterer,
+    return mapper[K, V, ToK, ToV]{
+        Filterer: func(x iter.Pair[K, V]) bool {
+            if filterer == nil { return true }
+            return filterer(x.Key, x.Value)
+        },
         Getter: func(k K) (V, bool) {
             v, ok := m[k]
             return v, ok
@@ -119,23 +110,33 @@ func FromMap[K comparable, V any, ToK comparable, ToV any](
             m[k] = v
         },
         Deleter: nil,
-        Keyer: Keyer,
-        Valuer: Valuer,
-        Iterer: func() Iter[Pair[K, V]] {
-            return IterPair(iter.FromMap(m))
+        Keyer: keyer,
+        Valuer: valuer,
+        Iterer: func() iter.It[iter.Pair[K, V]] {
+            return iter.FromMap(m)
         },
     }.View()
 }
 
-// FromSlice returns a View from a Go list type. See [Mapper] for details on
-// the function arguments.
+// FromSlice returns a View from a Go list collection type.
+//
+// Filterer defines a function that "hides" the given value from the view
+// when accessed through Get or Iter. It is implemented in terms of the
+// types of the underlying collection, and should not implement the keyer
+// or valuer logic.
+//
+// Valuer defines a mapping to and from the values in the underlying
+// collection to the view.
 func FromSlice[V any, ToV any](
     s []V,
     filterer func(int, V) bool,
-    Valuer Valuer[V, ToV],
+    valuer Valuer[V, ToV],
 ) View[int, ToV] {
-    return Mapper[int, V, int, ToV]{
-        Filterer: filterer,
+    return mapper[int, V, int, ToV]{
+        Filterer: func(x iter.Pair[int, V]) bool {
+            if filterer == nil { return true }
+            return filterer(x.Key, x.Value)
+        },
         Getter: func(k int) (V, bool) {
             ok := (k < len(s)) && (k >= 0)
             if !ok { return ks.Zero[V](), false }
@@ -145,56 +146,45 @@ func FromSlice[V any, ToV any](
             s[k] = v
         },
         Deleter: nil,
-        Keyer: Key[int, int](ks.Identity[int], ks.Identity[int]),
-        Valuer: Valuer,
-        Iterer: func() Iter[Pair[int, V]] {
-            return IterPair(iter.Enumerate(iter.FromSlice(s)))
+        Keyer: Keyer[int, int]{To: ks.Identity[int], From: ks.Identity[int]},
+        Valuer: valuer,
+        Iterer: func() iter.It[iter.Pair[int, V]] {
+            return iter.Enumerate(iter.FromSlice(s))
         },
     }.View()
 }
 
-// IterPair returns an [Iter] of [Pair] elements from an [iter.It] of
-// [iter.Item] elements.
-func IterPair[K comparable, V any](it iter.It[iter.Item[K, V]]) Iter[Pair[K, V]] {
-    return iter.Map(func (i iter.Item[K, V]) Pair[K, V] {
-        return Pair[K, V]{i.Key, i.Value}
-    }, it)
-}
-
-func (m Mapper[K, V, ToK, ToV]) get(key ToK) (ToV, bool) {
+func (m mapper[K, V, ToK, ToV]) get(key ToK) (ToV, bool) {
     k := m.Keyer.From(key)
     v, ok := m.Getter(k)
-    if ok && m.Filterer(k, v) {
+    if ok && m.Filterer(iter.Pair[K, V]{k, v}) {
         return m.Valuer.To(v), true
     }
     return ks.Zero[ToV](), false
 }
 
-func (m Mapper[K, V, ToK, ToV]) set(k ToK, v ToV) {
+func (m mapper[K, V, ToK, ToV]) set(k ToK, v ToV) {
     m.Setter(m.Keyer.From(k), m.Valuer.From(v))
 }
 
-func (m Mapper[K, V, ToK, ToV]) delete(k ToK) {
+func (m mapper[K, V, ToK, ToV]) delete(k ToK) {
     m.Deleter(m.Keyer.From(k))
 }
 
-func (m Mapper[K, V, ToK, ToV]) iter() Iter[Pair[ToK, ToV]] {
-    mapper := func(i Pair[K, V]) Pair[ToK, ToV] {
-        return Pair[ToK, ToV]{m.Keyer.To(i.Key), m.Valuer.To(i.Value)}
+func (m mapper[K, V, ToK, ToV]) iter() iter.It[iter.Pair[ToK, ToV]] {
+    mapper := func(i iter.Pair[K, V]) iter.Pair[ToK, ToV] {
+        return iter.Pair[ToK, ToV]{m.Keyer.To(i.Key), m.Valuer.To(i.Value)}
     }
 
-    filterer := func(i Pair[K, V]) bool {
-        return m.Filterer(i.Key, i.Value)
-    }
-
-    return iter.Map[Pair[K, V], Pair[ToK, ToV]](mapper,
-        iter.Filter[Pair[K, V]](filterer,
-            iter.Func(m.Iterer().Next),
+    return iter.Map[iter.Pair[K, V], iter.Pair[ToK, ToV]](mapper,
+        iter.Filter[iter.Pair[K, V]](m.Filterer,
+            m.Iterer(),
         ),
     )
 }
 
-func (m Mapper[K, V, ToK, ToV]) View() View[ToK, ToV] {
+// View returns a new view from an instantiated [mapper].
+func (m mapper[K, V, ToK, ToV]) View() View[ToK, ToV] {
     return view[ToK, ToV]{
         get: m.get,
         set: m.set,
@@ -215,6 +205,6 @@ func (w view[K, V]) Delete(k K) {
     w.delete(k)
 }
 
-func (w view[K, V]) Iter() Iter[Pair[K, V]] {
+func (w view[K, V]) Iter() iter.It[iter.Pair[K, V]] {
     return w.iter()
 }

@@ -56,6 +56,20 @@ func (r R[V]) MustError() error {
     return r.Error
 }
 
+// If calls function f on a R's value, but only if R is not an error.
+func (r R[V]) If(f func(v V)) {
+    if r.Error != nil {
+        f(r.Value)
+    }
+}
+
+// IfNot calls function f on a R's error, but only if R is an error.
+func (r R[V]) IfNot(f func(err error)) {
+    if r.Error != nil {
+        f(r.Error)
+    }
+}
+
 // Error returns a R that is an error.
 func Error[V any](err error) R[V] {
     return R[V]{
@@ -136,14 +150,13 @@ func Lift[X any, Y any](
     }
 }
 
-// Compose takes two functions of the form "f: R[X] => R[Y]" and
-//  "g: R[Y] => R[Z]" and returns a function "h(R[X]) => R[Z]" where R[Z] is
-//  the result of "g(f(R[X]))".
+// Compose takes two functions of the form "xy: R[X] => R[Y]" and
+// "yz: R[Y] => R[Z]" and returns a function "xz(R[X]) => R[Z]".
 func Compose[X any, Y any, Z any](
-    f func(R[X]) R[Y],
-    g func(R[Y]) R[Z],
+    xy func(R[X]) R[Y],
+    yz func(R[Y]) R[Z],
 ) func(R[X]) R[Z] {
     return func(x R[X]) R[Z] {
-        return g(f(x))
+        return yz(xy(x))
     }
 }
