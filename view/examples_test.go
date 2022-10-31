@@ -32,7 +32,7 @@ func UntrustedString(x string) Untrusted {
     return Untrusted{x}
 }
 
-func Example_URLQuery() {
+func Example_urlQuery() {
 
     // Assume an input URL query from an intrusted source
     v := url.Values{} // map[string][]string

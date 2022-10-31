@@ -1,4 +1,4 @@
-// Package must implements
+// Package must implements assertions.
 package must
 
 import (
@@ -11,7 +11,7 @@ import (
 //
 // For example, must.Result(os.Open("doesnotexist")) may panic with an error
 // like "unexpected error in must.Result[*os.File]: open doesnotexist: no such
-// file or directory". On success, returns *os.File
+// file or directory". On success, returns *os.File.
 func Result[T any](t T, err error) T {
     if err != nil {
         panic(fmt.Errorf("error in must.Result[%T]: got error: %w", t, err))
@@ -24,6 +24,12 @@ func Result[T any](t T, err error) T {
 func Ok[T any](t T, ok bool) T {
     if ok { return t }
     panic(fmt.Errorf("error in must.Ok[%T]: not ok", t))
+}
+
+// Equal panics unless the provided comparable values are equal.
+func Equal[T comparable](a T, b T) {
+    if a == b { return }
+    panic(errorf("error in must.Equal[%T]: %v != %v", a, b, a))
 }
 
 // True panics if the provided boolean is false.
@@ -52,9 +58,9 @@ func CatchFunc[X any](f func() X) func() (x X, err error) {
         defer func() {
             if r := recover(); r != nil {
                 if rErr, ok := r.(error); ok {
-                    err = fmt.Errorf("must.CatchFunc: caught panic: %w", rErr)
+                    err = fmt.Errorf("must.CatchFunc[%T]: caught panic: %w", x, rErr)
                 } else {
-                    err = fmt.Errorf("must.CatchFunc: caught panic: %v", r)
+                    err = fmt.Errorf("must.CatchFunc[%T]: caught panic: %v", x, r)
                 }
             }
         }()
