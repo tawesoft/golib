@@ -11,11 +11,20 @@ package result
 import (
     "fmt"
 )
+
 // R is a (value, error) "sum type" that has a value only when error is
 // nil.
 type R[V any] struct {
     Value V
     Error error
+}
+
+// WrapError returns a new [Error] based on an existing R. If the existing R is
+// not an error, returns Error(err). Otherwise, returns a Error containing
+// err and wrapping the original error.
+func (r R[V]) WrapError(err error) R[V] {
+    if r.Success() { return Error[V](err) }
+    return Error[V](fmt.Errorf("%w: %v", err, r.Error)) // TODO errors.Join
 }
 
 // Success returns true if the R is not an error.
