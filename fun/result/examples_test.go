@@ -51,7 +51,7 @@ func ExampleR() {
 
     // Output:
     // This is the first file!
-    // Could not read from file: open testdata/example2.txt: no such file or directory
+    // Could not read from file: no such file or directory
     // This is the third file!
     // Closing testdata/example1.txt
     // Closing testdata/example3.txt
