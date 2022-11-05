@@ -1,4 +1,4 @@
-package og
+package opengraph
 
 import (
     _ "embed"

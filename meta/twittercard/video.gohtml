@@ -1,0 +1,30 @@
+<style>
+    html, body {
+        margin: 0; padding: 0;
+        background-color: #000;
+        color: #FFF;
+    }
+    video {
+        display: block;
+        width: 100%;
+        max-width: {{.Width}}px;
+        height: auto;
+        max-height: {{.Height}}px;
+
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<video controls>
+    {{range .Streams }}
+        <source src="{{.Url}}" type="{{.Type}}" />
+    {{end}}
+
+    <p>Video player not supported.</p>
+    {{range .Streams }}
+        <p><a href="{{.Url}}">Download in {{.Type}} format</a></p>
+    {{end}}
+</video>

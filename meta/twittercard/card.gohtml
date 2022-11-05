@@ -1,0 +1,46 @@
+{{- define "image"}}
+    {{if .Url }}
+        <meta property="twitter:image" content="{{.Url}}" />
+        {{with .Alt}}<meta property="twitter:image:alt" content="{{.}}" />{{end}}
+    {{end}}
+{{end -}}
+
+{{- define "app"}}
+    {{if .ID }}
+        <meta property="twitter:app:id:{{.Store}}" content="{{.ID}}" />
+        {{if .Name}}<meta property="twitter:app:name:{{.Store}}" content="{{.Name}}" />{{end}}
+        {{if .Url}}<meta property="twitter:app:url:{{.Store}}" content="{{.Url}}" />{{end}}
+    {{end}}
+{{end -}}
+
+{{- define "account-suffix"}}{{if .ID }}:id{{end}}{{end -}}
+{{- define "account-value"}}{{if .ID }}{{.ID}}{{else}}{{.Username}}{{end}}{{end -}}
+
+{{with .Type }}<meta property="twitter:card" content="{{.}}" />{{end}}
+{{with .Title }}<meta property="twitter:title" content="{{.}}" />{{end}}
+{{with .Description}}<meta property="twitter:description" content="{{.}}" />{{end}}
+<meta property="twitter:site{{template "account-suffix" .Site}}" content="{{template "account-value" .Site}}" />
+
+{{- if eq .Type "summary" }}{{with .Summary }}
+    {{template "image" .Image}}
+{{end}}{{end}}
+
+{{- if eq .Type "summary_large_image" }}{{with .SummaryLargeImage }}
+    {{template "image" .Image}}
+    <meta property="twitter:creator{{template "account-suffix" .Creator}}" content="{{template "account-value" .Creator}}" />
+{{end}}{{end}}
+
+{{- if eq .Type "player" }}{{with .Player }}
+    {{template "image" .Image}}
+    {{with .Video}}
+    <meta property="twitter:player" content="{{.Url}}" />
+    <meta property="twitter:player:width" content="{{.Width}}" />
+    <meta property="twitter:player:height" content="{{.Height}}" />
+    {{with .Streams}}{{with index . 0}}<meta property="twitter:player:stream" content="{{.Url}}" />{{end}}{{end}}
+    {{end}}
+{{end}}{{end}}
+
+{{- if eq .Type "app" }}{{with .App }}
+    {{with .Country}}<meta property="twitter:app:country" content="{{.}}" />{{end}}
+    {{range .Apps}}{{template "app" .}}{{end}}
+{{end}}{{end}}

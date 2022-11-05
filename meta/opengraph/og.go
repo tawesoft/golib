@@ -1,15 +1,16 @@
-// Package og implements a way to repressent data in the Open Graph protocol as
-// typed Go structs, and render it as HTML meta tags. Typically, this is used
-// to customise how a page looks when shared on Facebook or LinkedIn.
+// Package opengraph implements a way to represent data in the Open Graph
+// protocol as typed Go structs, and render it as HTML meta tags. Typically,
+// this is used to customise how a page looks when shared on Facebook or
+// LinkedIn.
 //
 // This is not a parser.
 //
 // Note: currently only the Article and Website types are implemented.
-// Generally, besides the use-case of sharing on Facebook or Linkedin, you
+// Generally, besides the use-case of sharing on Facebook or LinkedIn, you
 // should avoid relying on the format for anything complicated. It has poor
-// support for internationalization, the protocol itself is archived, and the
-// Open Web Foundation is moribund.
-package og
+// support for internationalisation, the protocol itself is archived, and the
+// Open Web Foundation appears moribund.
+package opengraph
 
 import (
     "time"
