@@ -57,6 +57,13 @@ func Some[V any](value V) M[V] {
     }
 }
 
+// If returns Some(M.value) if the condition is true and M has a value,
+// otherwise returns Nothing.
+func (m M[V]) If(cond bool) M[V] {
+    if m.Ok && cond { return m }
+    return Nothing[V]()
+}
+
 // Else returns M.value if ok, otherwise returns the provided argument instead.
 func (m M[V]) Else(v V) V {
     if m.Ok { return m.Value }

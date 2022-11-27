@@ -24,6 +24,10 @@ The Unicode Word Mark is a trade mark of
 UNIX is a registered trade mark of
 [The Open Group](https://unix.org/).
 
+W3C® is a trademark (registered in numerous countries) of the
+[World Wide Web Consortium](https://www.w3.org/); marks of W3C are registered
+and held by its host institutions MIT, ERCIM, Keio, and Beihang.
+
 Windows is a trade mark of
 [Microsoft Corporation](https://www.microsoft.com/en-gb). 
 

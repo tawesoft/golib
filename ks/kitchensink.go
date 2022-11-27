@@ -281,6 +281,16 @@ type Rangeable[K comparable, V any] interface {
     ~string | ~map[K]V | ~[]V | chan V
 }
 
+// Reserve grows a slice to fit at least size extra elements. Like the builtin
+// append, it may return an updated slice.
+func Reserve[T any](xs []T, size int) []T {
+    // https://github.com/golang/go/wiki/SliceTricks#extend-capacity
+    if cap(xs) - len(xs) < size {
+        return append(make([]T, 0, len(xs) + size), xs...)
+    }
+    return xs
+}
+
 // TestCompletes executes f (in a goroutine), and blocks until either f returns,
 // or the provided duration has elapsed. In the latter case, calls t.Errorf to
 // fail the test. Provide optional format string and arguments to add
