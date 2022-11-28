@@ -21,6 +21,7 @@ package tokenizer
 
 import (
     "bufio"
+    "errors"
     "fmt"
     "io"
     "math"
@@ -36,7 +37,7 @@ import (
     "golang.org/x/text/transform"
 )
 
-const MaxLookahead = 7 // normally up to 3, but 7 used in urange
+const MaxLookahead = 3
 
 var (
     ErrUnexpectedEOF = fmt.Errorf("unexpected end of file")
@@ -169,9 +170,9 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
             return token.RightParen(), true
         case c == '+': // U+002B PLUS SIGN (+)
             // If the input stream starts with a number...
-            var xs[3]rune
-            must.Result(z.rdr.PeekN(xs[:], 3))
-            if isStartOfNumber(xs[0], xs[1], xs[2]) {
+            var xs[2]rune
+            must.Result(z.rdr.PeekN(xs[:], 2))
+            if isStartOfNumber(c, xs[0], xs[1]) {
                 // reconsume the current input code point, consume a numeric
                 // token, and return it.
                 z.rdr.Push(c)
@@ -654,9 +655,9 @@ func StringToNumber(x string) float64 {
     // otherwise, let i be the number 0.
     if len(integer) > 0 {
         n, err := strconv.ParseInt(integer, 10, 64)
-        if err == strconv.ErrRange { // ok, n is largest representable integer
+        if errors.Is(err, strconv.ErrRange) { // ok, n is largest representable integer
         } else if err != nil {
-            panic(fmt.Errorf("StringToNumber: invalid integer component"))
+            panic(fmt.Errorf("StringToNumber: invalid integer component %q", integer))
         }
         i = float64(n)
     }
@@ -665,10 +666,10 @@ func StringToNumber(x string) float64 {
     // formed by interpreting the digits as a base-10 integer and d be the
     // number of digits; otherwise, let f and d be the number 0.
     if len(frac) > 0 {
-        n, err := strconv.ParseInt(integer, 10, 64)
-        if err == strconv.ErrRange { // ok, n is largest representable integer
+        n, err := strconv.ParseInt(frac, 10, 64)
+        if errors.Is(err, strconv.ErrRange) { // ok, n is largest representable integer
         } else if err != nil {
-            panic(fmt.Errorf("StringToNumber: invalid fractional component"))
+            panic(fmt.Errorf("StringToNumber: invalid fractional component %q", frac))
         }
         f = float64(n)
         d = float64(len(frac))
@@ -682,17 +683,20 @@ func StringToNumber(x string) float64 {
     // interpreting the digits as a base-10 integer;
     // otherwise, let e be the number 0.
     if len(exponent) > 0 {
-        n, err := strconv.ParseInt(integer, 10, 64)
-        if err == strconv.ErrRange { // ok, n is largest representable integer
+        n, err := strconv.ParseInt(exponent, 10, 64)
+        if errors.Is(err, strconv.ErrRange) { // ok, n is largest representable integer
         } else if err != nil {
-            panic(fmt.Errorf("StringToNumber: invalid fractional component"))
+            panic(fmt.Errorf("StringToNumber: invalid exponent component %q", exponent))
         }
         e = float64(n)
     }
 
     // Return the number s·(i + f·10^(-d))·10^(te).
     part := i + (f * math.Pow(10, -d))
-    return s * part * math.Pow(10, t * e)
+    ans := s * part * math.Pow(10, t * e)
+    ans = math.Max(ans, math.MinInt32)
+    ans = math.Min(ans, math.MaxInt32)
+    return ans
 }
 
 // ConsumeIdentLikeToken consumes an ident-like token from a stream of code
@@ -804,7 +808,7 @@ func ConsumeUrlToken(rdr *runeio.Reader) (token.Token, error) {
             case c == '"':  fallthrough
             case c == '\'': fallthrough
             case c == '(':  fallthrough
-            case isNonPrintable(c):
+            case runeIsNonPrintable(c):
                 // This is a parse error. Consume the remnants of a bad url,
                 // create a <bad-url-token>, and return it.
                     ConsumeBadUrl(rdr)

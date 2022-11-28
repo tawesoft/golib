@@ -6,12 +6,13 @@
 A monorepo for small Go modules maintained by
 [Tawesoft®](https://www.tawesoft.co.uk). Open source ([MIT](/LICENSE.txt)).
 
-This is modern code with generics, for go v1.19
+This is modern code with generics, for go v1.19+
 
 ## Packages
 
 |       Name       |       /v2        | /v3 | Description                                               |
 |:----------------:|:----------------:|:---:|:----------------------------------------------------------|
+|  css/tokenizer   | [candidate][c01] |  -  | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
 |      dialog      |  [stable][d01]   |  -  | cross-platform message boxes & file pickers               |
 |     digraph      | [unstable][d02]  |  -  | directed graphs (including DAGs)                          |
 |       drop       |       TODO       |  -  | drop process privileges and inherit handles               |
@@ -21,7 +22,7 @@ This is modern code with generics, for go v1.19
 |    fun/slices    | [candidate][f04] |  -  | higher-order functions (map, flatmap) for slices          |
 |      grace       |       TODO       |  -  | start and gracefully shutdown processes                   |
 |     humanize     |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
-|       iter       | [candidate][i01] |  -  | composable lazy iteration over sequences                  |
+|       iter       | [candidate][i01] |  -  | composable (lazy) iteration over sequences                |
 |        ks        | [unstable][k01]  |  -  | "kitchen sink" of misc helpful things                     |
 |      loader      |       TODO       |  -  | concurrent dependency graph solver                        |
 |  meta/opengraph  | [candidate][m01] |  -  | render Open Graph protocol HTML meta tags                 |
@@ -33,8 +34,13 @@ This is modern code with generics, for go v1.19
 |  text/fallback   | [candidate][t03] |  -  | Unicode Character Fallback Substitutions                  | 
 |    text/fold     | [candidate][t04] |  -  | selectively merge distinctions in Unicode text            |
 |     text/np      | [candidate][t05] |  -  | Unicode numeric properties                                |
+|   text/runeio    | [candidate][t06] |  -  | Unicode streams with lookahead &amp; rewind               |
 |       view       | [candidate][v01] |  -  | dynamic views over collections                            |
 
+TODO: move meta to html/meta
+
+[css1]: https://www.w3.org/TR/css-syntax-3/
+[c01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/css/tokenizer
 [d01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/dialog
 [d02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/digraph
 [f01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/fun/maybe

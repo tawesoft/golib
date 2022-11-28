@@ -178,18 +178,17 @@ func (t Token) StringValue() string {
     return ""
 }
 
-// NumericValue returns the numeric value of a <number-token>,
-// <percentage-token>, or <dimension-token>, as well as the number type
-// (NumberTypeInteger or NumberTypeNumber). If the token is not one of these
-// types, returns (0, NumberType(""))
-func (t Token) NumericValue() (float64, NumberType) {
+// NumericValue returns a (number type, numeric value) of a <number-token>,
+// <percentage-token>, or <dimension-token>. If the token is not one of these
+// types, returns (NumberType(""), 0).
+func (t Token) NumericValue() (NumberType, float64) {
     switch t._type {
         case TypeNumber:     fallthrough
         case TypePercentage: fallthrough
         case TypeDimension:
-            return t.numberValue, t.numberType
+            return t.numberType, t.numberValue
     }
-    return 0, ""
+    return "", 0
 }
 
 // IsNumeric returns true if a token is a <number-token>,

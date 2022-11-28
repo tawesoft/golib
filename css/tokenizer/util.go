@@ -42,6 +42,17 @@ func runeIsIdentCodepoint(x rune) bool {
     return runeIsIdentStartCodepoint(x) || runeIsDigit(x) || (x == '-')
 }
 
+func runeIsNonPrintable(x rune) bool {
+    // A code point between U+0000 NULL and U+0008 BACKSPACE inclusive, or U+000B
+    // LINE TABULATION, or a code point between U+000E SHIFT OUT and U+001F
+    // INFORMATION SEPARATOR ONE inclusive, or U+007F DELETE.
+    if (x >= 0x00) && (x <= 0x08) { return true }
+    if (x == 0x0B) { return true }
+    if (x >= 0x0E) && (x <= 0x1F) { return true }
+    if (x == 0x7F) { return true }
+    return false
+}
+
 func isValidEscape(a rune, b rune) bool {
     return (a == '\\') && (b != '\n')
 }
@@ -83,15 +94,4 @@ func isStartOfNumber(a rune, b rune, c rune) bool {
         default:
             return false
     }
-}
-
-func isNonPrintable(x rune) bool {
-    // A code point between U+0000 NULL and U+0008 BACKSPACE inclusive, or U+000B
-    // LINE TABULATION, or a code point between U+000E SHIFT OUT and U+001F
-    // INFORMATION SEPARATOR ONE inclusive, or U+007F DELETE.
-    if (x >= 0x00) && (x <= 0x08) { return true }
-    if (x == 0x0B) { return true }
-    if (x >= 0x0E) && (x <= 0x1F) { return true }
-    if (x == 0x7F) { return true }
-    return false
 }
