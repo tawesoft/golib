@@ -6,7 +6,7 @@ import (
     "unicode/utf8"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/css/internal/filter"
+    "github.com/tawesoft/golib/v2/css/tokenizer/filter"
     "golang.org/x/text/transform"
 )
 
