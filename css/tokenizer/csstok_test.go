@@ -30,8 +30,8 @@ func ExampleTokenizer() {
     t := tokenizer.New(strings.NewReader(str))
 
     for {
-        tok, ok := t.NextExcept(token.TypeWhitespace, token.TypeEOF)
-        if !ok { break }
+        tok := t.NextExcept(token.TypeWhitespace)
+        if tok.Is(token.TypeEOF) { break }
         fmt.Println(tok)
     }
 
@@ -129,8 +129,8 @@ func testWithErrCheck(t *testing.T, css string, errCheck func(errors []error) bo
         }
 
         for _, k := range tokens {
-            n, ok := p.Next()
-            if !ok { break }
+            n := p.Next()
+            if n.Is(token.TypeEOF) { break }
 
             seen = append(seen, n)
             if !equal(t, k, n) {
@@ -143,11 +143,7 @@ func testWithErrCheck(t *testing.T, css string, errCheck func(errors []error) bo
             err("unexpected tokenizer termination")
             return
         }
-        n, ok := p.Next()
-        if !ok {
-            err("unexpected tokenizer termination")
-            return
-        }
+        n := p.Next()
         if !n.Is(token.TypeEOF) {
             seen = append(seen, n)
             err("expected EOF")

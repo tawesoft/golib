@@ -93,11 +93,12 @@ func (z *Tokenizer) error(err error) {
 
 // NextExcept is like [Tokenizer.Next] however any tokens matching the given
 // types are suppressed. For example, it is common to ignore whitespace.
-func (z *Tokenizer) NextExcept(types ... token.Type) (result token.Token, ok bool) {
+// token.EOF() is never ignored.
+func (z *Tokenizer) NextExcept(types ... token.Type) (result token.Token) {
     for {
         start:
-        result, ok = z.Next()
-        if !ok { break }
+        result = z.Next()
+        if result.Is(token.TypeEOF) { break }
 
         for i := 0; i < len(types); i++ {
             if result.Is(types[i]) { goto start }
@@ -108,16 +109,13 @@ func (z *Tokenizer) NextExcept(types ... token.Type) (result token.Token, ok boo
     return
 }
 
-// Next returns the next token from the input stream. If the second return
-// value is false, the stream has ended. Prior to the stream ending normally,
-// Next will return a single {token.EOF(), true}.
+// Next returns the next token from the input stream. Once the stream has
+// ended, it returns token.EOF().
 //
-// Check z.Errors() once the stream has ended (or at any point if you want to
-// fail-fast without recovering).
-//
-// TODO refactor, get rid of ok, just use EOF
-func (z *Tokenizer) Next() (result token.Token, ok bool) {
-    if z.eof { return token.EOF(), false }
+// Check z.Errors() once the stream has ended, or at any point if you want to
+// fail-fast without recovering, to detect parse errors.
+func (z *Tokenizer) Next() (result token.Token) {
+    if z.eof { return token.EOF() }
 
     // i/o and runtime panic handling
     defer func() {
@@ -125,7 +123,6 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
             z.error(r.(error))
             z.eof = true
             result = token.EOF()
-            ok = false
         }
     }()
 
@@ -135,13 +132,13 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
     c := runeio.Must(z.rdr.Next())
     switch {
         case runeIsWhitespace(c):
-            return ConsumeWhitespace(z.rdr), true
+            return ConsumeWhitespace(z.rdr)
         case c == '"': // U+0022 QUOTATION MARK (")
             fallthrough
         case c == '\'': // U+0027 APOSTROPHE (')
             t, err := ConsumeString(z.rdr, c)
             if err != nil { z.error(err) }
-            return t, true
+            return t
         case c == '#': // U+0023 NUMBER SIGN (#)
             // If the next input code point is an ident code point or the next
             // two input code points are a valid escape, then:
@@ -158,16 +155,16 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // Consume an ident sequence, and set the <hash-token>’s value
                 // to the returned string. Return the <hash-token>.
                 ident := ConsumeIdentSequence(z.rdr)
-                return token.Hash(hashTokenType, ident), true
+                return token.Hash(hashTokenType, ident)
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == '(': // U+0028 LEFT PARENTHESIS (()
-            return token.LeftParen(), true
+            return token.LeftParen()
         case c == ')': // U+0029 RIGHT PARENTHESIS ())
-            return token.RightParen(), true
+            return token.RightParen()
         case c == '+': // U+002B PLUS SIGN (+)
             // If the input stream starts with a number...
             var xs[2]rune
@@ -176,14 +173,14 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // reconsume the current input code point, consume a numeric
                 // token, and return it.
                 z.rdr.Push(c)
-                return ConsumeNumericToken(z.rdr), true
+                return ConsumeNumericToken(z.rdr)
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == ',': // U+002C COMMA (,)
-            return token.Comma(), true
+            return token.Comma()
         case c == '-': // U+002D HYPHEN-MINUS (-)
             // If the input stream starts with a number...
             var xs[2]rune
@@ -192,13 +189,13 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // reconsume the current input code point, consume a numeric
                 // token, and return it.
                 z.rdr.Push(c)
-                return ConsumeNumericToken(z.rdr), true
+                return ConsumeNumericToken(z.rdr)
                 // Otherwise, if the next 2 input code points are
                 // U+002D HYPHEN-MINUS U+003E GREATER-THAN SIGN (->)...
             } else if (xs[0] == '-') && (xs[1] == '>') {
                 // consume them and return a <CDC-token>.
                 z.rdr.Skip(2)
-                return token.CDC(), true
+                return token.CDC()
                 // Otherwise, if the input stream starts with an ident sequence,
             } else if isStartOfIdentSequence(c, xs[0], xs[1]) {
                 // reconsume the current input code point,
@@ -206,11 +203,11 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // consume an ident-like token, and return it.
                 t, err := ConsumeIdentLikeToken(z.rdr)
                 if err != nil { z.error(err) }
-                return t, true
+                return t
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == '.': // U+002E FULL STOP (.)
             // If the input stream starts with a number...
@@ -220,17 +217,17 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // reconsume the current input code point,
                 z.rdr.Push(c)
                 // consume a numeric token, and return it.
-                return ConsumeNumericToken(z.rdr), true
+                return ConsumeNumericToken(z.rdr)
                 // Otherwise...
             } else {
                 // return a <delim-token> with its value set to the current
                 // input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == ':': // U+003A COLON (:)
-            return token.Colon(), true
+            return token.Colon()
         case c == ';': // U+003B SEMICOLON (;)
-            return token.Semicolon(), true
+            return token.Semicolon()
         case c == '<': // U+003C LESS-THAN SIGN (<)
             // If the next 3 input code points are
             // U+0021 EXCLAMATION MARK
@@ -241,12 +238,12 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
             if (xs[0] == '!') && (xs[1] == '-') && (xs[2] == '-') {
                 // consume them and return a <CDO-token>.
                 z.rdr.Skip(3)
-                return token.CDO(), true
+                return token.CDO()
                 // Otherwise...
             } else {
                 // return a <delim-token> with its value set
                 // to the current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == '@': // U+0040 COMMERCIAL AT (@)
             // If the next 3 input code points would start an ident sequence...
@@ -255,15 +252,15 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
             if isStartOfIdentSequence(xs[0], xs[1], xs[2]) {
                 // consume an ident sequence, create an <at-keyword-token> with
                 // its value set to the returned value, and return it.
-                return token.AtKeyword(ConsumeIdentSequence(z.rdr)), true
+                return token.AtKeyword(ConsumeIdentSequence(z.rdr))
                 // Otherwise...
             } else {
                 // return a <delim-token> with its value set
                 // to the current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == '[': // U+005B LEFT SQUARE BRACKET ([)
-            return token.LeftSquareBracket(), true
+            return token.LeftSquareBracket()
         case c == '\\': // U+005C REVERSE SOLIDUS (\)
             // If the input stream starts with a valid escape...
             p := runeio.Must(z.rdr.Peek())
@@ -273,38 +270,38 @@ func (z *Tokenizer) Next() (result token.Token, ok bool) {
                 // consume an ident-like token, and return it.
                 t, err := ConsumeIdentLikeToken(z.rdr)
                 if err != nil { z.error(err) }
-                return t, true
+                return t
                 // Otherwise...
             } else {
                 // this is a parse error.
                 z.error(ErrUnexpectedInput)
                 // Return a <delim-token> with its value set to
                 // the current input code point.
-                return token.Delim(c), true
+                return token.Delim(c)
             }
         case c == ']': // U+005D RIGHT SQUARE BRACKET (])
-            return token.RightSquareBracket(), true
+            return token.RightSquareBracket()
         case c == '{': // U+007B LEFT CURLY BRACKET ({)
-            return token.LeftCurlyBracket(), true
+            return token.LeftCurlyBracket()
         case c == '}': // U+007D RIGHT CURLY BRACKET (})
-            return token.RightCurlyBracket(), true
+            return token.RightCurlyBracket()
         case runeIsDigit(c):
             // Reconsume the current input code point,
             z.rdr.Push(c)
             // consume a numeric token, and return it.
-            return ConsumeNumericToken(z.rdr), true
+            return ConsumeNumericToken(z.rdr)
         case runeIsIdentStartCodepoint(c):
             // Reconsume the current input code point,
             z.rdr.Push(c)
             // consume an ident-like token, and return it.
             t, err := ConsumeIdentLikeToken(z.rdr)
             if err != nil { z.error(err) }
-            return t, true
+            return t
         case c == runeio.RuneEOF:
             z.eof = true
-            return token.EOF(), true
+            return token.EOF()
         default: // anything else
-            return token.Delim(c), true
+            return token.Delim(c)
     }
 }
 
