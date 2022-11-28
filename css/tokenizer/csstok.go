@@ -1,4 +1,4 @@
-// Package tokenizer performs the tokenization step defined in
+// Package tokenizer tokenizes CSS as specified in
 // [CSS Syntax Module Level 3] (part 4).
 //
 // The main elements of this package are the [New] function, which returns a
@@ -30,6 +30,7 @@ import (
     "unicode/utf8"
 
     "github.com/tawesoft/golib/v2/css/tokenizer/filter"
+    "github.com/tawesoft/golib/v2/css/tokenizer/token"
     "github.com/tawesoft/golib/v2/must"
     "github.com/tawesoft/golib/v2/text/runeio"
     "golang.org/x/text/transform"
@@ -89,109 +90,40 @@ func (z *Tokenizer) error(err error) {
     z.errors = append(z.errors, rerr)
 }
 
-type TokenType string
-const (
-    TokenTypeWhitespace         = TokenType("whitespace-token")
-    TokenTypeEOF                = TokenType("EOF-token")
-    TokenTypeString             = TokenType("string-token")
-    TokenTypeBadString          = TokenType("bad-string-token")
-    TokenTypeDelim              = TokenType("delim-token")
-    TokenTypeHash               = TokenType("hash-token")
-    TokenTypeLeftParen          = TokenType("(-token")
-    TokenTypeRightParen         = TokenType(")-token")
-    TokenTypeNumber             = TokenType("number-token")
-    TokenTypeDimension          = TokenType("dimension-token")
-    TokenTypePercentage         = TokenType("percentage-token")
-    TokenTypeCDC                = TokenType("CDC-token")
-    TokenTypeIdent              = TokenType("ident-token")
-    TokenTypeFunction           = TokenType("function-token")
-    TokenTypeUrl                = TokenType("url-token")
-    TokenTypeBadUrl             = TokenType("bad-url-token")
-    TokenTypeColon              = TokenType("colon-token")
-    TokenTypeSemicolon          = TokenType("semicolon-token")
-    TokenTypeCDO                = TokenType("CDO-token")
-    TokenTypeAtKeyword          = TokenType("at-keyword-token")
-    TokenTypeLeftSquareBracket  = TokenType("[-token")
-    TokenTypeRightSquareBracket = TokenType("]-token")
-    TokenTypeLeftCurlyBracket  = TokenType("{-token")
-    TokenTypeRightCurlyBracket = TokenType("}-token")
-)
+// NextExcept is like [Tokenizer.Next] however any tokens matching the given
+// types are suppressed. For example, it is common to ignore whitespace.
+func (z *Tokenizer) NextExcept(types ... token.Type) (result token.Token, ok bool) {
+    for {
+        start:
+        result, ok = z.Next()
+        if !ok { break }
 
-type HashType string
-const (
-    HashTokenTypeID           = HashType("id")
-    HashTokenTypeUnrestricted = HashType("unrestricted")
-)
+        for i := 0; i < len(types); i++ {
+            if result.Is(types[i]) { goto start }
+        }
 
-type NumberType string
-const (
-    NumberTypeInteger = NumberType("integer")
-    NumberTypeNumber  = NumberType("number")
-)
-
-type Token struct {
-    Type TokenType
-
-    // The lexeme as it appears in the input stream. This preserves details
-    // such as whether .009 was written as .009 or 9e-3, and whether a
-    // character was written literally or as a CSS escape. Only used by
-    // <number-token>, <dimension-token>, <percentage-token>, ...
-    repr string
-
-    // Value is used by <ident-token>, <function-token>, <at-keyword-token>,
-    // <hash-token>, <string-token>, and <url-token>.
-    stringValue string
-
-    unit string // used by <dimension-token>.
-
-    // Hash tokens have a type flag set to either "id" or "unrestricted".
-    // The type flag defaults to "unrestricted" if not otherwise set.
-    hashType HashType
-
-    // <number-token> and <dimension-token> additionally have a type flag set
-    // to either "integer" or "number".
-    // NOTE: spec is a bit ambiguous, but assume this also applies to
-    // percentage-tokens.
-    numberType NumberType
-
-    delim rune // used by <delim-token>
-
-    // numberValue is used by <number-token>, <dimension-token>,
-    // <percentage-token>.
-    numberValue float64
-}
-
-func (t Token) String() string {
-    switch t.Type {
-        case TokenTypeString:    fallthrough
-        case TokenTypeAtKeyword: fallthrough
-        case TokenTypeUrl:       fallthrough
-        case TokenTypeFunction:  fallthrough
-        case TokenTypeIdent:
-            return fmt.Sprintf("<%s>{value: %q}", t.Type, t.stringValue)
-        case TokenTypeDelim:
-            return fmt.Sprintf("<%s>{delim: %q}", t.Type, t.delim)
-        case TokenTypeHash:
-            return fmt.Sprintf("<%s>{type: %q, value: %q}", t.Type, t.hashType, t.stringValue)
-        case TokenTypeNumber:
-            fallthrough
-        case TokenTypePercentage:
-            return fmt.Sprintf("<%s>{type: %q, value: %f, repr: %q}", t.Type, t.numberType, t.numberValue, t.repr)
-        case TokenTypeDimension:
-            return fmt.Sprintf("<%s>{type: %q, value: %f, unit: %q, repr: %q}", t.Type, t.numberType, t.numberValue, t.unit, t.repr)
-        default:
-            return fmt.Sprintf("<%s>", t.Type)
+        break
     }
+    return
 }
 
-// Next returns the next token from the input stream while the second return
-// value is true.
-func (z *Tokenizer) Next() (result Token, ok bool) {
-    if z.eof { return Token{Type: TokenTypeEOF}, false }
+// Next returns the next token from the input stream. If the second return
+// value is false, the stream has ended. Prior to the stream ending normally,
+// Next will return a single {token.EOF(), true}.
+//
+// Check z.Errors() once the stream has ended (or at any point if you want to
+// fail-fast without recovering).
+//
+// TODO refactor, get rid of ok, just use EOF
+func (z *Tokenizer) Next() (result token.Token, ok bool) {
+    if z.eof { return token.EOF(), false }
 
+    // i/o and runtime panic handling
     defer func() {
         if r := recover(); r != nil {
             z.error(r.(error))
+            z.eof = true
+            result = token.EOF()
             ok = false
         }
     }()
@@ -216,25 +148,25 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             must.Result(z.rdr.PeekN(xs[:], 3))
             if runeIsIdentCodepoint(xs[0]) || isValidEscape(xs[0], xs[1]) {
                 // Create a <hash-token>.
-                hashTokenType := HashTokenTypeUnrestricted
+                hashTokenType := token.HashTypeUnrestricted
                 // If the next 3 input code points would start an ident
                 // sequence, set the <hash-token>’s type flag to "id".
                 if isStartOfIdentSequence(xs[0], xs[1], xs[2]) {
-                    hashTokenType = HashTokenTypeID
+                    hashTokenType = token.HashTypeID
                 }
                 // Consume an ident sequence, and set the <hash-token>’s value
                 // to the returned string. Return the <hash-token>.
                 ident := ConsumeIdentSequence(z.rdr)
-                return NewHashToken(hashTokenType, ident), true
+                return token.Hash(hashTokenType, ident), true
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == '(': // U+0028 LEFT PARENTHESIS (()
-            return Token{Type:TokenTypeLeftParen}, true
+            return token.LeftParen(), true
         case c == ')': // U+0029 RIGHT PARENTHESIS ())
-            return Token{Type:TokenTypeRightParen}, true
+            return token.RightParen(), true
         case c == '+': // U+002B PLUS SIGN (+)
             // If the input stream starts with a number...
             var xs[3]rune
@@ -247,15 +179,15 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == ',': // U+002C COMMA (,)
-            return NewDelimToken(c), true
+            return token.Comma(), true
         case c == '-': // U+002D HYPHEN-MINUS (-)
             // If the input stream starts with a number...
-            var xs[3]rune
-            must.Result(z.rdr.PeekN(xs[:], 3))
-            if isStartOfNumber(xs[0], xs[1], xs[2]) {
+            var xs[2]rune
+            must.Result(z.rdr.PeekN(xs[:], 2))
+            if isStartOfNumber(c, xs[0], xs[1]) {
                 // reconsume the current input code point, consume a numeric
                 // token, and return it.
                 z.rdr.Push(c)
@@ -265,25 +197,25 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             } else if (xs[0] == '-') && (xs[1] == '>') {
                 // consume them and return a <CDC-token>.
                 z.rdr.Skip(2)
-                return Token{Type: TokenTypeCDC}, true
+                return token.CDC(), true
                 // Otherwise, if the input stream starts with an ident sequence,
-            } else if isStartOfIdentSequence(xs[0], xs[1], xs[2]) {
-                // reconsume the current input code point, consume an
-                // ident-like token, and return it.
+            } else if isStartOfIdentSequence(c, xs[0], xs[1]) {
+                // reconsume the current input code point,
                 z.rdr.Push(c)
+                // consume an ident-like token, and return it.
                 t, err := ConsumeIdentLikeToken(z.rdr)
                 if err != nil { z.error(err) }
                 return t, true
             } else {
                 // Otherwise, return a <delim-token> with its value set to the
                 // current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == '.': // U+002E FULL STOP (.)
             // If the input stream starts with a number...
-            var xs[3]rune
-            must.Result(z.rdr.PeekN(xs[:], 3))
-            if isStartOfNumber(xs[0], xs[1], xs[2]) {
+            var xs[2]rune
+            must.Result(z.rdr.PeekN(xs[:], 2))
+            if isStartOfNumber(c, xs[0], xs[1]) {
                 // reconsume the current input code point,
                 z.rdr.Push(c)
                 // consume a numeric token, and return it.
@@ -292,12 +224,12 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             } else {
                 // return a <delim-token> with its value set to the current
                 // input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == ':': // U+003A COLON (:)
-            return Token{Type: TokenTypeColon}, true
+            return token.Colon(), true
         case c == ';': // U+003B SEMICOLON (;)
-            return Token{Type: TokenTypeSemicolon}, true
+            return token.Semicolon(), true
         case c == '<': // U+003C LESS-THAN SIGN (<)
             // If the next 3 input code points are
             // U+0021 EXCLAMATION MARK
@@ -308,12 +240,12 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             if (xs[0] == '!') && (xs[1] == '-') && (xs[2] == '-') {
                 // consume them and return a <CDO-token>.
                 z.rdr.Skip(3)
-                return Token{Type: TokenTypeCDO}, true
+                return token.CDO(), true
                 // Otherwise...
             } else {
                 // return a <delim-token> with its value set
                 // to the current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == '@': // U+0040 COMMERCIAL AT (@)
             // If the next 3 input code points would start an ident sequence...
@@ -322,15 +254,15 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             if isStartOfIdentSequence(xs[0], xs[1], xs[2]) {
                 // consume an ident sequence, create an <at-keyword-token> with
                 // its value set to the returned value, and return it.
-                return NewAtKeywordToken(ConsumeIdentSequence(z.rdr)), true
+                return token.AtKeyword(ConsumeIdentSequence(z.rdr)), true
                 // Otherwise...
             } else {
                 // return a <delim-token> with its value set
                 // to the current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == '[': // U+005B LEFT SQUARE BRACKET ([)
-            return Token{Type:TokenTypeLeftSquareBracket}, true
+            return token.LeftSquareBracket(), true
         case c == '\\': // U+005C REVERSE SOLIDUS (\)
             // If the input stream starts with a valid escape...
             p := runeio.Must(z.rdr.Peek())
@@ -347,14 +279,14 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
                 z.error(ErrUnexpectedInput)
                 // Return a <delim-token> with its value set to
                 // the current input code point.
-                return NewDelimToken(c), true
+                return token.Delim(c), true
             }
         case c == ']': // U+005D RIGHT SQUARE BRACKET (])
-            return Token{Type: TokenTypeRightSquareBracket}, true
+            return token.RightSquareBracket(), true
         case c == '{': // U+007B LEFT CURLY BRACKET ({)
-            return Token{Type: TokenTypeLeftCurlyBracket}, true
+            return token.LeftCurlyBracket(), true
         case c == '}': // U+007D RIGHT CURLY BRACKET (})
-            return Token{Type: TokenTypeRightCurlyBracket}, true
+            return token.RightCurlyBracket(), true
         case runeIsDigit(c):
             // Reconsume the current input code point,
             z.rdr.Push(c)
@@ -369,9 +301,9 @@ func (z *Tokenizer) Next() (result Token, ok bool) {
             return t, true
         case c == runeio.RuneEOF:
             z.eof = true
-            return Token{Type: TokenTypeEOF}, true
+            return token.EOF(), true
         default: // anything else
-            return NewDelimToken(c), true
+            return token.Delim(c), true
     }
 }
 
@@ -416,19 +348,19 @@ func ConsumeComments(rdr *runeio.Reader) error {
 
 // ConsumeWhitespace consumes as much whitespace as possible and returns a
 // <whitespace-token>.
-func ConsumeWhitespace(rdr *runeio.Reader) Token {
+func ConsumeWhitespace(rdr *runeio.Reader) token.Token {
     for runeIsWhitespace(runeio.Must(rdr.Peek())) {
         runeio.Must(rdr.Next())
     }
 
-    return Token{Type: TokenTypeWhitespace}
+    return token.Whitespace()
 }
 
 // ConsumeString consumes a string token. It is assumed that the character that
 // opens a string (if any) has already been consumed. Returns either a
 // <string-token> or a <bad-string-token>. Endpoint specifies the codepoint
 // that terminates the string (e.g. a double or single quotation mark).
-func ConsumeString(rdr *runeio.Reader, endpoint rune) (t Token, err error) {
+func ConsumeString(rdr *runeio.Reader, endpoint rune) (t token.Token, err error) {
     // https://www.w3.org/TR/css-syntax-3/#consume-string-token
     var sb strings.Builder
 
@@ -436,12 +368,12 @@ func ConsumeString(rdr *runeio.Reader, endpoint rune) (t Token, err error) {
         c := runeio.Must(rdr.Next())
         switch c {
             case endpoint:
-                return NewStringToken(sb.String()), nil
+                return token.String(sb.String()), nil
             case runeio.RuneEOF:
-                return NewStringToken(sb.String()), ErrUnexpectedEOF
+                return token.String(sb.String()), ErrUnexpectedEOF
             case '\n':
                 rdr.Push(c)
-                return NewBadStringToken(sb.String()), ErrUnexpectedLinebreak
+                return token.BadString(), ErrUnexpectedLinebreak
             case '\\': // U+005C REVERSE SOLIDUS (\)
                 n := runeio.Must(rdr.Peek())
                 if n == runeio.RuneEOF { continue }
@@ -527,7 +459,7 @@ func ConsumeIdentSequence(rdr *runeio.Reader) string {
 // ConsumeNumericToken consumes a numeric token from a stream of code points.
 // It returns either a <number-token>, <percentage-token>, or
 // <dimension-token>.
-func ConsumeNumericToken(rdr *runeio.Reader) Token {
+func ConsumeNumericToken(rdr *runeio.Reader) token.Token {
     // Consume a number and let number be the result.
     nt, repr, value := ConsumeNumber(rdr)
 
@@ -540,7 +472,7 @@ func ConsumeNumericToken(rdr *runeio.Reader) Token {
         // Consume an ident sequence. Set the <dimension-token>’s unit to the
         // returned value. Return the <dimension-token>.
         unit := ConsumeIdentSequence(rdr)
-        return NewDimensionToken(nt, repr, value, unit)
+        return token.Dimension(nt, repr, value, unit)
     }
 
     // Otherwise, if the next input code point is U+0025
@@ -548,12 +480,12 @@ func ConsumeNumericToken(rdr *runeio.Reader) Token {
     // value as number, and return it.
     if xs[0] == '%' {
         rdr.Skip(1)
-        return NewPercentageToken(nt, repr, value)
+        return token.Percentage(nt, repr, value)
     }
 
     // Otherwise, create a <number-token> with the same value and type flag as
     // number, and return it.
-    return NewNumberToken(nt, repr, value)
+    return token.Number(nt, repr, value)
 }
 
 // ConsumeNumber consumes a number from a stream of code points. It returns a
@@ -561,17 +493,17 @@ func ConsumeNumericToken(rdr *runeio.Reader) Token {
 // "number".
 //
 // The representation is the token lexeme as it appears in the input stream.
-// This preserves details // such as whether .009 was written as .009 or 9e-3.
+// This preserves details such as whether .009 was written as .009 or 9e-3.
 //
 // Note: This algorithm does not do the verification of the first few code
 // points that are necessary to ensure a number can be obtained from the
 // stream. Ensure that the stream starts with a number before calling this
 // algorithm.
-func ConsumeNumber(rdr *runeio.Reader) (nt NumberType, repr string, value float64) {
+func ConsumeNumber(rdr *runeio.Reader) (nt token.NumberType, repr string, value float64) {
     // https://www.w3.org/TR/css-syntax-3/#consume-number
 
     // Initially set type to "integer". Let repr be the empty string.
-    nt = NumberTypeInteger
+    nt = token.NumberTypeInteger
     var sb strings.Builder // repr string builder
 
     // If the next input code point is U+002B PLUS SIGN (+) or
@@ -597,7 +529,7 @@ func ConsumeNumber(rdr *runeio.Reader) (nt NumberType, repr string, value float6
         sb.WriteRune(runeio.Must(rdr.Next()))
 
         // Set type to "number".
-        nt = NumberTypeNumber
+        nt = token.NumberTypeNumber
 
         // While the next input code point is a digit, consume it and append it
         // to repr.
@@ -628,7 +560,7 @@ func ConsumeNumber(rdr *runeio.Reader) (nt NumberType, repr string, value float6
         }
 
         // Set type to "number".
-        nt = NumberTypeNumber
+        nt = token.NumberTypeNumber
 
         // While the next input code point is a digit, consume it and append it
         // to repr.
@@ -669,7 +601,7 @@ func StringToNumber(x string) float64 {
             sign = x[0]
             x = x[1:]
         } else if x[0] == '-' {
-            sign = x[1]
+            sign = x[0]
             x = x[1:]
         }
     }
@@ -766,7 +698,7 @@ func StringToNumber(x string) float64 {
 // ConsumeIdentLikeToken consumes an ident-like token from a stream of code
 // points. It returns an <ident-token>, <function-token>, <url-token>, or
 // <bad-url-token>.
-func ConsumeIdentLikeToken(rdr *runeio.Reader) (Token, error) {
+func ConsumeIdentLikeToken(rdr *runeio.Reader) (token.Token, error) {
     // Consume an ident sequence, and let string be the result.
     ident := ConsumeIdentSequence(rdr)
 
@@ -805,7 +737,7 @@ func ConsumeIdentLikeToken(rdr *runeio.Reader) (Token, error) {
         if isFuncToken {
             // create a <function-token>
             // with its value set to string and return it.
-            return NewFunctionToken(ident), nil
+            return token.Function(ident), nil
         } else {
             // Otherwise, consume a url token, and return it.
             return ConsumeUrlToken(rdr)
@@ -817,11 +749,11 @@ func ConsumeIdentLikeToken(rdr *runeio.Reader) (Token, error) {
         // consume it.
         rdr.Skip(1)
         // Create a <function-token> with its value set to string and return it.
-        return NewFunctionToken(ident), nil
+        return token.Function(ident), nil
         // Otherwise...
     } else {
         // create an <ident-token> with its value set to string and return it.
-        return NewIdentToken(ident), nil
+        return token.Ident(ident), nil
     }
 }
 
@@ -833,7 +765,7 @@ func ConsumeIdentLikeToken(rdr *runeio.Reader) (Token, error) {
 // "unquoted" value, like url(foo). A quoted value, like url("foo"), is parsed
 // as a <function-token>. ConsumeIdentLikeToken automatically handles
 // this distinction; this algorithm shouldn’t be called directly otherwise.
-func ConsumeUrlToken(rdr *runeio.Reader) (Token, error) {
+func ConsumeUrlToken(rdr *runeio.Reader) (token.Token, error) {
     // Initially create a <url-token> with its value set to the empty string.
     var sb strings.Builder
 
@@ -845,10 +777,10 @@ func ConsumeUrlToken(rdr *runeio.Reader) (Token, error) {
         c := runeio.Must(rdr.Next())
         switch {
             case c == ')': // U+0029 RIGHT PARENTHESIS ())
-                return NewUrlToken(sb.String()), nil
+                return token.Url(sb.String()), nil
             case c == runeio.RuneEOF:
                 // This is a parse error. Return the <url-token>.
-                return NewUrlToken(sb.String()), ErrUnexpectedEOF
+                return token.Url(sb.String()), ErrUnexpectedEOF
             case runeIsWhitespace(c):
                 // // Consume as much whitespace as possible.
                 ConsumeWhitespace(rdr)
@@ -859,15 +791,15 @@ func ConsumeUrlToken(rdr *runeio.Reader) (Token, error) {
                 // (if EOF was encountered, this is a parse error);
                 if (p == ')') {
                     rdr.Skip(1)
-                    return NewUrlToken(sb.String()), nil
+                    return token.Url(sb.String()), nil
                 } else if (p == runeio.RuneEOF) {
-                    return NewUrlToken(sb.String()), ErrUnexpectedEOF
+                    return token.Url(sb.String()), ErrUnexpectedEOF
                     // otherwise
                 } else {
                     // consume the remnants of a bad url,
                     // create a <bad-url-token>, and return it.
                     ConsumeBadUrl(rdr)
-                    return Token{Type: TokenTypeBadUrl}, ErrBadUrl
+                    return token.BadUrl(), ErrBadUrl
                 }
             case c == '"':  fallthrough
             case c == '\'': fallthrough
@@ -876,7 +808,7 @@ func ConsumeUrlToken(rdr *runeio.Reader) (Token, error) {
                 // This is a parse error. Consume the remnants of a bad url,
                 // create a <bad-url-token>, and return it.
                     ConsumeBadUrl(rdr)
-                    return Token{Type: TokenTypeBadUrl}, ErrBadUrl
+                    return token.BadUrl(), ErrBadUrl
             case c == '\\': // U+005C REVERSE SOLIDUS (\)
                 // If the stream starts with a valid escape...
                 p := runeio.Must(rdr.Peek())
@@ -890,7 +822,7 @@ func ConsumeUrlToken(rdr *runeio.Reader) (Token, error) {
                     // Consume the remnants of a bad url,
                     // create a <bad-url-token>, and return it.
                     ConsumeBadUrl(rdr)
-                    return Token{Type: TokenTypeBadUrl}, ErrBadUrl
+                    return token.BadUrl(), ErrBadUrl
                 }
             default: // anything else
                 // Append the current input code point to the <url-token>’s value.
@@ -918,92 +850,7 @@ func ConsumeBadUrl(rdr *runeio.Reader) {
 }
 
 func consumeAndAppendWhile(rdr *runeio.Reader, builder *strings.Builder, pred func(x rune) bool) {
-        for pred(runeio.Must(rdr.Peek())) {
-            builder.WriteRune(runeio.Must(rdr.Next()))
-        }
-}
-
-func NewStringToken(s string) Token {
-    return Token{
-        Type:        TokenTypeString,
-        stringValue: s,
-    }
-}
-
-func NewBadStringToken(s string) Token {
-    return Token{
-        Type:        TokenTypeBadString,
-        stringValue: s,
-    }
-}
-
-func NewDelimToken(x rune) Token {
-    return Token{
-        Type:  TokenTypeDelim,
-        delim: x,
-    }
-}
-
-func NewHashToken(t HashType, s string) Token {
-    return Token{
-        Type:        TokenTypeHash,
-        stringValue: s,
-        hashType:    t,
-    }
-}
-
-func NewNumberToken(nt NumberType, repr string, value float64) Token {
-    return Token{
-        Type:        TokenTypeNumber,
-        repr:        repr,
-        numberValue: value,
-        numberType:  nt,
-    }
-}
-
-func NewPercentageToken(nt NumberType, repr string, value float64) Token {
-    return Token{
-        Type:        TokenTypePercentage,
-        repr:        repr,
-        numberValue: value,
-        numberType:  nt,
-    }
-}
-
-func NewDimensionToken(nt NumberType, repr string, value float64, unit string) Token {
-    return Token{
-        Type:        TokenTypeDimension,
-        repr:        repr,
-        numberValue: value,
-        numberType:  nt,
-        unit:        unit,
-    }
-}
-
-func NewIdentToken(s string) Token {
-    return Token{
-        Type:        TokenTypeIdent,
-        stringValue: s,
-    }
-}
-
-func NewFunctionToken(s string) Token {
-    return Token{
-        Type:        TokenTypeFunction,
-        stringValue: s,
-    }
-}
-
-func NewUrlToken(s string) Token {
-    return Token{
-        Type:        TokenTypeUrl,
-        stringValue: s,
-    }
-}
-
-func NewAtKeywordToken(s string) Token {
-    return Token{
-        Type:        TokenTypeAtKeyword,
-        stringValue: s,
+    for pred(runeio.Must(rdr.Peek())) {
+        builder.WriteRune(runeio.Must(rdr.Next()))
     }
 }
