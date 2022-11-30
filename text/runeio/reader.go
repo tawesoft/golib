@@ -163,7 +163,7 @@ func (r *Reader) next() (rune, int, error) {
 func (r *Reader) Next() (rune, error) {
     x, size, err := r.next()
 
-    if r.pushedRunes == 0 {
+    if (r.pushedRunes == 0) && (x != RuneEOF) {
         r.offset.Byte += int64(size)
         if x == '\n' {
             r.offset.Rune = 0
