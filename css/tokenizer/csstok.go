@@ -19,6 +19,8 @@
 // Portions Copyright © 2022 W3C® (MIT, ERCIM, Keio, Beihang)
 package tokenizer
 
+// TODO: add serializer (has special rules to prevent ambiguous grammar).
+
 import (
     "bufio"
     "errors"

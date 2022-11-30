@@ -58,6 +58,7 @@ TODO: move meta to html/meta
 [t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
 [t04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
 [t05]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/np
+[t06]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/runeio
 [v01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/view
 
 **Note:** Additional v2/legacy packages exist for users migrating from
