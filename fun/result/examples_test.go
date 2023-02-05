@@ -37,7 +37,7 @@ func Example_result() {
     contents := slices.Map(resultReadString, readers)
 
     for _, x := range contents {
-        if x.Failed() {
+        if !x.Success() {
             err := x.Error
             if os.IsNotExist(err) {
                 // hack to ensure error has the same text on every OS

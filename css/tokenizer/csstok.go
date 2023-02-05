@@ -1,25 +1,34 @@
-// Package tokenizer tokenizes CSS as specified in
-// [CSS Syntax Module Level 3] (part 4).
+// Package tokenizer tokenizes CSS based on part four of the
+// [CSS Syntax Module Level 3] (W3C Candidate Recommendation Draft),
+// 24 December 2021.
 //
 // The main elements of this package are the [New] function, which returns a
-// new [Tokenizer], and that Tokenizer's [Tokenizer.Next] method.
+// new [Tokenizer], and the [Tokenizer.Next] method.
 //
 // This package also exposes several low-level "Consume" functions, which
-// implement specific algorithms in the CSS specification.
-//
-// Note that all "Consume" functions may panic on I/O error. The
-// [Tokenizer.Next] method catches these panics.
-//
-// Note that all "Consume" functions operate on a steam of filtered code points
-// (see https://www.w3.org/TR/css-syntax-3/#input-preprocessing). This is
-// handled by a [New] Tokenizer.
+// implement specific algorithms in the CSS specification. Note that all
+// "Consume" functions may panic on I/O error. The [Tokenizer.Next] method
+// catches these panics. Also note that all "Consume" functions operate on a
+// steam of filtered code points (see
+// https://www.w3.org/TR/css-syntax-3/#input-preprocessing), not raw input.
+// This is implemented in package [tokenizer.filter] and automatically handled
+// by a [New] Tokenizer.
 //
 // [CSS Syntax Module Level 3]: https://www.w3.org/TR/css-syntax-3/
 //
-// Portions Copyright © 2022 W3C® (MIT, ERCIM, Keio, Beihang)
+// Disclaimer: although this software runs against a thorough and diverse set
+// of test cases, no claims are made of this software's performance or
+// conformance against the W3C Specification itself (because there is no
+// official W3C test suite for the tokenization step alone).
+//
+// This software includes material derived from CSS Syntax Module Level 3,
+// W3C Candidate Recommendation Draft, 24 December 2021. Copyright © 2021 W3C®
+// (MIT, ERCIM, Keio, Beihang). See LICENSE-PARTS.txt and TRADEMARKS.md.
 package tokenizer
 
 // TODO: add serializer (has special rules to prevent ambiguous grammar).
+// TODO add more tests from
+// https://github.com/web-platform-tests/wpt/blob/master/css/css-syntax/
 
 import (
     "bufio"
@@ -39,7 +48,8 @@ import (
     "golang.org/x/text/transform"
 )
 
-const MaxLookahead = 3
+const maxRuneLookahead = 3
+const maxTokenLookahead = 7
 
 var (
     ErrUnexpectedEOF = fmt.Errorf("unexpected end of file")
@@ -52,17 +62,21 @@ type Tokenizer struct {
     rdr *runeio.Reader
     errors []error
     eof bool
+
+    // pushback buffer
+    buf [maxTokenLookahead]token.Token
+    bufTop int
 }
 
 func reader(r io.Reader) *runeio.Reader {
     br := bufio.NewReader(r)
     rdr := runeio.NewReader(transform.NewReader(br, filter.Transformer()))
-    rdr.Buffer(nil, utf8.UTFMax * MaxLookahead)
+    rdr.Buffer(nil, utf8.UTFMax *maxRuneLookahead)
     return rdr
 }
 
-func New(r io.Reader) Tokenizer {
-    return Tokenizer{
+func New(r io.Reader) *Tokenizer {
+    return &Tokenizer{
         rdr: reader(r),
     }
 }
@@ -111,13 +125,36 @@ func (z *Tokenizer) NextExcept(types ... token.Type) (result token.Token) {
     return
 }
 
+// Push places a token back on a pushback buffer (first in, first out) so that
+// it is returned by Next() before advancing the input stream. This has a
+// limited capacity, and will panic if exceeded.
+func (z *Tokenizer) Push(x token.Token) {
+    if z.bufTop >= maxTokenLookahead {
+        panic(fmt.Errorf("tokenizer: pushback buffer overflow"))
+    }
+    z.buf[z.bufTop] = x
+    z.bufTop++
+}
+
 // Next returns the next token from the input stream. Once the stream has
 // ended, it returns token.EOF().
 //
 // Check z.Errors() once the stream has ended, or at any point if you want to
 // fail-fast without recovering, to detect parse errors.
 func (z *Tokenizer) Next() (result token.Token) {
-    if z.eof { return token.EOF() }
+    if z.bufTop == 0 {
+        return z.next()
+    } else {
+        result = z.buf[z.bufTop - 1]
+        z.bufTop--
+        return result
+    }
+}
+
+func (z *Tokenizer) next() (result token.Token) {
+    if z.eof {
+        return token.EOF().WithPosition(position0(z.rdr.Offset()))
+    }
 
     // i/o and runtime panic handling
     defer func() {
@@ -182,7 +219,7 @@ func (z *Tokenizer) Next() (result token.Token) {
                 return token.Delim(c)
             }
         case c == ',': // U+002C COMMA (,)
-            return token.Comma()
+            return token.Comma().WithPosition(position1(z.rdr.Offset()))
         case c == '-': // U+002D HYPHEN-MINUS (-)
             // If the input stream starts with a number...
             var xs[2]rune

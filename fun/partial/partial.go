@@ -8,10 +8,15 @@
 // Functions have the prefix "Left" if they bind the left-most argument first,
 // or "Right" if they bind the right-most argument first.
 //
+// Each input function must return exactly one value. The [fun/result] and
+// [fun/maybe] packages provide useful functions that can wrap functions that
+// return (value, ok) or (value, error).
+//
 // For example,
 //
-//     f(a, b, c) == Left3(f)(a)(b, c) == Right3(f)(c)(a, b)
+// f(a, b, c) becomes f(b, c), with a bound, by calling Left3(f)(a).
 //
+// f(a, b, c) becomes f(a, b), with c bound, by calling Right3(f)(c).
 package partial
 
 // Single takes a function with a single argument and return value and

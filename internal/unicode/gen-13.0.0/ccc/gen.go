@@ -11,8 +11,9 @@ import (
     "sort"
     "strconv"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/internal/legacy"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
 )
 type Char struct {
     codepoint rune
@@ -58,7 +59,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(legacy.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -75,21 +76,21 @@ func main() {
                 case xml.StartElement:
                     switch ty.Name.Local {
                         case "repertoire":
-                            if inRepertoire { ks.Never() }
+                            if inRepertoire { must.Never() }
                             inRepertoire = true
                         case "group":
                             if !inRepertoire { break }
-                            if inGroup { ks.Never() }
+                            if inGroup { must.Never() }
                             inGroup = true
-                            group = CharFromAttrs(ty.Attr, ks.Zero[Char]())
+                            group = CharFromAttrs(ty.Attr, operator.Zero[Char]())
                         case "char":
                             if !inRepertoire { break }
-                            if !inGroup { ks.Never() }
+                            if !inGroup { must.Never() }
                             c := CharFromAttrs(ty.Attr, group)
                             if c.IsRange() {
                                 if c.ccc != 0 {
                                     // not in this version
-                                    ks.Never()
+                                    must.Never()
                                 }
                             } else {
                                 chars = append(chars, c)
@@ -110,7 +111,7 @@ func main() {
         return nil
     }))
 
-    ks.Assert(sort.SliceIsSorted(chars, func(i int, j int) bool {
+    must.True(sort.SliceIsSorted(chars, func(i int, j int) bool {
         return chars[i].codepoint < chars[j].codepoint
     }))
 
@@ -124,7 +125,7 @@ func main() {
     }
     fmt.Printf("ccc: max range size: %d\n", size) // gives 256
 
-    ks.Assert(sort.SliceIsSorted(ranges, func(i int, j int) bool {
+    must.True(sort.SliceIsSorted(ranges, func(i int, j int) bool {
         return ranges[i].start < ranges[j].start
     }))
 
@@ -140,7 +141,7 @@ func main() {
         }
         if !seenInAnyRange {
             fmt.Printf("Codepoint 0x%x is not in any range!\n", c.codepoint)
-            ks.Never()
+            must.Never()
         }
     }
 
@@ -166,8 +167,8 @@ func (r rng) Pack() uint64 {
     rl  := int(r.end) - int(r.start)
     ccc := r.ccc
 
-    ks.Assert(rl     <=    0x7FF)
-    ks.Assert(cp     <= 0x1FFFFF)
+    must.True(rl     <=    0x7FF)
+    must.True(cp     <= 0x1FFFFF)
 
     var x uint64
     x |= (uint64(cp)  & 0x1FFFFF)

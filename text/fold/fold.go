@@ -22,7 +22,7 @@ package fold
 import (
     "unicode"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/operator"
     "github.com/tawesoft/golib/v2/text/dm"
     "github.com/tawesoft/golib/v2/text/np"
     "golang.org/x/text/runes"
@@ -46,7 +46,7 @@ var accents = transform.Chain(
 // code points) (e.g. Ohm => Omega)
 var CanonicalDuplicates = canonicalDuplicates
 var canonicalDuplicates = dm.CD.TransformerWithFilter(func (r rune) bool {
-    if ks.In(r,
+    if operator.In(r,
         0x0374, 0x037E, 0x0387, 0x1FBE,
         0x1FEF, 0x1FFD, 0x2000, 0x2001,
         0x2126, 0x212A, 0x212B,

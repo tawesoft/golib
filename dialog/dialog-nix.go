@@ -10,7 +10,7 @@ import (
     "time"
 
     "github.com/alessio/shellescape"
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/operator"
     "golang.org/x/sys/execabs"
 )
 
@@ -165,12 +165,12 @@ func find(bin string) (string, error) {
 }
 
 func (m ColorPicker) pick() (color.Color, bool, error) {
-    if gfuns.colorPick == nil { return ks.Zero[color.Color](), false, nil }
+    if gfuns.colorPick == nil { return operator.Zero[color.Color](), false, nil }
     return gfuns.colorPick(m)
 }
 
 func (m DatePicker) pick() (time.Time, bool, error) {
-    if gfuns.datePick == nil { return ks.Zero[time.Time](), false, nil }
+    if gfuns.datePick == nil { return operator.Zero[time.Time](), false, nil }
     return gfuns.datePick(m)
 }
 

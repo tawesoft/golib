@@ -3,7 +3,7 @@ package twittercard_test
 import (
     "os"
 
-    "github.com/tawesoft/golib/v2/meta/twittercard"
+    "github.com/tawesoft/golib/v2/html/meta/twittercard"
     "github.com/tawesoft/golib/v2/must"
 )
 

@@ -47,8 +47,18 @@ const (
     NumberTypeNumber  = NumberType("number")
 )
 
+type Position struct {
+    Byte int64 // steam offset in bytes (0-indexed)
+    Rune int64 // line offset in runes (0-indexed)
+    Line int64 // current line (0-indexed)
+    End  int64 // stream offset in bytes (0-indexed)
+}
+
 type Token struct {
-    _type Type
+    _type Type // discriminates
+
+    // position records the position of the token in the input stream
+    position Position
 
     // repr preserves details such as whether .009 was written as .009 or 9e-3, and
     // whether a character was written literally or as a CSS escape. Only used by
@@ -76,6 +86,15 @@ type Token struct {
     // numberValue is used by <number-token>, <dimension-token>,
     // <percentage-token>.
     numberValue float64
+}
+
+func (t Token) WithPosition(p Position) Token {
+    t.position = p
+    return t
+}
+
+func (t Token) Position() Position {
+    return t.position
 }
 
 func (t Token) Is(x Type) bool {
@@ -180,7 +199,8 @@ func (t Token) StringValue() string {
 
 // NumericValue returns a (number type, numeric value) of a <number-token>,
 // <percentage-token>, or <dimension-token>. If the token is not one of these
-// types, returns (NumberType(""), 0).
+// types, returns (NumberType(""), 0). In the case of a percentage, the raw
+// value as typed is returned e.g. "50%" returns 50.0.
 func (t Token) NumericValue() (NumberType, float64) {
     switch t._type {
         case TypeNumber:     fallthrough
@@ -252,21 +272,21 @@ func RightCurlyBracket()  Token { return Token{_type: TypeRightCurlyBracket} }
 
 func String(s string) Token {
     return Token{
-        _type:        TypeString,
+        _type:       TypeString,
         stringValue: s,
     }
 }
 
 func Delim(x rune) Token {
     return Token{
-        _type:  TypeDelim,
-        delim: x,
+        _type:    TypeDelim,
+        delim:    x,
     }
 }
 
 func Hash(t HashType, s string) Token {
     return Token{
-        _type:        TypeHash,
+        _type:       TypeHash,
         stringValue: s,
         hashType:    t,
     }
@@ -274,7 +294,7 @@ func Hash(t HashType, s string) Token {
 
 func Number(nt NumberType, repr string, value float64) Token {
     return Token{
-        _type:        TypeNumber,
+        _type:       TypeNumber,
         repr:        repr,
         numberValue: value,
         numberType:  nt,
@@ -283,7 +303,7 @@ func Number(nt NumberType, repr string, value float64) Token {
 
 func Percentage(nt NumberType, repr string, value float64) Token {
     return Token{
-        _type:        TypePercentage,
+        _type:       TypePercentage,
         repr:        repr,
         numberValue: value,
         numberType:  nt,
@@ -292,7 +312,7 @@ func Percentage(nt NumberType, repr string, value float64) Token {
 
 func Dimension(nt NumberType, repr string, value float64, unit string) Token {
     return Token{
-        _type:        TypeDimension,
+        _type:       TypeDimension,
         repr:        repr,
         numberValue: value,
         numberType:  nt,
@@ -309,21 +329,21 @@ func Ident(s string) Token {
 
 func Function(s string) Token {
     return Token{
-        _type:        TypeFunction,
+        _type:       TypeFunction,
         stringValue: s,
     }
 }
 
 func Url(s string) Token {
     return Token{
-        _type:        TypeUrl,
+        _type:       TypeUrl,
         stringValue: s,
     }
 }
 
 func AtKeyword(s string) Token {
     return Token{
-        _type:        TypeAtKeyword,
+        _type:       TypeAtKeyword,
         stringValue: s,
     }
 }

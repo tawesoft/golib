@@ -56,6 +56,7 @@ func TestOffset(t *testing.T) {
     r := runeio.NewReader(strings.NewReader("héllo\nworld"))
     r.Buffer(nil, utf8.UTFMax * 4)
     var dest [4]rune
+    var c rune
 
     r.Next()
     assert.Equal(t, runeio.Offset{1, 1, 0}, r.Offset())
@@ -64,17 +65,32 @@ func TestOffset(t *testing.T) {
     r.Peek()
     r.Push('界')
     r.Skip(1)
-    r.Next();  assert.Equal(t, runeio.Offset{3, 2, 0}, r.Offset())
+    c = runeio.Must(r.Next())
+    assert.Equal(t, 'é', c)
+    assert.Equal(t, c, r.Last())
+    assert.Equal(t, runeio.Offset{3, 2, 0}, r.Offset())
     r.Push('界')
     r.Peek();
-    r.Skip(5)
-    assert.Equal(t, runeio.Offset{7, 0, 1}, r.Offset())
+    r.Skip(1)
+    r.Skip(3) // llo
+    assert.Equal(t, runeio.Offset{6, 5, 0}, r.Offset())
     r.Push('界')
-    assert.Equal(t, runeio.Offset{7, 0, 1}, r.Offset())
     r.Peek(); r.Peek(); r.Peek(); r.Skip(1)
+    c = runeio.Must(r.Next())
+    assert.Equal(t, '\n', c)
+    assert.Equal(t, c, r.Last())
+    assert.Equal(t, runeio.Offset{7, 0, 1}, r.Offset())
     r.Next()
     assert.Equal(t, runeio.Offset{8, 1, 1}, r.Offset())
     r.Push('界')
     r.Next()
     assert.Equal(t, runeio.Offset{8, 1, 1}, r.Offset())
+    c = runeio.Must(r.Next())
+    assert.Equal(t, 'o', c)
+    assert.Equal(t, runeio.Offset{9, 2, 1}, r.Offset())
+    r.Skip(3) // rld
+    assert.Equal(t, runeio.Offset{12, 5, 1}, r.Offset())
+}
+
+func TestOffsetEof(t *testing.T) {
 }

@@ -114,6 +114,7 @@ func ExampleEquivalent() {
 
     // TODO for some reason our implementation is missing the two variants with an Angstrom Sign.
     //   This is probably due to Go's Unicode version being older than the example.
+    //   Revisit once new Unicode versions land
 
     // output:
     // Input: Åḑ̇ [41 30a 64 307 327] 41cc8a64cc87cca7

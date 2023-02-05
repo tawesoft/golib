@@ -16,7 +16,7 @@
 //   - [ncruces/zenity]
 //
 // [sqweek/dialog]: https://github.com/sqweek/dialog
-// [ncruces/zenity]:https://github.com/ncruces/zenity
+// [ncruces/zenity]: https://github.com/ncruces/zenity
 //
 // ## Please note!
 //
@@ -67,8 +67,6 @@ import (
     "fmt"
     "image/color"
     "time"
-
-    "github.com/tawesoft/golib/v2/ks"
 )
 
 // Init performs optional per-platform initialisation. On Windows, this loads
@@ -180,7 +178,7 @@ func (m ColorPicker) Pick() (color.Color, bool, error) {
 // ColorPicker is a dialog to select a colour.
 type ColorPicker struct {
     // Title is the colour picker window title (may be empty) e.g. "Colour".
-    // If omitted, defaults to US-en "Color".
+    // If omitted, defaults to en-US "Color".
     Title string
 
     // Palette controls the color picker mode. If false, this is a simple
@@ -221,7 +219,7 @@ func Date() (time.Time, bool, error) {
 func (m DatePicker) Pick() (time.Time, bool, error) {
     // m.Title has sensible defaults on some implementations, so not set here
     if m.Location == nil { m.Location = time.Local }
-    if m.Initial == ks.Zero[time.Time]() { m.Initial = time.Now() }
+    if m.Initial.IsZero() { m.Initial = time.Now() }
     return m.pick()
 }
 

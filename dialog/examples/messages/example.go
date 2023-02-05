@@ -1,10 +1,5 @@
 package main
 
-// rsrc -manifest manifest.xml -o $1.syso
-// CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_ENABLED=1  go build -trimpath -o "$1.exe"
-//
-// Needs rsrc provided by https://github.com/akavel/rsrc
-
 import (
     "fmt"
     "image/color"
@@ -15,6 +10,12 @@ import (
 )
 
 func main() {
+    // For prettier visual styles on the message box on Windows platforms,
+    // you need to compile the manifest:
+    //
+    // 1. Install a compiler from https://github.com/akavel/rsrc
+    // 2. Run `rsrc -manifest manifest.xml -o messages.syso`
+
     supported := must.Result(dialog.Supported())
     fmt.Printf("Supported features: %+v\n", supported)
 

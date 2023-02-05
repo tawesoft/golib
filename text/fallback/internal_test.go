@@ -2,11 +2,14 @@ package fallback
 
 import (
     "fmt"
+    "sort"
+    "strings"
     "testing"
 
     "github.com/stretchr/testify/assert"
     lazy "github.com/tawesoft/golib/v2/iter"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
     "golang.org/x/text/unicode/norm"
 )
 
@@ -40,6 +43,7 @@ func TestStringGet(t *testing.T) {
     assert.Equal(t, "a", stringGet("a�b�c", 0))
     assert.Equal(t, "b", stringGet("a�b�c", 1))
     assert.Equal(t, "c", stringGet("a�b�c", 2))
+    assert.Equal(t, 2, strings.Count("a�b�c", "\uFFFD"))
 }
 
 func Example_combinations() {
@@ -51,37 +55,45 @@ func Example_combinations() {
     }
 
     it := must.Result(combinations(input))
-    lazy.Walk(func (x string) {
+    xs := lazy.ToSlice(it)
+
+    must.Equal(3 * 3 * 1 * 3, len(xs))
+
+    sort.Slice(xs, func(i int, j int) bool {
+        return operator.LT(xs[i], xs[j])
+    })
+
+    for _, x := range xs {
         fmt.Println(x)
-    }, it)
+    }
 
     // output:
     // adwx
-    // bdwx
-    // cdwx
-    // aewx
-    // bewx
-    // cewx
-    // afwx
-    // bfwx
-    // cfwx
     // adwy
-    // bdwy
-    // cdwy
-    // aewy
-    // bewy
-    // cewy
-    // afwy
-    // bfwy
-    // cfwy
     // adwz
-    // bdwz
-    // cdwz
+    // aewx
+    // aewy
     // aewz
-    // bewz
-    // cewz
+    // afwx
+    // afwy
     // afwz
+    // bdwx
+    // bdwy
+    // bdwz
+    // bewx
+    // bewy
+    // bewz
+    // bfwx
+    // bfwy
     // bfwz
+    // cdwx
+    // cdwy
+    // cdwz
+    // cewx
+    // cewy
+    // cewz
+    // cfwx
+    // cfwy
     // cfwz
 }
 

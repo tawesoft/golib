@@ -10,7 +10,9 @@ import (
     "unicode/utf8"
 
     "github.com/tawesoft/golib/v2/ks"
-    "github.com/tawesoft/golib/v2/numbers"
+    "github.com/tawesoft/golib/v2/operator"
+    "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "golang.org/x/exp/constraints"
     "golang.org/x/exp/maps"
 )
 
@@ -59,7 +61,7 @@ func All[X any](
 ) bool {
     for {
         x, ok := it()
-        if !ok { break; }
+        if !ok { break }
         if !f(x) { return false }
     }
     return true
@@ -74,7 +76,7 @@ func Any[X any](
 ) bool {
     for {
         x, ok := it()
-        if !ok { break; }
+        if !ok { break }
         if f(x) { return true }
     }
     return false
@@ -94,33 +96,6 @@ func AppendToSlice[X any](
     return dest
 }
 
-// Averageable is any number type. It is used as the input type for an
-// [AverageJoiner].
-type Averageable interface { numbers.Real }
-
-// AverageJoiner returns a [Joiner] for calculating the average of a sequence.
-func AverageJoiner[In Averageable]() Joiner[In, float64] {
-    return &averageJoiner[In]{}
-}
-
-type averageJoiner[In Averageable] struct {
-    count int
-    mean float64
-}
-
-func (j *averageJoiner[In]) Join(x In, isFinal bool) {
-    j.count ++
-    f := float64(x)
-    j.mean += (f - j.mean) / float64(j.count)
-}
-
-func (j *averageJoiner[In]) End() float64 {
-    result := j.mean
-    j.count = 0
-    j.mean = 0
-    return result
-}
-
 // Cat (for "concatenate") returns an iterator that merges several input
 // iterators, consuming an input iterator in its entirety to produce values
 // before moving on to the next input iterator. The input iterators should not
@@ -136,7 +111,7 @@ func (j *averageJoiner[In]) End() float64 {
 //
 // Some libraries call this function "chain" instead.
 func Cat[X any](its ... It[X]) It[X] {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     return func() (X, bool) {
         for {
             if len(its) == 0 { return zero, false }
@@ -159,7 +134,7 @@ func Check[X any](
     f func(X) error,
     it It[X],
 ) (X, error) {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     for {
         x, ok := it()
         if !ok { break }
@@ -189,14 +164,15 @@ func Count[X any](
     return
 }
 
-// Counter returns an iterator that produces a series of integers (between
-// [math.MinInt] and [math.MaxInt]), starting at a given number, and increasing
-// by step each time.
-func Counter(start int, step int) It[int] {
+// Counter returns an iterator that produces a series of integers, starting at
+// the given number, and increasing by step each time. It terminates at the
+// maximum representable value for the number type.
+func Counter[I constraints.Integer](start I, step I) It[I] {
+    limit := integer.GetLimits[I]()
     done := false
-    return func() (int, bool) {
+    return func() (I, bool) {
         if done { return 0, false }
-        if x, ok := numbers.Int.CheckedAdd(start, step); ok {
+        if x, ok := limit.Add(start, step); ok {
             result := start
             start = x
             return result, true
@@ -218,7 +194,8 @@ func Counter(start int, step int) It[int] {
 //
 // Unlike some Go functions, CutString does not also treat invalid Unicode or
 // invalid Utf8 byte sequences as a valid delimiter when the separator is
-// utf8.RuneError.
+// utf8.RuneError. That is, the utf8.RuneError delimiter only matches bytes
+// that literally encode the Unicode value of utf8.RuneError.
 //
 // Note that in many situations, it is probably faster, simpler, clearer, and
 // more idiomatic to use a [bufio.Scanner]. Prefer CutString only if you are
@@ -276,13 +253,13 @@ func CutStringStr(in string, sep string) It[string] {
 
 // Empty returns an iterator that is typed, but empty.
 func Empty[X any]() It[X] {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     return func () (X, bool) {
         return zero, false
     }
 }
 
-// Enumerate produces an [Pair] for each value produced by the input iterator,
+// Enumerate produces a [Pair] for each value produced by the input iterator,
 // where Pair.Key is an integer that starts at zero and increases by one with
 // each produced value. The input iterator should not be used anywhere else
 // once provided to this function.
@@ -326,7 +303,7 @@ func Filter[X any](
     f func(X) bool,
     it It[X],
 ) It[X] {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
 
     if f == nil {
         f = func(x X) bool { return true }
@@ -348,8 +325,9 @@ func Filter[X any](
 // the time of input, then the returned iterator is empty. The input iterators
 // should not be used anywhere else once provided to this function.
 //
-// For example, Final(FromSlice([]int{1, 2, 3}) produces the values FinalValue{1, false},
-// FinalValue{2, false}, FinalValue{3, true}
+// For example, Final(FromSlice([]int{1, 2, 3}) produces the values
+// (FinalValue{1, false}, true), (FinalValue{2, false}, true),
+// (FinalValue{3, true}, true), (FinalValue{}, false).
 func Final[X any](it It[X]) It[FinalValue[X]] {
     zero := FinalValue[X]{}
     done := false
@@ -388,7 +366,7 @@ type FinalValue[X any] struct {
 // until no longer using the returned iterator.
 func FromMap[X comparable, Y any](kvs map[X]Y) It[Pair[X, Y]] {
     rest := maps.Keys(kvs)
-    zero := ks.Zero[Pair[X, Y]]()
+    zero := operator.Zero[Pair[X, Y]]()
 
     return func() (Pair[X, Y], bool) {
         if len(rest) == 0 {
@@ -409,7 +387,7 @@ func FromMap[X comparable, Y any](kvs map[X]Y) It[Pair[X, Y]] {
 // the returned iterator.
 func FromSlice[X any](xs []X) It[X] {
     rest := xs
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     return func() (X, bool) {
         if len(rest) == 0 {
             return zero, false
@@ -459,20 +437,6 @@ func InsertToMap[X comparable, Y any](
     }
 }
 
-// Join uses a [Joiner] to build a result by walking over an iterator.
-func Join[In any, Out any](j Joiner[In, Out], it It[In]) Out {
-    WalkFinal(j.Join, it)
-    return j.End()
-}
-
-// Joiner is a type for something that can build a result by walking over
-// an iterator using [Join]. It must be possible for a Joiner to be used
-// multiple times (although not concurrently) from multiple calls to [Join].
-type Joiner[In any, Out any] interface {
-    Join(x In, isFinal bool)
-    End() Out
-}
-
 // Map returns an iterator that consumes an input iterator (of type X) and
 // produces values (of type Y) for each input value, according to some mapping
 // function f(x X) => y Y.
@@ -491,7 +455,7 @@ func Map[X any, Y any](
     f func(X) Y,
     it It[X],
 ) It[Y] {
-    zero := ks.Zero[Y]()
+    zero := operator.Zero[Y]()
 
     return func () (Y, bool) {
         x, ok := it()
@@ -538,44 +502,23 @@ func PairwiseEnd[X any, Y [2]X](
     return Pairwise[X, Y](Cat(g, Repeat(1, lastValue)))
 }
 
-// Reduce returns the result of applying a [Reducer] to the elements produced
-// by an iterator.
+// Reduce applies function f to each element of the sequence (in order) with
+// the previous return value from f as the first argument and the element as
+// the second argument (for the first call to f, the supplied initial value is
+// used instead of a return value), returning the final value returned by f.
 //
-// For example,
-//
-//     sum := func(a int, b int) int { return a + b }
-//     summer := Reducer[int]{Reduce: sum, Identity: 0}
-//     Reduce(summer, FromSlice([]int{1, 2, 3}))
-//     // calculates (((0 + 1) + 2) + 3) and returns 6
-//
+// If the input iterator is empty, the result is the initial value.
 func Reduce[X any](
-    reducer Reducer[X],
+    initial X,
+    f func(X, X) X,
     it It[X],
-) X  {
-    v := reducer.Identity
+) X {
+    v := initial
     for {
         x, ok := it()
         if !ok { return v }
-        v = reducer.Reduce(v, x)
+        v = f(v, x)
     }
-}
-
-// Reducer is a function and an identity value for reducing a sequence of
-// values into a single value by calling v = Reduce(v, x) for each x of an
-// input sequence from left to right.
-//
-// The first argument to the first invocation of the Reduce function is always
-// the provided Identity value which is defined so that Reduce(Identity, x)
-// always returns x.
-//
-// Simple example Reducers:
-//
-//     sum := Reducer{Reduce: func(a int, b int) { return a + b }, Identity: 0}
-//     mul := Reducer{Reduce: func(a int, b int) { return a * b }, Identity: 1}
-//
-type Reducer[X any] struct {
-    Reduce func(a X, b X) X
-    Identity X
 }
 
 // Repeat produces the value x, with n repetitions. If n is negative, it
@@ -588,33 +531,11 @@ func Repeat[X any](
 ) It[X] {
     return func() (X, bool) {
         if n == 0 {
-            return ks.Zero[X](), false
+            return operator.Zero[X](), false
         }
         if n > 0 { n-- }
         return x, true
     }
-}
-
-// StringJoiner returns a [Joiner] for concatenating strings with a (possibly
-// empty) separator.
-func StringJoiner(sep string) Joiner[string, string] {
-    return &stringJoiner{sep: sep}
-}
-
-type stringJoiner struct {
-    sb strings.Builder
-    sep string
-}
-
-func (j *stringJoiner) Join(x string, isFinal bool) {
-    j.sb.WriteString(x)
-    if !isFinal { j.sb.WriteString(j.sep) }
-}
-
-func (j *stringJoiner) End() string {
-    result := j.sb.String()
-    j.sb.Reset()
-    return result
 }
 
 // Take returns an iterator that produces only (up to) the first n items of
@@ -623,7 +544,7 @@ func Take[X any](
     n int,
     xs It[X],
 ) It[X] {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     return func() (X, bool) {
         if n == 0 { return zero, false }
         x, ok := xs()
@@ -633,7 +554,7 @@ func Take[X any](
 }
 
 // Tee returns a slice of n iterators that each, individually, produce the
-// sames values otherwise produced by the input iterator. This can be thought
+// same values otherwise produced by the input iterator. This can be thought
 // of at "copying" an iterator. The input iterators should not be used anywhere
 // else once provided to this function.
 //
@@ -797,7 +718,7 @@ func Zip[X any, Y []X](
 func ZipFlat[X any](
     its ... It[X],
 ) It[X] {
-    zero := ks.Zero[X]()
+    zero := operator.Zero[X]()
     n := len(its)
     i := 0
 

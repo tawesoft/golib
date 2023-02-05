@@ -8,7 +8,7 @@ import (
     "time"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/internal/test"
     "github.com/tawesoft/golib/v2/text/ccc"
     "golang.org/x/text/transform"
 )
@@ -93,7 +93,7 @@ func TestReorder_MaliciousInput(t *testing.T) {
     inBytes = append(inBytes, []byte("\u0323")...)
     inRunes := []rune(string(inBytes))
 
-    ks.TestCompletes(t, 1 * time.Second, func() {
+    test.Completes(t, 1 * time.Second, func() {
         var inBytesCopy []byte
         inBytesCopy = append(inBytesCopy, inBytes...)
         assert.Equal(t, ccc.ErrMaxNonStarters, ccc.ReorderRunes(inRunes))

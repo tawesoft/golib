@@ -3,12 +3,11 @@
 //
 // Note that in many cases, it is more idiomatic for a function to return a
 // naked (value, error). Use [WrapFunc] to convert such a function to return
-// a Result type.
-//
-// For examples, see the sibling "maybe" package.
+// a R result type.
 package result
 
 import (
+    "errors"
     "fmt"
 )
 
@@ -19,22 +18,19 @@ type R[V any] struct {
     Error error
 }
 
-// WrapError returns a new [Error] based on an existing R. If the existing R is
-// not an error, returns Error(err). Otherwise, returns a Error containing
-// err and wrapping the original error.
-func (r R[V]) WrapError(err error) R[V] {
-    if r.Success() { return Error[V](err) }
-    return Error[V](fmt.Errorf("%w: %v", err, r.Error)) // TODO errors.Join
+// JoinError returns a new [Error] based on an existing R. If the existing R is
+// not an error, returns Error(err). Otherwise, returns
+// Error(errors.Join(existingError, err)).
+func (r R[V]) JoinError(err error) R[V] {
+    if r.Success() {
+        return Error[V](err)
+    }
+    return Error[V](errors.Join(r.Error, err))
 }
 
 // Success returns true if the R is not an error.
 func (r R[V]) Success() bool {
     return r.Error == nil
-}
-
-// Failed returns true if R has an error.
-func (r R[V]) Failed() bool {
-    return r.Error != nil
 }
 
 // New returns a R. It is syntax sugar for R{value, error}. If error is
@@ -63,20 +59,6 @@ func (r R[V]) MustError() error {
         panic(fmt.Sprintf("result.R[%T].MustError called, but is not an error.", r))
     }
     return r.Error
-}
-
-// If calls function f on a R's value, but only if R is not an error.
-func (r R[V]) If(f func(v V)) {
-    if r.Error != nil {
-        f(r.Value)
-    }
-}
-
-// IfNot calls function f on a R's error, but only if R is an error.
-func (r R[V]) IfNot(f func(err error)) {
-    if r.Error != nil {
-        f(r.Error)
-    }
 }
 
 // Error returns a R that is an error.
@@ -111,7 +93,7 @@ func Map[X any, Y any](
     }
 }
 
-// FlatMap turns function "f: X => R[Y]" into "f: R(X) => R[Y]".
+// FlatMap turns function "f: X => R[Y]" into "f: R[X] => R[Y]".
 func FlatMap[X any, Y any](
     f func(x X) R[Y],
 ) func(x2 R[X]) R[Y] {
@@ -140,7 +122,7 @@ func WrapFunc[X any, Y any](
 }
 
 // UnwrapFunc converts a function of the form "f: X => R[Y]" to the
-// form "f: X => ([Y], error)".
+// form "f: X => (Y, error)".
 func UnwrapFunc[X any, Y any](
     f func(x X) R[Y],
 ) func(x X) (Y, error) {

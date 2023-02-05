@@ -13,7 +13,8 @@ import (
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
     "github.com/tawesoft/golib/v2/text/dm"
     "golang.org/x/text/transform"
     "golang.org/x/text/unicode/norm"
@@ -233,8 +234,8 @@ func TestUCD(t *testing.T) {
         b, err := stringer(b)
         assert.Nil(t, err)
         if a != b {
-            matchNFD := ks.IfThenElse(a == norm.NFD.String(a), "match", "differ")
-            matchNFKD := ks.IfThenElse(a == norm.NFKD.String(a), "match", "differ")
+            matchNFD := operator.Ternary(a == norm.NFD.String(a), "match", "differ")
+            matchNFKD := operator.Ternary(a == norm.NFKD.String(a), "match", "differ")
             t.Errorf("test %s line %d:\n%x != %x\n%x Go's NFD (%s)\n%x Go's NFKD (%s)\n%s",
                 test, lineno, []rune(a), []rune(b),
                 []rune(norm.NFD.String(a)),  matchNFD,
@@ -256,7 +257,7 @@ func TestUCD(t *testing.T) {
     for {
         lineno++
         ln, isPrefix, err := rdr.ReadLine()
-        if isPrefix { ks.Never() }
+        if isPrefix { must.Never() }
         if (err != nil) && errors.Is(err, io.EOF) { break }
         if err != nil { panic(err) }
         if ln == nil { break }
@@ -267,7 +268,7 @@ func TestUCD(t *testing.T) {
 
         // source; NFC; NFD; NFKC; NFKD; # comment
         cols := strings.SplitN(l, ";", 6)
-        ks.Assert(len(cols) >= 5)
+        must.True(len(cols) >= 5)
         c1 := parse(cols[0])
         c2 := parse(cols[1])
         c3 := parse(cols[2])

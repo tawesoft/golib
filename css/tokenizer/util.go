@@ -1,8 +1,45 @@
 package tokenizer
 
 import (
+    "github.com/tawesoft/golib/v2/css/tokenizer/token"
+    "github.com/tawesoft/golib/v2/must"
     "github.com/tawesoft/golib/v2/text/runeio"
 )
+
+// position0 returns a [token.Position] from an offset, with a length of
+// zero.
+func position0(start runeio.Offset) token.Position {
+    return token.Position{
+        Byte: start.Byte,
+        Rune: start.Rune,
+        Line: start.Line,
+        End:  start.Byte,
+    }
+}
+
+// position1 returns a [token.Position] from an offset with a length of
+// one byte.
+func position1(start runeio.Offset) token.Position {
+    return token.Position{
+        Byte: start.Byte,
+        Rune: start.Rune,
+        Line: start.Line,
+        End:  start.Byte + 1,
+    }
+}
+
+// position returns a [token.Position] from a (start, end) offset pair.
+func position(start runeio.Offset, end runeio.Offset) token.Position {
+    if end.Byte < start.Byte {
+        must.Never("token end before token start")
+    }
+    return token.Position{
+        Byte: start.Byte,
+        Rune: start.Rune,
+        Line: start.Line,
+        End:  end.Byte - start.Byte,
+    }
+}
 
 func runeIsWhitespace(x rune) bool {
     // Note that U+000D CARRIAGE RETURN and U+000C FORM FEED are not included in

@@ -4,6 +4,7 @@ import (
     "fmt"
 
     lazy "github.com/tawesoft/golib/v2/iter"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 // FibFunc lazily generates a sequence of fibonacci numbers.
@@ -21,13 +22,10 @@ func FibFunc() lazy.It[int] {
 }
 
 func ExampleFibonacci() {
+    sum := operator.Add[int]
+
     // return a new generator of fibonacci numbers
     isOdd := func(x int) bool { return x % 2 != 0 }
-
-    sum := lazy.Reducer[int]{
-        Identity: 0,
-        Reduce: func (a int, b int) int { return a + b },
-    }
 
     // create four iterators
     fib := lazy.Tee[int](4, lazy.Func(FibFunc()))
@@ -46,12 +44,12 @@ func ExampleFibonacci() {
                         fib[1])))))
 
     fmt.Printf("Sum of the first 10 Fibonacci numbers is: %d\n",
-        lazy.Reduce(sum,
+        lazy.Reduce(0, sum,
             lazy.Take(10,
                 fib[2])))
 
     average := func(n int, xs lazy.It[int]) float64 {
-        total := lazy.Reduce(sum, lazy.Take(n, xs))
+        total := lazy.Reduce(0, sum, lazy.Take(n, xs))
         return float64(total) / float64(n)
     }
 

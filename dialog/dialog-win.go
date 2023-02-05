@@ -12,8 +12,8 @@ import (
     "unicode/utf16"
     "unsafe"
 
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
     "golang.org/x/sys/windows"
     "golang.org/x/text/unicode/bidi"
 )
@@ -158,7 +158,7 @@ func (i IconType) iconFlag() uint32 {
         case IconError:   return windows.MB_ICONERROR
     }
 
-    ks.Never()
+    must.Never()
     return 0
 }
 
@@ -172,11 +172,11 @@ func supported() (Support, error) {
 }
 
 func (m ColorPicker) pick() (color.Color, bool, error) {
-    return ks.Zero[color.Color](), false, nil
+    return operator.Zero[color.Color](), false, nil
 }
 
 func (m DatePicker) pick() (time.Time, bool, error) {
-    return ks.Zero[time.Time](), false, nil
+    return operator.Zero[time.Time](), false, nil
 }
 
 func (m FilePicker) pick(
@@ -254,7 +254,7 @@ func (m FilePicker) pick(
     }
 
     var filters strings.Builder
-    if len(m.FileTypes) == 0 { ks.Never() }
+    if len(m.FileTypes) == 0 { must.Never() }
     for _, f := range m.FileTypes {
         name, patterns := f[0], strings.Split(f[1], " ")
         filters.WriteString(fmt.Sprintf("%s (%s)", name, strings.Join(patterns, ", ")))

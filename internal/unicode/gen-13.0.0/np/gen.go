@@ -12,9 +12,10 @@ import (
     "strconv"
     "strings"
 
+    "github.com/tawesoft/golib/v2/internal/legacy"
     "github.com/tawesoft/golib/v2/iter"
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 type Char struct {
@@ -125,7 +126,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(legacy.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -142,16 +143,16 @@ func main() {
                 case xml.StartElement:
                     switch ty.Name.Local {
                         case "repertoire":
-                            if inRepertoire { ks.Never() }
+                            if inRepertoire { must.Never() }
                             inRepertoire = true
                         case "group":
                             if !inRepertoire { break }
-                            if inGroup { ks.Never() }
+                            if inGroup { must.Never() }
                             inGroup = true
-                            group = CharFromAttrs(ty.Attr, ks.Zero[Char]())
+                            group = CharFromAttrs(ty.Attr, operator.Zero[Char]())
                         case "char":
                             if !inRepertoire { break }
-                            if !inGroup { ks.Never() }
+                            if !inGroup { must.Never() }
                             c := CharFromAttrs(ty.Attr, group)
                             if c.codepoint == 0 { break }
                             if c.NumericType() == NTNone { break }
@@ -173,7 +174,7 @@ func main() {
         return nil
     }))
 
-    ks.Assert(sort.SliceIsSorted(chars, func(i int, j int) bool {
+    must.True(sort.SliceIsSorted(chars, func(i int, j int) bool {
         return chars[i].codepoint < chars[j].codepoint
     }))
 
@@ -247,15 +248,15 @@ func (c Char) Pack() uint64 {
 
     prefix, trailing := split(nv.N)
 
-    ks.Assert(nt       >=        1)
-    ks.Assert(nt       <=        3)
-    ks.Assert(nv.N     >=        0)
-    ks.Assert(prefix   <=   0x0FFF) // 2^12
-    ks.Assert(trailing <=     0x3F) // 2^ 6
-    ks.Assert(nv.D     <=   0x0FFF) // 2^12
-    ks.Assert(nv.D     >=        1)
-    ks.Assert(c.span   >=        1)
-    ks.Assert(c.span   <=     0xFF)
+    must.True(nt       >=        1)
+    must.True(nt       <=        3)
+    must.True(nv.N     >=        0)
+    must.True(prefix   <=   0x0FFF) // 2^12
+    must.True(trailing <=     0x3F) // 2^ 6
+    must.True(nv.D     <=   0x0FFF) // 2^12
+    must.True(nv.D     >=        1)
+    must.True(c.span   >=        1)
+    must.True(c.span   <=     0xFF)
 
     var x uint64
     x |= (uint64(cp)  &      0x1FFFFF)

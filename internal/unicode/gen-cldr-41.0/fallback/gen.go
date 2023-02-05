@@ -9,8 +9,8 @@ import (
     "sort"
     "unicode/utf8"
 
+    "github.com/tawesoft/golib/v2/internal/legacy"
     lazy "github.com/tawesoft/golib/v2/iter"
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/must"
 )
 
@@ -21,7 +21,7 @@ type Char struct {
 
 func (c Char) Codepoint() rune {
     r, rZ := utf8.DecodeRuneInString(c.Value)
-    ks.Assert(rZ == len(c.Value))
+    must.True(rZ == len(c.Value))
     return r
 }
 
@@ -38,7 +38,7 @@ func main() {
     }
 
     var data Data
-    must.Check(ks.WithCloser(opener("../../DATA/cldr-41.0/common/supplemental/characters.xml"), func(f io.ReadCloser) error {
+    must.Check(legacy.WithCloser(opener("../../DATA/cldr-41.0/common/supplemental/characters.xml"), func(f io.ReadCloser) error {
         return xml.Unmarshal(must.Result(io.ReadAll(f)), &data)
     }))
 

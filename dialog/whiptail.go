@@ -13,7 +13,7 @@ import (
     "strings"
     "time"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 type whiptail struct {
@@ -99,7 +99,7 @@ func (x whiptail) getString(title string, label string, placeholder string) (str
 var whiptailColorPickerRE = regexp.MustCompile(`^#(?P<red>[[:xdigit:]]{2})(?P<green>[[:xdigit:]]{2})(?P<blue>[[:xdigit:]]{2})$`)
 
 func (x whiptail) color(m ColorPicker) (color.Color, bool, error) {
-    zero := ks.Zero[color.Color]()
+    zero := operator.Zero[color.Color]()
 
     r, g, b, _ := m.Initial.RGBA()
     r /= 256; g /= 256; b /= 256;
@@ -143,7 +143,7 @@ func (x whiptail) date(m DatePicker) (time.Time, bool, error) {
         m.LongTitle += " (YYYY/MM/DD)"
     }
 
-    zero := ks.Zero[time.Time]()
+    zero := operator.Zero[time.Time]()
 
     initial := fmt.Sprintf("%d/%d/%d",
         m.Initial.Year(), m.Initial.Month(), m.Initial.Day())

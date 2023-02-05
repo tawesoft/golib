@@ -3,7 +3,7 @@
 //
 // Note that in many cases, it is more idiomatic for a function to return a
 // naked (value, ok). Use [WrapFunc] to convert such a function to return
-// a M type.
+// a M maybe type.
 package maybe
 
 import (
@@ -57,15 +57,8 @@ func Some[V any](value V) M[V] {
     }
 }
 
-// If returns Some(M.value) if the condition is true and M has a value,
-// otherwise returns Nothing.
-func (m M[V]) If(cond bool) M[V] {
-    if m.Ok && cond { return m }
-    return Nothing[V]()
-}
-
-// Else returns M.value if ok, otherwise returns the provided argument instead.
-func (m M[V]) Else(v V) V {
+// Or returns M.value if ok, otherwise returns the provided argument instead.
+func (m M[V]) Or(v V) V {
     if m.Ok { return m.Value }
     return v
 }
@@ -90,7 +83,7 @@ func FlatMap[X any, Y any](
     }
 }
 
-// Applicator turns function "M[f]: X => Y" into "f: X => M[Y]".
+// Applicator turns function "M[f: X => Y]" into "f: X => M[Y]".
 func Applicator[X any, Y any](
     f M[func(x X) Y],
 ) func(x X) M[Y] {
@@ -105,6 +98,36 @@ func WrapFunc[X any, Y any](
 ) func(x X) M[Y] {
     return func(x X) M[Y] {
         return New(f(x))
+    }
+}
+
+// WrapFunc2 converts a function of the form "f(A, B) => (C, ok bool)" to
+// the form "f(A, B) => M[C].
+func WrapFunc2[A any, B any, C any](
+    f func(a A, b B) (C, bool),
+) func(a A, b B) M[C] {
+    return func(a A, b B) M[C] {
+        return New(f(a, b))
+    }
+}
+
+// WrapFunc3 converts a function of the form "f(A, B, C) => (D, ok bool)" to
+// the form "f(A, B, C) => M[D].
+func WrapFunc3[A any, B any, C any, D any](
+    f func(a A, b B, c C) (D, bool),
+) func(a A, b B, c C) M[D] {
+    return func(a A, b B, c C) M[D] {
+        return New(f(a, b, c))
+    }
+}
+
+// WrapFunc4 converts a function of the form "f(A, B, C, D) => (E, ok bool)" to
+// the form "f(A, B, C, D) => M[E].
+func WrapFunc4[A any, B any, C any, D any, E any](
+    f func(a A, b B, c C, d D) (E, bool),
+) func(a A, b B, c C, d D) M[E] {
+    return func(a A, b B, c C, d D) M[E] {
+        return New(f(a, b, c, d))
     }
 }
 

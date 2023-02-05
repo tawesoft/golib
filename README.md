@@ -3,41 +3,49 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/tawesoft/golib/v2.svg)](https://pkg.go.dev/github.com/tawesoft/golib/v2)
 [![Coverage Status](https://coveralls.io/repos/github/tawesoft/golib/badge.svg?branch=v2)](https://coveralls.io/github/tawesoft/golib?branch=v2)
 
-A monorepo for small Go modules maintained by
-[Tawesoft®](https://www.tawesoft.co.uk). Open source ([MIT](/LICENSE.txt)).
+A monorepo for small Go (v1.20+) modules maintained by
+[Tawesoft®](https://www.tawesoft.co.uk).
 
-This is modern code with generics, for go v1.19+
+```go
+import "github.com/tawesoft/golib/v2/..."
+```
+
+This is free &amp; open source software made available under the
+[MIT Licence](/LICENSE.txt).
+
+Some portions, particularly portions relating to CSS processing and Unicode 
+support, are additionally covered by compatible [MIT-like licences](/LICENSE-PARTS.txt).
+
 
 ## Packages
 
-|       Name       |       /v2        | /v3 | Description                                               |
-|:----------------:|:----------------:|:---:|:----------------------------------------------------------|
-|  css/tokenizer   | [candidate][c01] |  -  | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
-|      dialog      |  [stable][d01]   |  -  | cross-platform message boxes & file pickers               |
-|     digraph      | [unstable][d02]  |  -  | directed graphs (including DAGs)                          |
-|       drop       |       TODO       |  -  | drop process privileges and inherit handles               |
-|    fun/maybe     | [candidate][f01] |  -  | implements a "Maybe" sum type                             |
-|   fun/partial    |  [stable][f02]   |  -  | partial function application                              |
-|    fun/result    | [candidate][f03] |  -  | implements a "Result" sum type                            |
-|    fun/slices    | [candidate][f04] |  -  | higher-order functions (map, flatmap) for slices          |
-|      grace       |       TODO       |  -  | start and gracefully shutdown processes                   |
-|     humanize     |       TODO       |  -  | locale-aware parsing & formatting of times & quantities   |
-|       iter       | [candidate][i01] |  -  | composable (lazy) iteration over sequences                |
-|        ks        | [unstable][k01]  |  -  | "kitchen sink" of misc helpful things                     |
-|      loader      |       TODO       |  -  | concurrent dependency graph solver                        |
-|  meta/opengraph  | [candidate][m01] |  -  | render Open Graph protocol HTML meta tags                 |
-| meta/twittercard | [candidate][m02] |  -  | render Twitter Card HTML meta tags                        |
-|       must       | [candidate][m03] |  -  | assertions                                                |
-|     numbers      | [candidate][n01] |  -  | helpful things for number types                           |
-|     text/ccc     | [candidate][t01] |  -  | Unicode Canonical Combining Class values                  |
-|     text/dm      | [candidate][t02] |  -  | Unicode decomposition mappings & selective decompositions |
-|  text/fallback   | [candidate][t03] |  -  | Unicode Character Fallback Substitutions                  | 
-|    text/fold     | [candidate][t04] |  -  | selectively merge distinctions in Unicode text            |
-|     text/np      | [candidate][t05] |  -  | Unicode numeric properties                                |
-|   text/runeio    | [candidate][t06] |  -  | Unicode streams with lookahead &amp; rewind               |
-|       view       | [candidate][v01] |  -  | dynamic views over collections                            |
-
-TODO: move meta to html/meta
+|           Name           |  Stable   |  Latest   | Description                                               |
+|:------------------------:|:---------:|:---------:|:----------------------------------------------------------|
+|      css/tokenizer       |     -     | [v2][c01] | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
+|          dialog          | [v2][d01] |     -     | cross-platform message boxes & file pickers               |
+|         digraph          |     -     | [v2][d02] | *(unstable)* directed graphs (including DAGs)             |
+|           drop           |     -     |     -     | *(TODO)* drop process privileges and inherit handles      |
+|        fun/maybe         | [v2][f01] |     -     | "Maybe" sum type                                          |
+|       fun/partial        | [v2][f02] |     -     | partial function application                              |
+|        fun/result        | [v2][f03] |     -     | "Result" sum type                                         |
+|        fun/slices        | [v2][f04] |     -     | higher-order functions for slices                         |
+|          grace           |     -     |     -     | *(TODO)* start and gracefully shutdown processes          |
+|         humanize         |     -     |     -     | *(TODO)* locale-aware numbers &amp; quantities            |
+|           iter           | [v2][i01] |     -     | composable lazy iteration                                 |
+|            ks            |     -     | [v2][k01] | *(unstable)* "kitchen sink" of extras                     |
+|          loader          |     -     |     -     | *(TODO)* concurrent dependency graph solver               |
+|   html/meta/opengraph    | [v2][m01] |     -     | HTML meta tags for Facebook's Open Graph protocol         |
+|  html/meta/twittercard   | [v2][m02] |     -     | HTML meta tags for Twitter Cards                          |
+|           must           | [v2][m03] |     -     | assertions                                                |
+|         operator         | [v2][o01] |     -     | operators as functions                                    |
+| operator/checked/integer | [v2][o02] |     -     | integer operators with overflow checking                  |
+|         text/ccc         |     -     | [v2][t01] | Unicode Canonical Combining Class values                  |
+|         text/dm          |     -     | [v2][t02] | Unicode decomposition mappings & selective decompositions |
+|      text/fallback       |     -     | [v2][t03] | Unicode Character Fallback Substitutions                  | 
+|        text/fold         |     -     | [v2][t04] | Unicode text folding                                      |
+|         text/np          |     -     | [v2][t05] | Unicode numeric properties                                |
+|       text/runeio        |     -     | [v2][t06] | *(unstable)* Unicode streams with lookahead &amp; rewind  |
+|           view           | [v2][v01] |     -     | dynamic views over collections                            |
 
 [css1]: https://www.w3.org/TR/css-syntax-3/
 [c01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/css/tokenizer
@@ -52,7 +60,8 @@ TODO: move meta to html/meta
 [m01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/meta/opengraph
 [m02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/meta/twittercard
 [m03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
-[n01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/numbers
+[o01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/operator
+[o02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/operator/checked/integer
 [t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
 [t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
 [t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
@@ -64,12 +73,10 @@ TODO: move meta to html/meta
 **Note:** Additional v2/legacy packages exist for users migrating from
 `tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).
 
-**Note:** Packages have the
+**Note:** "Stable" packages have the
 [normal stability guarantees](https://go.dev/doc/modules/version-numbers)
-expected for a Go package of v2 or higher, except where marked 
-"partial", "candidate", or "unstable". See 
-[MIGRATIONS.md](/MIGRATIONS.md) 
-for the meaning of other terms. 
+expected for a Go package of v2 or higher. "Latest" packages, or
+"Latest *(unstable)*" packages do not. See [MIGRATIONS.md](/MIGRATIONS.md). 
 
 ## Support
 

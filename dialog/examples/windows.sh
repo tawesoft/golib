@@ -3,7 +3,7 @@ set -e
 if [ $# -eq 0 ]
 then
     echo "Builds an example for windows and runs using wine"
-    echo "Usage: $0 EXAMPLE"
+    echo "Usage: $0 DIRECTORY"
     exit 0
 fi
 

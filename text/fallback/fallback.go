@@ -30,8 +30,8 @@ import (
     "unicode/utf8"
 
     lazy "github.com/tawesoft/golib/v2/iter"
-    "github.com/tawesoft/golib/v2/ks"
-    "github.com/tawesoft/golib/v2/numbers"
+    "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator/checked/integer"
     "github.com/tawesoft/golib/v2/text/ccc"
     "golang.org/x/text/unicode/norm"
 )
@@ -171,7 +171,7 @@ func combinations(segVariants []string) (lazy.It[string], error) {
     }
     var nCombinations = 1
     for i := 0; i < nSegments; i++ {
-        n, ok := numbers.Int.CheckedMul(nCombinations, nVariants[i])
+        n, ok := integer.Int.Mul(nCombinations, nVariants[i])
         if !ok { return nil, fmt.Errorf("too many combinations") }
         nCombinations = n
     }
@@ -250,7 +250,7 @@ func equivalent_r(sb *strings.Builder, in string) {
     // a: Use the set of characters whose decomposition begins with the
     // segment's starter.
     r, _ := utf8.DecodeRuneInString(in)
-    ks.Assert(r != utf8.RuneError)
+    must.Not(r == utf8.RuneError)
     ds := dstarts(r)
 
     // b: For each character in this set

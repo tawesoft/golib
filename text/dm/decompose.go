@@ -19,7 +19,7 @@ import (
     "sort"
     "unicode/utf8"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
     "github.com/tawesoft/golib/v2/text/ccc"
     "golang.org/x/text/transform"
 )
@@ -83,7 +83,7 @@ func (t Type) String() string {
         case Vertical:  return "Vertical"
         case Wide:      return "Wide"
     }
-    ks.Never()
+    must.Never()
     return ""
 }
 

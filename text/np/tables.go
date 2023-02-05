@@ -4,7 +4,7 @@ import (
     _ "embed"
     "sort"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 // npBin contains packed Unicode data (not worth gziping) containing
@@ -40,10 +40,10 @@ func getspan(x rune) span {
         return int(x) <= int(s.codepoint) + (s.length - 1)
     })
 
-    if (i == n) { return ks.Zero[span]() }
+    if (i == n) { return operator.Zero[span]() }
     s := spans[i]
     if (x < s.codepoint) || (int(x) >= int(s.codepoint) + s.length) {
-        return ks.Zero[span]()
+        return operator.Zero[span]()
     }
 
     return s

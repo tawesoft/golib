@@ -1,26 +1,10 @@
 package ks_test
 
 import (
-    "fmt"
     "testing"
 
     "github.com/tawesoft/golib/v2/ks"
 )
-
-func ExampleZero() {
-
-    type thing struct {
-        number int
-        phrase string
-    }
-
-    fmt.Printf("The zero value is %+v\n", ks.Zero[thing]())
-    fmt.Printf("The zero value is %+v\n", ks.Zero[int32]())
-
-    // Output:
-    // The zero value is {number:0 phrase:}
-    // The zero value is 0
-}
 
 func TestWordWrap(t *testing.T) {
     var tests = [][3]interface{}{

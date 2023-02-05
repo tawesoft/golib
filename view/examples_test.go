@@ -4,6 +4,7 @@ import (
     "fmt"
     "net/url"
     "path"
+    "sort"
 
     "github.com/acarl005/stripansi"
     "github.com/tawesoft/golib/v2/view"
@@ -35,22 +36,20 @@ func UntrustedString(x string) Untrusted {
 func Example_urlQuery() {
 
     // Assume an input URL query from an intrusted source
-    v := url.Values{} // map[string][]string
-    v.Set("name", "Ava")
-    v.Add("friend", "Jess")
-    v.Add("friend", "Sarah")
-    v.Add("friend", "Zoe")
-    v.Add("filename", "../index.html") // malicious input
-    v.Add("fbclid", "nonsense we don't care about")
-    // v.Encode() == ...
+    args := url.Values{} // map[string][]string
+    args.Set("name", "Ava")
+    args.Add("friend", "Jess")
+    args.Add("friend", "Sarah")
+    args.Add("friend", "Zoe")
+    args.Add("filename", "../index.html") // malicious input
+    args.Add("fbclid", "nonsense we don't care about")
+    // args.Encode() == ...
 
+    recognisedKeys := []string{"name", "friend", "filename"}
+    sort.Strings(recognisedKeys)
     onlyRecognised := func(k string, _ []string) bool {
-        switch k {
-            case "name": return true
-            case "friend": return true
-            case "filename": return true
-        }
-        return false
+        i := sort.SearchStrings(recognisedKeys, k)
+        return (i < len(recognisedKeys)) && (recognisedKeys[i] == k)
     }
 
     // Construct a view that can read keys and values from the input query,
@@ -59,21 +58,16 @@ func Example_urlQuery() {
     //
     // Like the url.Values.Get method, returns only the first value associated
     // with the given key.
-    taintedValues := view.FromMap[string, []string, Untrusted, Untrusted](
-        v,
-        onlyRecognised,
-        view.Keyer[string, Untrusted]{
-            To: func (k string) Untrusted { return UntrustedString(k) },
-            From: func(k Untrusted) string { return k.Raw() },
+    taintedValues := view.Map[string, []string, Untrusted, Untrusted]{
+        Filterer:  onlyRecognised,
+        ToKey:     func (k string) Untrusted { return UntrustedString(k) },
+        FromKey:   func(k Untrusted) string { return k.Raw() },
+        ToValue:   func(x []string) Untrusted {
+            if len(x) >= 1 { return UntrustedString(x[0]) }
+            return Untrusted{}
         },
-        view.Valuer[[]string, Untrusted]{
-            To: func(x []string) Untrusted {
-                if len(x) >= 1 { return UntrustedString(x[0]) }
-                return Untrusted{}
-            },
-            // From: omitted as we don't need to map a value back
-        },
-    )
+        FromValue: nil, // omitted as we don't need to map a value back
+    }.Bind(args)
 
     if name, ok := taintedValues.Get(UntrustedString("name")); ok {
         fmt.Printf("Hi %s!\n", name.Escape(stripansi.Strip))

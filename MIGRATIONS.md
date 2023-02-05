@@ -7,38 +7,32 @@ and how to transition.
 
 Packages in this project generally have
 [normal stability guarantees](https://go.dev/doc/modules/version-numbers) (for
-a project of v2+).
+a project of v2+) if they are listed under "stable" in the README table.
 
-However, we further mark each individual package with a stability rating to
-manage expectations. Packages marked as "partial", "candidate" or "unstable" 
-do not have the normal stability guarantees. Instead, they have the guarantees
-described in the following table.
+However, packages listed under "latest" do not have the normal stability
+guarantees. Instead, they have the guarantees described in the following table.
 
-| Stability | Meaning                                                                                                                  |
-|:---------:|--------------------------------------------------------------------------------------------------------------------------|
-|  Frozen   | There will be no breaking changes to this package. There will be no new versions.                                        |
-|  Normal   | There will be no breaking changes to this package, except between major versions.                                        |
-|  Partial  | As "normal", with a documented exception for individual parts.                                                           |
-| Candidate | Small breaking changes to this package are possible, even between minor versions.                                        |
-| Unstable  | Large breaking changes to this package are likely, even between minor versions, and may not have migration instructions. |
+|      Stability      | Meaning                                                                                                                          |
+|:-------------------:|----------------------------------------------------------------------------------------------------------------------------------|
+|       Stable        | There will be no breaking changes to this package, except between major versions.                                                |
+|       Latest        | Small breaking changes to this package are possible, even between minor versions. They will usually have migration instructions. |
+| Latest *(unstable)* | Large breaking changes to this package are likely, even between minor versions, and may not have migration instructions.         |
 
-Security fixes may not always be backwards compatible, even between minor 
-versions.
-
-Downstream module authors should avoid using a candidate package
-in a stable release of their module, particularly in their public API. 
-Candidate packages are appropriate for "release candidate" pre-release 
-versions of modules, development versions of modules, and `main()` programs. 
-Alternatively, please vendor the package as a temporary measure.
+Security fixes may cause breaking changes if necessary, even across 
+minor version changes.
 
 
 ## Updating `github.com/tawesoft/golib`
 
-### Migrating v2.1 → v2.2
+### Migrating v2.0 → v2.7
 
-* `fun/maybe` and `fun/result` packages have been redone
+Fewer breaking changes are expected after this point.
 
-
+* `meta` packages have been moved to `html/meta`
+* `fun/maybe`, `fun/result`, and `view` packages have been redone
+* `numbers` package removed with much implemented by the new `operator` package
+* some functions removed from `fun/result`, `iter`, `ks` packages
+* some functions removed from `ks` to `operator`
 
 ## Migrating from `tawesoft.co.uk/go`
 
@@ -104,9 +98,9 @@ in v3. It will always be available at the v2 import path.
 This `golib/v2/legacy/operator` package is frozen and will not appear 
 in v3. It will always be available at the v2 import path.
 
-### (Optional) migrate operator → **goblib/v2/number:**
+### (Optional) migrate operator → **goblib/v2/operator:**
 
-Package `goblib/v2/number` provides similar features to the old
+Package `goblib/v2/operator` provides similar features to the old
 `tawesoft.co.uk/go/operator` package. It uses generics and will be maintained
 going forward. It's fairly easy to migrate existing code to use the new golib 
 package.
@@ -115,7 +109,8 @@ package.
 
 ```diff
 - import "tawesoft.co.uk/go/operator"
-+ import "github.com/tawesoft/golib/v2/numbers"
++ import "github.com/tawesoft/golib/v2/operator"
++ import "github.com/tawesoft/golib/v2/operator/checked/integer"
 ```
 
 #### Rewrite checked code
@@ -125,35 +120,28 @@ the return value logic is inverted:
 
 ```diff
 - if sum, err := operator.IntChecked.Binary.Add(a, b); err == nil { ...
-+ if sum, ok := numbers.Int.CheckedAdd(a, b); ok { ...
-
-- if sum, err := operator.IntChecked.Nary.AddN(a, b, c, d); err == nil { ...
-+ if sum, ok := numbers.Int.CheckedAddN(a, b, c, d); ok { ...
++ if sum, ok := integer.Int32.Add(a, b); ok { ...
 ```
 
 Or, generically:
 
 ```diff
-func foo[N numbers.Real](a N, b N) N {
-    min := numbers.Min[N]()
-    max := numbers.Min[N]() 
-    sum, ok := numbers.CheckedAddReals(min, max, a, b)
+func foo[N constraints.Integer](a N, b N) N {
+    limits := integer.Limits[N]()
+    sum, ok := limits.Add(a, b)
     ...
 }
 ```
 
 #### Rewrite non-checked code
 
-Remaining code is trivial to update, and types are automatically detected by 
-the Go compiler.
+Remaining code is trivial to update, and types are often automatically 
+detected by the Go compiler.
 
 ```diff
 - operator.Int.Binary.Add(2, 3) // 5
-+ numbers.Add(2, 5) // 5
++ operator.Add(2, 5) // 5
 
 - reduce(operator.Int.Binary.Add, []int{1, 2, 3})
-+ reduce(numbers.Add, []int{1, 2, 3})
-
-- sum := operator.Int.Nary.Add([]int{1, 2, 3}...)
-+ sum := numbers.AddN([]int{1, 2, 3}...)
++ reduce(operator.Add[int], []int{1, 2, 3})
 ```

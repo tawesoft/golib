@@ -18,8 +18,9 @@ import (
     "strconv"
     "strings"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/internal/legacy"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 type Char struct {
@@ -99,7 +100,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(legacy.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -116,19 +117,19 @@ func main() {
                 case xml.StartElement:
                     switch ty.Name.Local {
                         case "repertoire":
-                            if inRepertoire { ks.Never() }
+                            if inRepertoire { must.Never() }
                             inRepertoire = true
                         case "group":
                             if !inRepertoire { break }
-                            if inGroup { ks.Never() }
+                            if inGroup { must.Never() }
                             inGroup = true
-                            group = CharFromAttrs(ty.Attr, ks.Zero[Char]())
+                            group = CharFromAttrs(ty.Attr, operator.Zero[Char]())
                         case "char":
                             if !inRepertoire { break }
-                            if !inGroup { ks.Never() }
+                            if !inGroup { must.Never() }
                             c := CharFromAttrs(ty.Attr, group)
                             if c.DecompositionType() == 0 { break }
-                            if c.IsRange() { ks.Never() }
+                            if c.IsRange() { must.Never() }
                             chars = append(chars, c)
                     }
                 case xml.EndElement:
@@ -146,7 +147,7 @@ func main() {
         return nil
     }))
 
-    ks.Assert(sort.SliceIsSorted(chars, func(i int, j int) bool {
+    must.True(sort.SliceIsSorted(chars, func(i int, j int) bool {
         return chars[i].codepoint < chars[j].codepoint
     }))
 
@@ -197,7 +198,7 @@ func dstartsEncode(dest io.Writer, keys []rune, mapping map[rune][]rune) {
 
     for _, k := range keys {
         values := mapping[k]
-        ks.Assert(sort.SliceIsSorted(values, func(i int, j int) bool {
+        must.True(sort.SliceIsSorted(values, func(i int, j int) bool {
             return values[i] < values[j]
         }))
 
@@ -226,7 +227,7 @@ func dstartsEncode(dest io.Writer, keys []rune, mapping map[rune][]rune) {
         dest.Write(encode(mapping[k]))
     }
 
-    ks.Assert(offset < 65536)
+    must.True(offset < 65536)
     fmt.Printf("max offset %d\n", offset)
     fmt.Printf("last key: 0x%x\n", keys[len(keys)-1])
 }

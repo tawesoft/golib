@@ -17,14 +17,13 @@ fixes to any downstream consumer of this repository who can provide evidence
 that any security issues would have a particularly high impact on their 
 services, such as operators of a service that processes personal data or is 
 used by a large volume of users. Email us with the subject
-"join golib security-preannounce list" for details.
+"join security-preannounce list" for details.
 
 
 ## Backporting fixes
 
-Applicable security fixes will always be backported to all legacy and stable
-packages, where possible. Fixes will be backported to candidate and unstable
-packages on a case-by-case basis.
+Applicable security fixes will always be backported to all packages, where
+possible.
 
 Security fixes may break backwards compatibility, even between minor versions,
 if necessary.
@@ -50,8 +49,8 @@ For example:
 `vulnerability: github.com/example/repo - denial of service in foo/bar`
 
 If you don't receive an acknowledgement within 48 hours, please contact us
-through any contact method listed on the Tawesoft website.
+through any contact method listed on the
+[Tawesoft website](https://www.tawesoft.co.uk/).
 
 If, after being notified, we have not fixed or disclosed a vulnerability after
 90 days, then you may exercise your right to disclose it publicly.
-

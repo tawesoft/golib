@@ -10,7 +10,8 @@ import (
     "sort"
     "unicode/utf8"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
     "golang.org/x/text/transform"
 )
 
@@ -90,7 +91,7 @@ func getRange(c rune) (cccRange, bool) {
     })
 
     if !found {
-        return ks.Zero[cccRange](), false
+        return operator.Zero[cccRange](), false
     }
 
     return cccs[i], true
@@ -256,7 +257,7 @@ func (o orderer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err err
         if (seenNonStarters == 0) && (cap(dst) - nDst < (maxSeenNonStarters + 2) * 4) {
             return nDst, nSrc, transform.ErrShortDst
         }
-        ks.Assert(cap(runes) <= maxSeenNonStarters) // should be static
+        must.True(cap(runes) <= maxSeenNonStarters) // should be static
 
         r, rZ := utf8.DecodeRune(src[nSrc:])
         if r == utf8.RuneError {

@@ -21,27 +21,45 @@ func Result[T any](t T, err error) T {
 
 // Ok accepts a (value, ok) tuple as input and panics if ok is false, otherwise
 // returns value.
-func Ok[T any](t T, ok bool) T {
+//
+// The args parameter defines an optional fmt.Sprintf-style format string and
+// arguments. If specified, the first argument must be a string.
+func Ok[T any](t T, ok bool, args ... interface{}) T {
     if ok { return t }
-    panic(fmt.Errorf("error in must.Ok[%T]: not ok", t))
+    panic(errorf(fmt.Sprintf("error in must.Ok[%T]: not ok", t), args...))
 }
 
-// Equal panics unless the provided comparable values are equal.
-func Equal[T comparable](a T, b T) {
-    if a == b { return }
-    panic(errorf("error in must.Equal[%T]: %v != %v", a, b, a))
+// Equal panics if the provided comparable values are not equal.
+//
+// Otherwise, returns true.
+//
+// The args parameter defines an optional fmt.Sprintf-style format string and
+// arguments. If specified, the first argument must be a string.
+func Equal[T comparable](a T, b T, args ... interface{}) bool {
+    if a == b { return true }
+    panic(errorf(fmt.Sprintf("error in must.Equal[%T]: %v != %v", a, b, a), args...))
 }
 
-// True panics if the provided boolean is false.
-func True(q bool) {
-    if q { return }
-    panic(errorf("error in must.True: not true"))
+// True panics if the provided boolean is not true.
+//
+// Otherwise, it passes the input value back unchanged.
+//
+// The args parameter defines an optional fmt.Sprintf-style format string and
+// arguments. If specified, the first argument must be a string.
+func True(q bool, args ... interface{}) bool {
+    if q { return q }
+    panic(errorf("error in must.True: not true", args...))
 }
 
-// False panics if the provided boolean is true.
-func False(q bool) {
-    if !q { return }
-    panic(errorf("error in must.False: not false"))
+// Not panics if the provided boolean is not false.
+//
+// Otherwise, it passes the input value back unchanged.
+//
+// The args parameter defines an optional fmt.Sprintf-style format string and
+// arguments. If specified, the first argument must be a string.
+func Not(q bool, args ... interface{}) bool {
+    if !q { return q }
+    panic(errorf("error in must.False: not false", args...))
 }
 
 // Check panics if the error is not nil. Otherwise, it returns a nil error (so
@@ -49,6 +67,14 @@ func False(q bool) {
 func Check(err error) error {
     if err == nil { return nil }
     panic(fmt.Errorf("must.Check: unexpected error: %w", err))
+}
+
+// CheckAll panics at the first non-nil error.
+func CheckAll(errs ... error) {
+    for _, err := range errs {
+        if err == nil { continue }
+        panic(fmt.Errorf("must.CheckAll: unexpected error: %w", err))
+    }
 }
 
 // CatchFunc takes a function f() => x that may panic, and instead returns a
@@ -83,7 +109,7 @@ func Func[X any](
 // called.
 //
 // The args parameter defines an optional fmt.Sprintf-style format string and
-// arguments.
+// arguments. If specified, the first argument must be a string.
 func Never(args ... interface{}) {
     panic(errorf("must.Never: this should never happen", args...))
 }

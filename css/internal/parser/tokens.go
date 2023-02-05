@@ -4,6 +4,7 @@ import (
     "strings"
 
     "github.com/tawesoft/golib/v2/css/tokenizer/token"
+    "github.com/tawesoft/golib/v2/must"
 )
 
 // Helpful functions for parsing tokens into the <an+b> type
@@ -21,10 +22,27 @@ func eachRune(xs string, pred func(x rune) bool) bool {
     return true
 }
 
-// IsNDimensionToken returns true for a token that is a <n-dimension>: a
+func mirror(x token.Token) token.Token {
+    switch {
+        case x.Is(token.TypeLeftParen):         return token.RightParen()
+        case x.Is(token.TypeLeftCurlyBracket):  return token.RightCurlyBracket()
+        case x.Is(token.TypeLeftSquareBracket): return token.RightSquareBracket()
+    }
+    must.Never("invalid mirror")
+    return token.Token{}
+}
+
+// TokenIsBlockStart returns true for a <(-token>, <{-token> or <[-token>.
+func TokenIsBlockStart(t token.Token) bool {
+    return t.Is(token.TypeLeftParen) ||
+        t.Is(token.TypeLeftCurlyBracket) ||
+        t.Is(token.TypeLeftSquareBracket)
+}
+
+// TokenIsNDimension returns true for a token that is a <n-dimension>: a
 // <dimension-token> with its type flag set to "integer", and a unit that is an
 // ASCII case-insensitive match for "n".
-func IsNDimensionToken(t token.Token) bool {
+func TokenIsNDimension(t token.Token) bool {
     nt, _ := t.NumericValue()
     return true &&
         t.Is(token.TypeDimension) &&
@@ -32,11 +50,11 @@ func IsNDimensionToken(t token.Token) bool {
         strings.EqualFold(t.Unit(), "n")
 }
 
-// IsNdashdigitDimensionToken returns true for a token that is a
+// TokenIsNdashdigitDimension returns true for a token that is a
 // <ndashdigit-dimension>: a <dimension-token> with its type flag set to
 // "integer", and a unit that is an ASCII case-insensitive match for "n-*",
 // where "*" is a series of one or more digits.
-func IsNdashdigitDimensionToken(t token.Token) bool {
+func TokenIsNdashdigitDimension(t token.Token) bool {
     nt, _ := t.NumericValue()
     unit := t.Unit()
     return true &&
@@ -47,11 +65,11 @@ func IsNdashdigitDimensionToken(t token.Token) bool {
         eachRune(unit[2:], runeIsDigit)
 }
 
-// IsNdashdigitIdentToken returns true for a token that is a
+// TokenIsNdashdigitIdent returns true for a token that is a
 // <ndashdigit-ident>: an <ident-token> whose value is an ASCII
 // case-insensitive match for "n-*", where "*" is a series of one or more
 // digits.
-func IsNdashdigitIdentToken(t token.Token) bool {
+func TokenIsNdashdigitIdent(t token.Token) bool {
     value := t.StringValue()
     return true &&
         t.Is(token.TypeIdent) &&
@@ -60,11 +78,11 @@ func IsNdashdigitIdentToken(t token.Token) bool {
         eachRune(value[2:], runeIsDigit)
 }
 
-// IsDashndashdigitIdentToken returns true for a token that is a
+// TokenIsDashndashdigitIdent returns true for a token that is a
 // <dashndashdigit-ident>: an <ident-token> whose value is an ASCII
 // case-insensitive match for "-n-*", where "*" is a series of one or more
 // digits.
-func IsDashndashdigitIdentToken(t token.Token) bool {
+func TokenIsDashndashdigitIdent(t token.Token) bool {
     value := t.StringValue()
     return true &&
         t.Is(token.TypeIdent) &&
@@ -73,19 +91,19 @@ func IsDashndashdigitIdentToken(t token.Token) bool {
         eachRune(value[3:], runeIsDigit)
 }
 
-// IsIntegerToken returns true for a token that is an <integer>: a
+// TokenIsInteger returns true for a token that is an <integer>: a
 // <number-token> with its type flag set to "integer".
-func IsIntegerToken(t token.Token) bool {
+func TokenIsInteger(t token.Token) bool {
     nt, _ := t.NumericValue()
     return true &&
         t.Is(token.TypeNumber) &&
         nt == token.NumberTypeInteger
 }
 
-// IsSignedIntegerToken returns true for a token that is a <signed-integer>: a
+// TokenIsSignedInteger returns true for a token that is a <signed-integer>: a
 // <number-token> with its type flag set to "integer", and whose representation
 // starts with "+" or "-".
-func IsSignedIntegerToken(t token.Token) bool {
+func TokenIsSignedInteger(t token.Token) bool {
     nt, _ := t.NumericValue()
     repr := t.Repr()
     return true &&
@@ -95,10 +113,10 @@ func IsSignedIntegerToken(t token.Token) bool {
         (repr[0] == '+') || (repr[0] == '-')
 }
 
-// IsSignlessIntegerToken returns true fora token that is a <signless-integer>
-// is a <number-token> with its type flag set to "integer", and whose
-// representation starts with a digit.
-func IsSignlessIntegerToken(t token.Token) bool {
+// TokenIsSignlessInteger returns true for a token that is a
+// <signless-integer>: a <number-token> with its type flag set to "integer",
+// and whose representation starts with a digit.
+func TokenIsSignlessInteger(t token.Token) bool {
     nt, _ := t.NumericValue()
     repr := t.Repr()
     return true &&

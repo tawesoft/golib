@@ -69,27 +69,6 @@ func ExampleFunc() {
     // First four integers are: [0 1 2 3]
 }
 
-func ExampleJoin_average() {
-
-    // produce numbers from 1 to 1000
-    lotsOfNumbers := lazy.Take(999, lazy.Counter(1, 1))
-    result := lazy.Join(lazy.AverageJoiner[int](), lotsOfNumbers)
-    fmt.Printf("%.1f\n", result)
-
-    // Output:
-    // 500.0
-}
-
-func ExampleJoin_strings() {
-
-    inputs := lazy.FromSlice([]string{"one", "two", "three"})
-    result := lazy.Join(lazy.StringJoiner(", "), inputs)
-    fmt.Println(result)
-
-    // Output:
-    // one, two, three
-}
-
 func ExampleMap() {
     numbersAsStrings := lazy.FromSlice([]string{"1", "2", "3", "4"})
 

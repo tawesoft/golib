@@ -6,7 +6,6 @@ import (
     "encoding/binary"
     "sort"
 
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/must"
 )
 
@@ -44,7 +43,7 @@ func dstarts(x rune) []byte {
     if i + 1 < n {
         // length is found by subtracting offset of next item
         z = int(dsis[i + 1].cpsi) - int(dsis[i].cpsi)
-        ks.Assert(z > 0)
+        must.True(z > 0)
     } else {
         // length is found relative to end
         z = len(cps) - int(dsis[i].cpsi)

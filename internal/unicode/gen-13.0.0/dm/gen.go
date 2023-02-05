@@ -20,8 +20,9 @@ import (
     "strconv"
     "strings"
 
-    "github.com/tawesoft/golib/v2/ks"
+    "github.com/tawesoft/golib/v2/internal/legacy"
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
 )
 
 type Char struct {
@@ -46,10 +47,10 @@ func (c Char) Pack() uint64 {
     dmi := c.Offset
     dml := len(c.DecompositionMappings())
 
-    ks.Assert(dt     <=     0x1F)
-    ks.Assert(dml    <=     0x1F)
-    ks.Assert(dmi    <=   0xFFFF)
-    ks.Assert(cp     <= 0x1FFFFF)
+    must.True(dt     <=     0x1F)
+    must.True(dml    <=     0x1F)
+    must.True(dmi    <=   0xFFFF)
+    must.True(cp     <= 0x1FFFFF)
 
     var x uint64
     x |= (uint64(cp)  & 0x1FFFFF)
@@ -163,7 +164,7 @@ func (c Char) DecompositionType() DT {
         case "wide": return DTWide
         default:
             fmt.Println(c.decompositionType)
-            ks.Never()
+            must.Never()
     }
 
     return DTNone
@@ -180,7 +181,7 @@ func main() {
 
     chars := make([]Char, 0)
 
-    must.Check(ks.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
+    must.Check(legacy.WithCloser(opener("ucd.nounihan.grouped.xml"), func(f io.ReadCloser) error {
         d := xml.NewDecoder(bufio.NewReaderSize(f, 64 * 1024))
         var group Char
         var inRepertoire, inGroup bool
@@ -197,19 +198,19 @@ func main() {
                 case xml.StartElement:
                     switch ty.Name.Local {
                         case "repertoire":
-                            if inRepertoire { ks.Never() }
+                            if inRepertoire { must.Never() }
                             inRepertoire = true
                         case "group":
                             if !inRepertoire { break }
-                            if inGroup { ks.Never() }
+                            if inGroup { must.Never() }
                             inGroup = true
-                            group = CharFromAttrs(ty.Attr, ks.Zero[Char]())
+                            group = CharFromAttrs(ty.Attr, operator.Zero[Char]())
                         case "char":
                             if !inRepertoire { break }
-                            if !inGroup { ks.Never() }
+                            if !inGroup { must.Never() }
                             c := CharFromAttrs(ty.Attr, group)
                             if c.DecompositionType() == 0 { break }
-                            if c.IsRange() { ks.Never() }
+                            if c.IsRange() { must.Never() }
                             chars = append(chars, c)
                     }
                 case xml.EndElement:
@@ -227,7 +228,7 @@ func main() {
         return nil
     }))
 
-    ks.Assert(sort.SliceIsSorted(chars, func(i int, j int) bool {
+    must.True(sort.SliceIsSorted(chars, func(i int, j int) bool {
         return chars[i].codepoint < chars[j].codepoint
     }))
 

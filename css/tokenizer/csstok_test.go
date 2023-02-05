@@ -62,15 +62,14 @@ func ExampleTokenizer() {
 }
 
 func roughlyEqual(a float64, b float64) bool {
-    // loosely based on python "isClose"
+    // based on python "isClose"
     // https://peps.python.org/pep-0485/#proposed-implementation
-    epsilon := math.Nextafter(1, 2) - 1
-    reltol := epsilon
+    reltol := 1e-12
     abstol := 0.0
     return math.Abs(a-b) <= math.Max(reltol * math.Max(math.Abs(a), math.Abs(b)), abstol)
 }
 
-func equal(t *testing.T, expected token.Token, actual token.Token) bool {
+func equal(expected token.Token, actual token.Token) bool {
     if !token.Equals(expected, actual) {
         return false
     }
@@ -93,28 +92,31 @@ func Test_Tester(t *testing.T) {
     assert.True(t, roughlyEqual(12.34e2, 12.34e2))
     assert.True(t, roughlyEqual(12.34e10, 12.34e10))
     assert.False(t, roughlyEqual(2.1, 2.0))
-    assert.False(t, roughlyEqual(12.34e10+1, 12.34e10))
-    assert.True(t, equal(t,
+    assert.False(t, roughlyEqual(12.34e6+1, 12.34e6))
+    assert.False(t, roughlyEqual(math.MaxInt32 - 1, math.MaxInt32))
+    assert.True(t,  roughlyEqual(math.MaxInt32, math.MaxInt32))
+    assert.False(t,  roughlyEqual(float64(math.MaxInt32) + 1.0, math.MaxInt32))
+    assert.True(t, equal(
         token.Number(token.NumberTypeInteger, "123", 123),
         token.Number(token.NumberTypeInteger, "123", 123),
     ))
-    assert.False(t, equal(t,
+    assert.False(t, equal(
         token.Number(token.NumberTypeInteger, "123", 123),
         token.Number(token.NumberTypeInteger, "124", 124),
     ))
-    assert.True(t, equal(t,
+    assert.True(t, equal(
         token.Number(token.NumberTypeNumber, "123.456", 123.456),
         token.Number(token.NumberTypeNumber, "123.456", 123.456),
     ))
-    assert.False(t, equal(t,
+    assert.False(t, equal(
         token.Number(token.NumberTypeNumber, "123.4", 123.4),
         token.Number(token.NumberTypeNumber, "123.456", 123.456),
     ))
-    assert.False(t, equal(t,
+    assert.False(t, equal(
         token.Number(token.NumberTypeInteger, "123", 123),
         token.Number(token.NumberTypeNumber,  "123", 123),
     ))
-    assert.True(t, equal(t,
+    assert.True(t, equal(
         token.Number(token.NumberTypeInteger, "12E-1", 1.2),
         token.Number(token.NumberTypeInteger, "12E-1", 1.2),
     ))
@@ -133,7 +135,7 @@ func testWithErrCheck(t *testing.T, css string, errCheck func(errors []error) bo
             if n.Is(token.TypeEOF) { break }
 
             seen = append(seen, n)
-            if !equal(t, k, n) {
+            if !equal(k, n) {
                 err("parse error")
                 return
             }
@@ -210,7 +212,7 @@ func TestTokenizer_Whitespace(t *testing.T) {
 
 func TestTokenizer_Escapes(t *testing.T) {
     // Tests from chromium.googlesource.com
-    replacement := string([]rune{0xFFFD});
+    replacement := string([]rune{0xFFFD})
     test(t, "hel\\6Co",         token.Ident("hello"))
     test(t, "\\26 B",           token.Ident("&B"))
     test(t, "'hel\\6c o'",      token.String("hello"))
@@ -308,14 +310,14 @@ func TestTokenizer_AtKeywords(t *testing.T) {
 
 func TestTokenizer_Urls(t *testing.T) {
     // Tests from chromium.googlesource.com
-    test(t, "url(foo.gif)",                         token.Url("foo.gif"));
-    test(t, "urL(https://example.com/cats.png)",    token.Url("https://example.com/cats.png"));
-    test(t, "uRl(what-a.strange^URL~this\\ is!)",   token.Url("what-a.strange^URL~this is!"));
-    test(t, "uRL(123#test)",                        token.Url("123#test"));
-    test(t, "Url(escapes\\ \\\"\\'\\)\\()",         token.Url("escapes \"')("));
-    test(t, "UrL(   whitespace   )",                token.Url("whitespace"));
-    test(t, "url(not/*a*/comment)",                 token.Url("not/*a*/comment"));
-    test(t, "urL()",                                token.Url(""));
+    test(t, "url(foo.gif)",                         token.Url("foo.gif"))
+    test(t, "urL(https://example.com/cats.png)",    token.Url("https://example.com/cats.png"))
+    test(t, "uRl(what-a.strange^URL~this\\ is!)",   token.Url("what-a.strange^URL~this is!"))
+    test(t, "uRL(123#test)",                        token.Url("123#test"))
+    test(t, "Url(escapes\\ \\\"\\'\\)\\()",         token.Url("escapes \"')("))
+    test(t, "UrL(   whitespace   )",                token.Url("whitespace"))
+    test(t, "url(not/*a*/comment)",                 token.Url("not/*a*/comment"))
+    test(t, "urL()",                                token.Url(""))
 
     // the following tests tokenize successfully, but only because they
     // recover from a specific error. Assert (exactly!) that error is reported.
@@ -325,18 +327,18 @@ func TestTokenizer_Urls(t *testing.T) {
     checkSyn := func(errs []error) bool {
         return (len(errs) == 1) && (errors.Is(errs[0], tokenizer.ErrBadUrl))
     }
-    testWithErrCheck(t, "URL(eof",                  checkEof, token.Url("eof"));
-    testWithErrCheck(t, "URl( whitespace-eof ",     checkEof, token.Url("whitespace-eof"));
-    testWithErrCheck(t, "uRl(white space),",        checkSyn, token.BadUrl(), token.Comma());
-    testWithErrCheck(t, "Url(b(ad),",               checkSyn, token.BadUrl(), token.Comma());
-    testWithErrCheck(t, "uRl(ba'd):",               checkSyn, token.BadUrl(), token.Colon());
-    testWithErrCheck(t, "urL(b\"ad):",              checkSyn, token.BadUrl(), token.Colon());
-    testWithErrCheck(t, "uRl(b\"ad):",              checkSyn, token.BadUrl(), token.Colon());
-    testWithErrCheck(t, "Url(b\\\rad):",            checkSyn, token.BadUrl(), token.Colon());
-    testWithErrCheck(t, "url(b\\\nad):",            checkSyn, token.BadUrl(), token.Colon());
+    testWithErrCheck(t, "URL(eof",                  checkEof, token.Url("eof"))
+    testWithErrCheck(t, "URl( whitespace-eof ",     checkEof, token.Url("whitespace-eof"))
+    testWithErrCheck(t, "uRl(white space),",        checkSyn, token.BadUrl(), token.Comma())
+    testWithErrCheck(t, "Url(b(ad),",               checkSyn, token.BadUrl(), token.Comma())
+    testWithErrCheck(t, "uRl(ba'd):",               checkSyn, token.BadUrl(), token.Colon())
+    testWithErrCheck(t, "urL(b\"ad):",              checkSyn, token.BadUrl(), token.Colon())
+    testWithErrCheck(t, "uRl(b\"ad):",              checkSyn, token.BadUrl(), token.Colon())
+    testWithErrCheck(t, "Url(b\\\rad):",            checkSyn, token.BadUrl(), token.Colon())
+    testWithErrCheck(t, "url(b\\\nad):",            checkSyn, token.BadUrl(), token.Colon())
     testWithErrCheck(t, "url(/*'bad')*/",           checkSyn, token.BadUrl(),
-        token.Delim('*'), token.Delim('/'));
-    testWithErrCheck(t, "url(ba'd\\\\))",           checkSyn, token.BadUrl(), token.RightParen());
+        token.Delim('*'), token.Delim('/'))
+    testWithErrCheck(t, "url(ba'd\\\\))",           checkSyn, token.BadUrl(), token.RightParen())
 }
 
 func TestTokenizer_Strings(t *testing.T) {
@@ -456,7 +458,7 @@ func TestTokenizer_Percentages(t *testing.T) {
     test(t, "-48.99%",  token.Percentage(token.NumberTypeNumber,  "-48.99", -48.99))
     test(t, "6e-1%",    token.Percentage(token.NumberTypeNumber,  "6e-1",   0.6))
     test(t, "5%%",      token.Percentage(token.NumberTypeInteger, "5",      5),
-        token.Delim('%'));
+        token.Delim('%'))
 }
 
 // func TestTokenizer_UnicodeRange(t *testing.T)

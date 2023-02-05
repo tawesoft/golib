@@ -4,7 +4,7 @@ import (
     "os"
     "time"
 
-    "github.com/tawesoft/golib/v2/meta/opengraph"
+    "github.com/tawesoft/golib/v2/html/meta/opengraph"
     "github.com/tawesoft/golib/v2/must"
 )
 

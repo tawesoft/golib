@@ -9,6 +9,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     lazy "github.com/tawesoft/golib/v2/iter"
+    "github.com/tawesoft/golib/v2/operator"
     "golang.org/x/exp/maps"
 )
 
@@ -418,25 +419,6 @@ func TestJoin_string(t *testing.T) {
     assert.Equal(t, "",        lazy.Join(j, lazy.FromSlice([]string(nil))))
 }
 
-func TestJoin_average(t *testing.T) {
-    j := lazy.AverageJoiner[int]() // can be reused
-
-    epsilon := 0.01
-
-    {
-        avg := lazy.Join(j, lazy.FromSlice([]int{2, 4, 6, 8}))
-        assert.InDelta(t, 5.0, avg, epsilon)
-    }
-    {
-        avg := lazy.Join(j, lazy.FromSlice([]int{2}))
-        assert.InDelta(t, 2.0, avg, epsilon)
-    }
-    {
-        avg := lazy.Join(j, lazy.FromSlice([]int{}))
-        assert.InDelta(t, 0.0, avg, epsilon)
-    }
-}
-
 func TestMap(t *testing.T) {
     {
         double := func(a int) int { return a + a }
@@ -532,23 +514,22 @@ func TestPairwiseEnd(t *testing.T) {
 }
 
 func TestReduce(t *testing.T) {
-    mul := func(a int, b int) int { return a * b }
-    multiplier := lazy.Reducer[int]{Reduce: mul, Identity: 1}
+    mul := operator.Mul[int]
     {
-        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{1, 2, 3, 4}))
+        x := lazy.Reduce(1, mul, lazy.FromSlice([]int{1, 2, 3, 4}))
         // 1 * 2 * 3 * 4 = 24
         assert.Equal(t, 24, x)
     }
     {
-        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{4}))
+        x := lazy.Reduce(1, mul, lazy.FromSlice([]int{4}))
         assert.Equal(t, 4, x)
     }
     {
-        x := lazy.Reduce(multiplier, lazy.FromSlice([]int{}))
+        x := lazy.Reduce(1, mul, lazy.FromSlice([]int{}))
         assert.Equal(t, 1, x)
     }
     {
-        x := lazy.Reduce(multiplier, lazy.FromSlice([]int(nil)))
+        x := lazy.Reduce(1, mul, lazy.FromSlice([]int(nil)))
         assert.Equal(t, 1, x)
     }
 }

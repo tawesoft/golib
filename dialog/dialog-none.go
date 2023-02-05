@@ -15,11 +15,11 @@ func supported() (Support, error) {
 }
 
 func (m ColorPicker) pick() (color.Color, bool, nil) {
-    return ks.Zero[color.Color], false, nil
+    return operator.Zero[color.Color](), false, nil
 }
 
 func (m DatePicker) pick(tz *time.Location) (color.Color, bool, nil) {
-    return ks.Zero[color.Color], false, nil
+    return operator.Zero[color.Color](), false, nil
 }
 
 func (m FilePicker) open() (string, bool, error) {
