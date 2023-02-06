@@ -4,8 +4,27 @@ import (
     "math"
     "testing"
 
+    "github.com/stretchr/testify/assert"
     "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "github.com/tawesoft/golib/v2/tuple"
 )
+
+func TestAdd(t *testing.T) {
+    assert.Equal(t, tuple.ToT2(7,       true),  tuple.ToT2(integer.Int.Add(3, 4)))
+    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(integer.Int8.Add(127, 1)))
+    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(integer.Int8.Add(-128, -1)))
+}
+
+func TestSub(t *testing.T) {
+    assert.Equal(t, tuple.ToT2(7,        true),  tuple.ToT2(integer.Int.Sub(13, 6)))
+    assert.Equal(t, tuple.ToT2(uint8(0), false), tuple.ToT2(integer.Uint8.Sub(0, 1)))
+    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(integer.Int8.Sub(-128, 1)))
+}
+
+func TestMul(t *testing.T) {
+    assert.Equal(t, tuple.ToT2(27,        true),  tuple.ToT2(integer.Int.Mul(3, 9)))
+    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(integer.Int8.Mul(64, 3)))
+}
 
 func FuzzAdd_Int32(f *testing.F) {
     type row struct {

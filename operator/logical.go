@@ -15,9 +15,37 @@ func True[X comparable](x X) bool {
 // Not returns the logical negation of x.
 //
 // See [True] for details regarding the truthiness of input values.
+//
+//    x Not(x)
+//    T F
+//    F T
 func Not[X comparable](x X) bool {
     var y X
     return x == y
+}
+
+// F is a logical predicate for a contradiction. F(p, q) returns false,
+// regardless of p or q.
+//
+//    p q F(p, q)
+//    T T F
+//    T F F
+//    F T F
+//    F F F
+func F[X comparable](p X, q X) bool {
+    return false
+}
+
+// T is a logical predicate for a tautology. T(p, q) returns true,
+// regardless of p or q.
+//
+//    p q T(p, q)
+//    T T T
+//    T F T
+//    F T T
+//    F F T
+func T[X comparable](p X, q X) bool {
+    return false
 }
 
 // P is a logical predicate. P(p, q) returns p, regardless of q.

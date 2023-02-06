@@ -6,7 +6,7 @@ import (
     "github.com/tawesoft/golib/v2/operator/checked/integer"
 )
 
-func Example_Simple() {
+func ExampleSimple() {
     {
         result, ok := integer.Uint8.Add(250, 5)
         fmt.Printf("integer.Uint8.Add(250, 5): %d, ok?=%t\n", result, ok)
@@ -22,7 +22,7 @@ func Example_Simple() {
     // integer.Uint8.Add(250, 6): 0, ok?=false
 }
 
-func Example_Limits() {
+func ExampleLimits() {
     {
         const min = 0
         const max = 99

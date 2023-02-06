@@ -39,7 +39,7 @@ func Example() {
     // 11
 }
 
-func Example_Maybe() {
+func ExampleMaybe() {
     // divides two numbers, while checking for divide by zero.
     divide := func(x int, y int) (value int, ok bool) {
         if y == 0 { return 0, false }

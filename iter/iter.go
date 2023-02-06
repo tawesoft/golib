@@ -9,7 +9,6 @@ import (
     "strings"
     "unicode/utf8"
 
-    "github.com/tawesoft/golib/v2/ks"
     "github.com/tawesoft/golib/v2/operator"
     "github.com/tawesoft/golib/v2/operator/checked/integer"
     "golang.org/x/exp/constraints"
@@ -18,7 +17,10 @@ import (
 
 // Pair is any Key, Value pair. Type K is any type that would be suitable as a
 // KeyType in a map collection.
-type Pair[K comparable, V any] ks.Item[K, V]
+type Pair[K comparable, V any] struct {
+    Key   K
+    Value V
+}
 
 // It is an iterator, defined as a function that produces a (possibly infinite)
 // sequence of (value, true) tuples through successive calls. If the sequence

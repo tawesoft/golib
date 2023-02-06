@@ -11,8 +11,8 @@
 // catches these panics. Also note that all "Consume" functions operate on a
 // steam of filtered code points (see
 // https://www.w3.org/TR/css-syntax-3/#input-preprocessing), not raw input.
-// This is implemented in package [tokenizer.filter] and automatically handled
-// by a [New] Tokenizer.
+// This is implemented by [css/tokenizer/filter.Transform] and automatically
+// handled by a [New] Tokenizer.
 //
 // [CSS Syntax Module Level 3]: https://www.w3.org/TR/css-syntax-3/
 //

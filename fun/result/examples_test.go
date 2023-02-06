@@ -10,7 +10,7 @@ import (
     "github.com/tawesoft/golib/v2/fun/slices"
 )
 
-func Example_result() {
+func ExampleResult() {
     resultOpen := result.WrapFunc(os.Open)
     toReader := result.Map(func (x *os.File) io.Reader { return x })
 

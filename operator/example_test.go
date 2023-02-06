@@ -8,6 +8,15 @@ import (
     "github.com/tawesoft/golib/v2/operator"
 )
 
+func ExampleSimple() {
+    fmt.Printf("1 + 2 = %d (int)\n", operator.Add(1, 2))
+    fmt.Printf("1 + 2 = %d (uint16)\n", operator.Add[uint16](1, 2))
+
+    // Output:
+    // 1 + 2 = 3 (int)
+    // 1 + 2 = 3 (uint16)
+}
+
 func ExampleAdd() {
     // generate a sequence 1, 2, 3, ... 99, 100. This is produced lazily.
     sequence := iter.Take(100, iter.Counter[int](1, 1))

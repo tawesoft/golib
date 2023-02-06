@@ -2,8 +2,8 @@
 // (equals) or "+" (addition), as functions that can be passed to higher order
 // functions.
 //
-// See also the [operator/checked/integer] package which implements operators
-// that are robust against integer overflow.
+// See also the [github.com/tawesoft/golib/v2/operator/checked/integer] package
+// which implements operators that are robust against integer overflow.
 package operator
 
 import (
