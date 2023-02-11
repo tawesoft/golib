@@ -4,6 +4,9 @@
 //
 // See also the [github.com/tawesoft/golib/v2/operator/checked/integer] package
 // which implements operators that are robust against integer overflow.
+//
+// See also the [github.com/tawesoft/golib/v2/operator/reflect] package
+// which implements operators that require reflection.
 package operator
 
 import (

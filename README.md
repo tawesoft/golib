@@ -38,7 +38,6 @@ support, are additionally covered by compatible [MIT-like licences](/LICENSE-PAR
 |  html/meta/twittercard   | [v2][m02] |     -     | HTML meta tags for Twitter Cards                          |
 |           must           | [v2][m03] |     -     | assertions                                                |
 |         operator         | [v2][o01] |     -     | operators as functions                                    |
-| operator/checked/integer | [v2][o02] |     -     | integer operators with overflow checking                  |
 |         text/ccc         |     -     | [v2][t01] | Unicode Canonical Combining Class values                  |
 |         text/dm          |     -     | [v2][t02] | Unicode decomposition mappings & selective decompositions |
 |      text/fallback       |     -     | [v2][t03] | Unicode Character Fallback Substitutions                  | 
@@ -61,7 +60,6 @@ support, are additionally covered by compatible [MIT-like licences](/LICENSE-PAR
 [m02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/meta/twittercard
 [m03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
 [o01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/operator
-[o02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/operator/checked/integer
 [t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
 [t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
 [t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback

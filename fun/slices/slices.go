@@ -68,3 +68,11 @@ func Reduce[X any](initial X, f func (X, X) X, xs []X) X {
 
     return result
 }
+
+// Reducer constructs a partially applied Reduce function with the arguments
+// "initial" and "f" already bound.
+func Reducer[X any](initial X, f func(X, X) X) func(xs []X) X {
+    return func(xs []X) X {
+        return Reduce[X](initial, f, xs)
+    }
+}

@@ -4,20 +4,24 @@ package ks
 
 import (
     "errors"
-    "io/fs"
-    "os"
     "strings"
     "unicode/utf8"
 
     "golang.org/x/exp/utf8string"
 )
 
-// IfNotExists wraps an error, returning nil if the error is that the file
-// does not exist, otherwise returning the error unchanged.
-func IfNotExists(err error) error {
-    if (err == nil) { return nil }
-    if os.IsExist(err) { return nil }
-    if errors.Is(err, fs.ErrNotExist) { return nil }
+// FilterError returns err, unless errors.Is(err, i) returns true for any
+// i in ignore, in which case it returns nil.
+//
+// For example,
+//
+//     // Create a symlink but ignore an error if the file exists.
+//     err := FilterError(os.Symlink(oldname, newname), fs.ErrExist)
+func FilterError(err error, ignore ... error) error {
+    if err == nil { return nil }
+    for _, i := range ignore {
+        if errors.Is(err, i) { return nil }
+    }
     return err
 }
 
@@ -31,6 +35,8 @@ func MustMap[K comparable, V any](m map[K]V) map[K]V {
 
 // Reserve grows a slice to fit at least size extra elements. Like the builtin
 // append, it may return an updated slice.
+//
+// Deprecated: use [golang.org/x/exp/slices.Grow].
 func Reserve[T any](xs []T, size int) []T {
     // https://github.com/golang/go/wiki/SliceTricks#extend-capacity
     if cap(xs) - len(xs) < size {

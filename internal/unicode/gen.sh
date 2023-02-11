@@ -14,7 +14,7 @@ cd "gen-$UNICODE_VERSION/fallback"
 go run .
 cd "../../"
 
-cd "gen-$UNICODE_VERSION/fallback"
+cd "gen-$UNICODE_VERSION/np"
 go run .
 cd "../../"
 
