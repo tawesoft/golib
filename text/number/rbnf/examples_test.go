@@ -7,7 +7,7 @@ import (
     "github.com/tawesoft/golib/v2/text/number/rbnf"
 )
 
-func Example_SpelloutCardinal() {
+func Example_spelloutCardinal() {
     g := must.Result(rbnf.New(nil, `
         %spellout-cardinal:
             -x: minus →→;
@@ -74,7 +74,7 @@ func Example_SpelloutCardinal() {
 
 // Example using custom time factors from the Battlestar Galactica 1978 TV
 // series.
-func Example_Fictional() {
+func Example_fictional() {
     /*
             168000: ←← secton [ →→];
             672000: ←← quatron [ →→];
