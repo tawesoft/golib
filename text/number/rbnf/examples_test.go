@@ -85,22 +85,22 @@ func Example_fictional() {
         %%s:
             0: s;
             1: ;
-            2: s;
+            2/1: s;
         %%es:
             0: es;
             1: ;
-            2: es;
+            2/1: es;
         %%timecomma:
             0: =%time=;
             1: , =%time=;
         %%microns:
             0: =%%spellout-cardinal= microns;
             1: =%%spellout-cardinal= micron;
-            2: =%%spellout-cardinal= microns;
+            2/1: =%%spellout-cardinal= microns;
         %%hyphen-microns:
             0: ' microns;
             1: -=%%spellout-cardinal= micron;
-            2: -=%%spellout-cardinal= microns;
+            2/1: -=%%spellout-cardinal= microns;
         %time:
             -x: minus →→;
             0: =%%microns=;
@@ -114,12 +114,12 @@ func Example_fictional() {
             70: seventy→%%hyphen-microns→;
             80: eighty→%%hyphen-microns→;
             90: ninety→%%hyphen-microns→;
-            100: ←%%spellout-cardinal← centon[←%%s←→%%timecomma→];
-            6000/6000: ←%%spellout-cardinal← centar[←%%es←→%%timecomma→];
-            144000/144000: ←%%spellout-cardinal← cycle[←%%s←→%%timecomma→];
-            1008000/1008000: ←%%spellout-cardinal← secton[←%%s←→%%timecomma→];
-            4032000/4032000: ←%%spellout-cardinal← quatron[←%%s←→%%timecomma→];
-            48384000/48384000: ←%%spellout-cardinal-verbose← yahren[←%%s←→%%timecomma→];
+            100: ←%%spellout-cardinal← centon←%%s←[→%%timecomma→];
+            6000/6000: ←%%spellout-cardinal← centar←%%es←[→%%timecomma→];
+            144000/144000: ←%%spellout-cardinal← cycle←%%s←[→%%timecomma→];
+            1008000/1008000: ←%%spellout-cardinal← secton←%%s←[→%%timecomma→];
+            4032000/4032000: ←%%spellout-cardinal← quatron←%%s←[→%%timecomma→];
+            48384000/48384000: ←%%spellout-cardinal-verbose← yahren←%%s←[→%%timecomma→];
         %%spellout-cardinal:
             0: zero;
             1: one;
@@ -212,16 +212,16 @@ func Example_fictional() {
     // printTime(microns(0)): zero microns
     // printTime(microns(1)): one micron
     // printTime(microns(5)): five microns
-    // printTime(microns(1)): one centar
-    // printTime(microns(2)): one centares
+    // printTime(microns(6000)): one centar
+    // printTime(microns(12000)): two centares
     // printTime(microns(195)): one centon, ninety-five microns
     // printTime(microns(12501)): two centares, five centons, one micron
     // printTime(microns(150005)): one cycle, one centar, five microns
     // printTime(microns(1008000)): one secton
     // printTime(microns(4032000)): one quatron
-    // printTime(microns(14112000)): three quatrons, two secton
+    // printTime(microns(14112000)): three quatrons, two sectons
     // printTime(microns(48384000)): one yahren
-    // printTime(microns(96768000)): two yahren
-    // printTime(microns(7257600000)): one hundred and fifty yahren
+    // printTime(microns(96768000)): two yahrens
+    // printTime(microns(7257600000)): one hundred and fifty yahrens
     // printTime(microns(4914588050)): one hundred and one yahrens, six quatrons, three sectons, four cycles, two centares, fifty microns
 }
