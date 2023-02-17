@@ -21,3 +21,7 @@ cd "../../"
 cd "gen-cldr-$CLDR_VERSION/fallback"
 go run .
 cd "../../"
+
+cd "maketables/"
+go run .
+cd "../"

@@ -19,32 +19,54 @@ support, are additionally covered by compatible [MIT-like licences](/LICENSE-PAR
 
 ## Packages
 
-|           Name           |  Stable   |  Latest   | Description                                               |
-|:------------------------:|:---------:|:---------:|:----------------------------------------------------------|
-|      css/tokenizer       |     -     | [v2][c01] | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
-|          dialog          | [v2][d01] |     -     | cross-platform message boxes & file pickers               |
-|         digraph          |     -     | [v2][d02] | *(unstable)* directed graphs (including DAGs)             |
-|           drop           |     -     |     -     | *(TODO)* drop process privileges and inherit handles      |
-|        fun/maybe         | [v2][f01] |     -     | "Maybe" sum type                                          |
-|       fun/partial        | [v2][f02] |     -     | partial function application                              |
-|        fun/result        | [v2][f03] |     -     | "Result" sum type                                         |
-|        fun/slices        | [v2][f04] |     -     | higher-order functions for slices                         |
-|          grace           |     -     |     -     | *(TODO)* start and gracefully shutdown processes          |
-|         humanize         |     -     |     -     | *(TODO)* locale-aware numbers &amp; quantities            |
-|           iter           | [v2][i01] |     -     | composable lazy iteration                                 |
-|            ks            |     -     | [v2][k01] | *(unstable)* "kitchen sink" of extras                     |
-|          loader          |     -     |     -     | *(TODO)* concurrent dependency graph solver               |
-|   html/meta/opengraph    | [v2][m01] |     -     | HTML meta tags for Facebook's Open Graph protocol         |
-|  html/meta/twittercard   | [v2][m02] |     -     | HTML meta tags for Twitter Cards                          |
-|           must           | [v2][m03] |     -     | assertions                                                |
-|         operator         | [v2][o01] |     -     | operators as functions                                    |
-|         text/ccc         |     -     | [v2][t01] | Unicode Canonical Combining Class values                  |
-|         text/dm          |     -     | [v2][t02] | Unicode decomposition mappings & selective decompositions |
-|      text/fallback       |     -     | [v2][t03] | Unicode Character Fallback Substitutions                  | 
-|        text/fold         |     -     | [v2][t04] | Unicode text folding                                      |
-|         text/np          |     -     | [v2][t05] | Unicode numeric properties                                |
-|       text/runeio        |     -     | [v2][t06] | *(unstable)* Unicode streams with lookahead &amp; rewind  |
-|           view           | [v2][v01] |     -     | dynamic views over collections                            |
+### General Packages
+
+|          Name           |  Stable   |  Latest   | Description                                               |
+|:-----------------------:|:---------:|:---------:|:----------------------------------------------------------|
+|      css/tokenizer      |     -     | [v2][c01] | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
+|         dialog          | [v2][d01] |     -     | cross-platform message boxes & file pickers               |
+|         digraph         |     -     | [v2][d02] | *(unstable)* directed graphs (including DAGs)             |
+|          drop           |     -     |     -     | *(TODO)* drop process privileges and inherit handles      |
+|        fun/maybe        | [v2][f01] |     -     | "Maybe" sum type                                          |
+|       fun/partial       | [v2][f02] |     -     | partial function application                              |
+|       fun/result        | [v2][f03] |     -     | "Result" sum type                                         |
+|       fun/slices        | [v2][f04] |     -     | higher-order functions for slices                         |
+|          grace          |     -     |     -     | *(TODO)* start and gracefully shutdown processes          |
+|        humanize         |     -     |     -     | *(TODO)* locale-aware numbers &amp; quantities            |
+|          iter           | [v2][i01] |     -     | composable lazy iteration                                 |
+|           ks            |     -     | [v2][k01] | *(unstable)* "kitchen sink" of extras                     |
+|         loader          |     -     |     -     | *(TODO)* concurrent dependency graph solver               |
+|   html/meta/opengraph   | [v2][m01] |     -     | HTML meta tags for Facebook's Open Graph protocol         |
+|  html/meta/twittercard  | [v2][m02] |     -     | HTML meta tags for Twitter Cards                          |
+|          must           | [v2][m03] |     -     | assertions                                                |
+|        operator         | [v2][o01] |     -     | operators as functions                                    |
+|          view           | [v2][v01] |     -     | dynamic views over collections                            |
+
+**Note:** Additional v2/legacy packages exist for users migrating from
+`tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).
+
+**Note:** "Stable" packages have the
+[normal stability guarantees](https://go.dev/doc/modules/version-numbers)
+expected for a Go package of v2 or higher. "Latest" packages, or
+"Latest *(unstable)*" packages do not. See [MIGRATIONS.md](/MIGRATIONS.md). 
+
+### Text Packages
+
+|          Name           |  Stable   |  Latest   | Description                                               |
+|:-----------------------:|:---------:|:---------:|:----------------------------------------------------------|
+|        text/ccc         |     -     | [v2][t01] | Unicode Canonical Combining Class values                  |
+|         text/dm         |     -     | [v2][t02] | Unicode decomposition mappings & selective decompositions |
+|      text/fallback      |     -     | [v2][t03] | Unicode Character Fallback Substitutions                  | 
+|        text/fold        |     -     | [v2][t04] | Unicode text folding                                      |
+|         text/np         |     -     | [v2][t05] | Unicode numeric properties                                |
+|       text/runeio       |     -     | [v2][t06] | *(unstable)* Unicode streams with lookahead &amp; rewind  |
+| text/number/algorithmic | [v2][t07] |     -     | CLDR algorithmic (non-decimal) numbering systems          |
+|    text/number/rbnf     |     -     | [v2][t08] | CLDR Rule-Based Number Formats                            |
+
+**Note:** "Stable" packages have the
+[normal stability guarantees](https://go.dev/doc/modules/version-numbers)
+expected for a Go package of v2 or higher. "Latest" packages, or
+"Latest *(unstable)*" packages do not. See [MIGRATIONS.md](/MIGRATIONS.md). 
 
 [css1]: https://www.w3.org/TR/css-syntax-3/
 [c01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/css/tokenizer
@@ -66,15 +88,10 @@ support, are additionally covered by compatible [MIT-like licences](/LICENSE-PAR
 [t04]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fold
 [t05]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/np
 [t06]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/runeio
+[t07]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/number/algorithmic
+[t08]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/number/rbnf
 [v01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/view
 
-**Note:** Additional v2/legacy packages exist for users migrating from
-`tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).
-
-**Note:** "Stable" packages have the
-[normal stability guarantees](https://go.dev/doc/modules/version-numbers)
-expected for a Go package of v2 or higher. "Latest" packages, or
-"Latest *(unstable)*" packages do not. See [MIGRATIONS.md](/MIGRATIONS.md). 
 
 ## Support
 

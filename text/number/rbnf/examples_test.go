@@ -68,5 +68,6 @@ func ExampleGroup_FormatInteger() {
     // spellout(1): one
     // spellout(2): two
     // spellout(-5): minus five
-    // spellout(325): minus three hundred twenty five
+    // spellout(25): twenty-five
+    // spellout(-325): minus three hundred twenty-five
 }

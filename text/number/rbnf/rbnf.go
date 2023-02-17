@@ -64,14 +64,11 @@ type Group struct {
     rulesets []ruleset
     rulesetNames map[string]int // index into rulesets
     stringData string
-    descriptors []desc
     bodies []token
 }
 
 type ruleset struct {
-    descriptorIdx int
-    nRules int
-    // isRegular bool
+    descriptors []desc
 }
 
 type desc struct {
@@ -164,36 +161,33 @@ func (g *Group) addRuleset(name string) *ruleset {
 
 func (g *Group) initRuleset(name string) *ruleset {
     rs := must.Ok(g.getRuleset(name))
-    rs.descriptorIdx = len(g.descriptors)
     return rs
 }
 
 func (g *Group) addRuleDescriptor(rs *ruleset, str string) *desc {
     if len(g.bodies) > math.MaxUint16 {
-        panic("too much rule body data in ruleset")
+        panic("too much rule body data in ruleset group")
     }
     d := descriptor.Parse(str)
-    rs.nRules++
-    g.descriptors = append(g.descriptors, desc{
+    rs.descriptors = append(rs.descriptors, desc{
         Base:      d.Base,
         Divisor:   d.Divisor,
         Type:      int8(d.Type),
         BodyIdx:   uint16(len(g.bodies)),
     })
-    return &(g.descriptors[len(g.descriptors) - 1])
+    return &(rs.descriptors[len(rs.descriptors) - 1])
 }
 
 func (g *Group) getString(tok token) string {
     if tok.Len == 0 { return "" }
-    // TODO panic if wrong type
     return g.stringData[int(tok.Left) : int(tok.Left) + int(tok.Len)]
 }
 
 func (g *Group) getRule(rs *ruleset, condition func(d desc) bool) (desc, bool) {
-    for i := 0; i < rs.nRules; i++ {
-        d := g.descriptors[rs.descriptorIdx + i]
+    for i := 0; i < len(rs.descriptors); i++ {
+        d := rs.descriptors[i]
         if condition(d) {
-            return g.descriptors[i], true
+            return rs.descriptors[i], true
         }
     }
     return desc{}, false
@@ -248,8 +242,8 @@ func (g *Group) formatInteger(sb *strings.Builder, rs *ruleset, v int64, isRegul
         highestBaseValue := int64(-1)
         highestIdx := -1
         previousIdx := -1
-        for i := 0; i < rs.nRules; i++ {
-            d := g.descriptors[i]
+        for i := 0; i < len(rs.descriptors); i++ {
+            d := rs.descriptors[i]
 
             if !operator.In(descriptor.Type(d.Type),
                 descriptor.TypeBaseValue, descriptor.TypeBaseValueAndRadix) { continue }
@@ -261,7 +255,7 @@ func (g *Group) formatInteger(sb *strings.Builder, rs *ruleset, v int64, isRegul
             }
         }
         if highestIdx < 0 { return ErrNoRule }
-        rule := g.descriptors[highestIdx]
+        rule := rs.descriptors[highestIdx]
 
         // If that rule has two substitutions, its base value is not an even
         // multiple of its divisor, and the number is an even multiple of the
@@ -284,7 +278,7 @@ func (g *Group) formatInteger(sb *strings.Builder, rs *ruleset, v int64, isRegul
             baseValueIsEvenMultiple := (rule.Base % rule.Divisor) == 0
             numberIsEvenMultuple := (v % rule.Divisor) == 0
             if hasTwoSubs(rule) && (!baseValueIsEvenMultiple) && numberIsEvenMultuple {
-                rule = g.descriptors[previousIdx]
+                rule = rs.descriptors[previousIdx]
             }
         }
         return g.applyIntegerRule(sb, rs, rule, v, isRegular)

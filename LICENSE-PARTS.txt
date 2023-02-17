@@ -10,6 +10,7 @@ The following licence also applies to code in the following folders:
     * text/fallback
     * text/fold
     * text/np
+    & text/number
 
 Copyright © 1991 - 2022 Unicode, Inc.
 
