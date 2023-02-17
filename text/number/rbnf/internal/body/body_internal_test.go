@@ -23,11 +23,12 @@ func Test_consumeDirect(t *testing.T) {
         {"Literal", len("X"), "Xmillion $(", "million ",  TypeLiteral, -2},
         {"Literal", len("X"), "Xmillion =",  "million ",  TypeLiteral, -1},
 
-        {"SimpleSubstitution", len("X→"), "X→→ X",     "",   TypeSubstRightArrow, -2},
-        {"SimpleSubstitution", len("X→"), "X→foo→ X", "foo", TypeSubstRightArrow, -2},
+        {"SimpleSubstitution", len("X→"),    "X→→ X",     "",   TypeSubstRightArrow, -2},
+        {"SimpleSubstitution", len("X→"),    "X→foo→ X", "foo", TypeSubstRightArrow, -2},
+        {"TripleRightArrow",   len("X"),     "X→→→",     "",    TypeTripleRightArrow, 0},
 
-        {"PluralSubstitution", len("$("), "$(ordinal,foo)$ X",  "foo", TypeSubstPluralOrdinal, -2},
-        {"PluralSubstitution", len("$("), "$(cardinal,foo)$ X", "foo", TypeSubstPluralCardinal,-2},
+        {"PluralSubstitution", len("$("),    "$(ordinal,foo)$ X",  "foo", TypeSubstPluralOrdinal, -2},
+        {"PluralSubstitution", len("$("),    "$(cardinal,foo)$ X", "foo", TypeSubstPluralCardinal,-2},
     }
     fns := map[string]func(string, int) (Token, int){
         "Literal": consumeLiteral,
@@ -35,6 +36,13 @@ func Test_consumeDirect(t *testing.T) {
             return consumeSimpleSubstitution(x, n, '→')
         },
         "PluralSubstitution": consumePluralSubstitution,
+        "TripleRightArrow": func(x string, n int) (Token, int) {
+            if t, i, ok := consumeTripleRightArrow(x, n); ok {
+                return t, i
+            } else {
+                return Token{}, -1
+            }
+        },
     }
     for _, test := range rows {
         f, ok := fns[test.fn]; must.True(ok, "no function %q", test.fn)

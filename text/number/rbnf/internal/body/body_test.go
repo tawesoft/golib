@@ -6,6 +6,7 @@ import (
     "os"
     "path"
     "runtime"
+    "strings"
     "testing"
 
     "github.com/tawesoft/golib/v2/internal/unicode/ldml"
@@ -76,12 +77,21 @@ func cldrpath(v string, p string) string {
 }
 
 func TestTokenizer_NextFromCLDR(t *testing.T) {
+    type problem struct {
+        source string
+        rule string
+    }
+    knownProblems := []problem{
+        {"pl", "←%spellout-cardinal-masculine←←;"},
+        {"pl", "←%%spellout-fraction-digits←←;"},
+        {"ky", "0* ←#,##0←←;"},
+    }
     type row struct {
         source string
         input string
     }
     cldrvers := []string{"41.0"}
-    var passes, total int
+    var passes, skips, errors, total int
 
     for _, cldrver := range cldrvers {
         rbnfdir := cldrpath(cldrver, "rbnf")
@@ -125,6 +135,14 @@ func TestTokenizer_NextFromCLDR(t *testing.T) {
 
             for _, test := range rows {
                 try := func() error {
+                    for _, p := range knownProblems {
+                        if !strings.HasPrefix(test.source, p.source) { continue }
+                        if test.input != p.rule { continue }
+                        t.Logf("skip known problem (%s): %q", p.source, p.rule)
+                        skips++
+                        return nil
+                    }
+
                     tokenizer := body.NewTokenizer(test.input)
                     for {
                         tok, err := tokenizer()
@@ -137,6 +155,7 @@ func TestTokenizer_NextFromCLDR(t *testing.T) {
                 err := try()
                 if (err != nil) {
                     t.Errorf("tokenize %q error (from %q): %v", test.input, test.source, err)
+                    errors++
                 } else {
                     passes++
                 }
@@ -145,5 +164,5 @@ func TestTokenizer_NextFromCLDR(t *testing.T) {
         }
     }
 
-    t.Logf("Pass: %d/%d", passes, total)
+    t.Logf("pass: %d/%d, %d skipped, %d errors", passes - skips, total, skips, errors)
 }

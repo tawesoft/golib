@@ -36,6 +36,7 @@ const (
     TypeOptionalEnd         // "]" in [...], may contain substitutions and literals
     TypeSubstPluralCardinal // $(cardinal,plural-syntax)$
     TypeSubstPluralOrdinal  // $(ordinal,plural-syntax)$
+    TypeTripleRightArrow    // →→→.
     TypeEOF
 )
 
@@ -76,14 +77,17 @@ type Token struct {
 func (t Token) SimpleSubstType(s string) SubstType {
     for {
         switch t.Type {
-            case TypeSubstRightArrow: fallthrough
-            case TypeSubstLeftArrow:  fallthrough
+            case TypeTripleRightArrow:  fallthrough
+            case TypeSubstRightArrow:   fallthrough
+            case TypeSubstLeftArrow:    fallthrough
             case TypeSubstEqualsSign: {
                 if t.Content.Len() == 0 {
                     if (t.Type == TypeSubstEqualsSign) {
                         return SubstTypeInvalid // not allowed here
                     }
                     return SubstTypeEmpty
+                } else if (t.Type == TypeTripleRightArrow) {
+                    must.Never()
                 }
                 c := s[t.Content[0]] // only need first byte
                 switch c {
@@ -101,7 +105,7 @@ func (t Token) SimpleSubstType(s string) SubstType {
 func decode(s string) (rune, int) {
     r, z := utf8.DecodeRuneInString(s)
     if (r == utf8.RuneError) && (z == 1) {
-        panic(fmt.Errorf("unexpected end"))
+        panic(fmt.Errorf("unicode error"))
     }
     return r, z
 }
@@ -165,6 +169,8 @@ func (t *tokenizer) Next() (rettok Token, reterr error) {
         case TypeSubstLeftArrow:
             fallthrough
         case TypeSubstRightArrow:
+            fallthrough
+        case TypeTripleRightArrow:
             if t.seenSubs > 2 {
                 panic(fmt.Errorf("too many substitutions"))
             }
@@ -198,6 +204,11 @@ func next(s string, start int) (Token, int) {
     if z == 0 { return Token{Type: TypeEOF}, 0 }
 
     for {
+        if current == '→' {
+            if t, end, ok := consumeTripleRightArrow(s, start); ok {
+                return t, end
+            }
+        }
         switch current {
             case '→': fallthrough
             case '←': fallthrough
@@ -219,6 +230,25 @@ func next(s string, start int) (Token, int) {
     }
 }
 
+// possibly consumes "→→→"
+func consumeTripleRightArrow(s string, start int) (Token, int, bool) {
+    seen := 0
+    end := start
+    for {
+        next, z := decode(s[end:])
+        end += z
+        if (z == 0) || (seen >= 3) {
+            if seen == 3 {
+                t := Token{Type: TypeTripleRightArrow}
+                return t, end, true
+            }
+            break
+        }
+        if (next == '→') { seen++ } else { break }
+    }
+    return Token{}, 0, false
+}
+
 // consumes e.g. " million", stopping at any special sequence
 func consumeLiteral(s string, start int) (Token, int) {
     end := start
@@ -226,7 +256,7 @@ func consumeLiteral(s string, start int) (Token, int) {
         next, z := decode(s[end:])
         if z == 0 { break }
 
-        if strings.ContainsRune("→←=[", next) { break }
+        if strings.ContainsRune("→←=[]", next) { break }
 
         peek, _ := decode(s[end+z:])
         if (next == '$') && (peek == '(') { break }
