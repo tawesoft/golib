@@ -43,9 +43,17 @@
 package rbnf
 
 import (
+    "errors"
     "fmt"
+    "math"
+    "strings"
 
+    "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/operator"
+    "github.com/tawesoft/golib/v2/operator/checked/integer"
     "github.com/tawesoft/golib/v2/text/number/plurals"
+    "github.com/tawesoft/golib/v2/text/number/rbnf/internal/body"
+    "github.com/tawesoft/golib/v2/text/number/rbnf/internal/descriptor"
 )
 
 // Group defines a group of rule sets. Rule sets may refer to other rule sets
@@ -53,33 +61,32 @@ import (
 // programming language.
 type Group struct {
     pluralRules plurals.Rules
-    rulesets map[string]ruleset
+    rulesets []ruleset
+    rulesetNames map[string]int // index into rulesets
+    stringData string
+    descriptors []desc
+    bodies []token
 }
 
-type ruleType int
-const (
-    ruleTypeDefault = ruleType(iota)
-    ruleTypeBaseValue
-    ruleTypeBaseValueAndRadix
-    ruleTypeNegativeNumber
-    ruleTypeProperFraction
-    ruleTypeImproperFraction
-    ruleTypeInfinity
-    ruleTypeNaN
-)
+type ruleset struct {
+    descriptorIdx int
+    nRules int
+    // isRegular bool
+}
 
-type rule struct {
-    // rule descriptor:
-    Type ruleType
+type desc struct {
     Base int64
     Divisor int64
-
-    // rule body:
-    Subs [3]string
-    Optional string
-    Literal string
+    NumTokens uint8
+    Type int8
+    BodyIdx uint16
 }
 
+type token struct {
+    Type uint8   // 0b00001111 Type + 0b0111000 SubstType
+    Len uint8    // strlen or idx into rulesetNames
+    Left uint16  // idx into stringData
+}
 
 // New returns a new rule-based number formatter formed from the group of
 // rule sets described by the rules string.
@@ -121,12 +128,320 @@ type rule struct {
 func New(p plurals.Rules, rules string) (*Group, error) {
     g := &Group{
         pluralRules: p,
-        rulesets: make(map[string]ruleset),
+        rulesets: make([]ruleset, 0),
     }
-    if err := g.parseGroups(rules); err != nil {
-        return nil, fmt.Errorf("error parsing rbnf ruleset: %w", err)
+    if err := g.parse(rules); err != nil {
+        return nil, fmt.Errorf("error parsing rbnf ruleset group: %w", err)
     }
     return g, nil
 }
 
-type ruleset []rule // ordered
+func (g *Group) getRuleset(target string) (*ruleset, bool) {
+    if n, ok := g.rulesetNames[target]; ok {
+        return &(g.rulesets[n]), true
+    } else {
+        return nil, false
+    }
+}
+
+func (g *Group) getRulesetIndex(target string) (int, bool) {
+    if n, ok := g.rulesetNames[target]; ok {
+        return n, true
+    } else {
+        return 0, false
+    }
+}
+
+func (g *Group) addRuleset(name string) *ruleset {
+    if _, exists := g.getRuleset(name); exists {
+        panic(fmt.Errorf("duplicate ruleset name %q", name))
+    }
+
+    g.rulesetNames[name] = len(g.rulesets)
+    g.rulesets = append(g.rulesets, ruleset{})
+    return must.Ok(g.getRuleset(name))
+}
+
+func (g *Group) initRuleset(name string) *ruleset {
+    rs := must.Ok(g.getRuleset(name))
+    rs.descriptorIdx = len(g.descriptors)
+    return rs
+}
+
+func (g *Group) addRuleDescriptor(rs *ruleset, str string) *desc {
+    if len(g.bodies) > math.MaxUint16 {
+        panic("too much rule body data in ruleset")
+    }
+    d := descriptor.Parse(str)
+    rs.nRules++
+    g.descriptors = append(g.descriptors, desc{
+        Base:      d.Base,
+        Divisor:   d.Divisor,
+        Type:      int8(d.Type),
+        BodyIdx:   uint16(len(g.bodies)),
+    })
+    return &(g.descriptors[len(g.descriptors) - 1])
+}
+
+func (g *Group) getString(tok token) string {
+    if tok.Len == 0 { return "" }
+    // TODO panic if wrong type
+    return g.stringData[int(tok.Left) : int(tok.Left) + int(tok.Len)]
+}
+
+func (g *Group) getRule(rs *ruleset, condition func(d desc) bool) (desc, bool) {
+    for i := 0; i < rs.nRules; i++ {
+        d := g.descriptors[rs.descriptorIdx + i]
+        if condition(d) {
+            return g.descriptors[i], true
+        }
+    }
+    return desc{}, false
+}
+
+// Errors returned by the Format methods.
+var (
+    ErrRange  = errors.New("value out of range")
+    ErrNoRule = errors.New("no rule for this input")
+    ErrNotImplemented = errors.New("rule logic not implemented for this input")
+    ErrInvalidState = errors.New("invalid rule state")
+)
+
+func (g *Group) FormatInteger(rulesetName string, v int64) (string, error) {
+    var sb strings.Builder
+    rs := must.Ok(g.getRuleset(rulesetName))
+    if err := g.formatInteger(&sb, rs, v, true); err == nil {
+        return sb.String(), nil
+    } else {
+        return "", err
+    }
+}
+
+func (g *Group) formatInteger(sb *strings.Builder, rs *ruleset, v int64, isRegular bool) error {
+    if isRegular { // If the rule set is a regular rule set, do the following:
+
+        // If the rule set includes a default rule (and the number was passed in as a
+        // double), use the default rule. (If the number being formatted was passed in
+        // as a long, the default rule is ignored.)
+        // == ignored
+
+        // If the number is negative, use the negative-number rule.
+        if v < 0 {
+            rule, ok := g.getRule(rs, func(d desc) bool {
+                return descriptor.Type(d.Type) == descriptor.TypeNegativeNumber
+            })
+            if !ok { return ErrNoRule }
+            return g.applyIntegerRule(sb, rs, rule, v, isRegular)
+        }
+
+        // If the number has a fractional part and is greater than 1, use the
+        // improper fraction rule.
+        // ...
+
+        // If the number has a fractional part and is between 0 and
+        // 1, use the proper fraction rule.
+        // ...
+
+        // Binary-search the rule list for the rule with the highest base value
+        // less than or equal to the number.
+        // TODO for now this is a linear search
+        highestBaseValue := int64(-1)
+        highestIdx := -1
+        previousIdx := -1
+        for i := 0; i < rs.nRules; i++ {
+            d := g.descriptors[i]
+
+            if !operator.In(descriptor.Type(d.Type),
+                descriptor.TypeBaseValue, descriptor.TypeBaseValueAndRadix) { continue }
+
+            if (d.Base <= v) && (d.Base > highestBaseValue) {
+                highestBaseValue = d.Base
+                highestIdx = i
+                previousIdx = i-1
+            }
+        }
+        if highestIdx < 0 { return ErrNoRule }
+        rule := g.descriptors[highestIdx]
+
+        // If that rule has two substitutions, its base value is not an even
+        // multiple of its divisor, and the number is an even multiple of the
+        // rule's divisor, use the rule that precedes it in the rule list.
+        // Otherwise, use the rule itself.
+        if (previousIdx >= 0) && (rule.Divisor > 0) {
+            hasTwoSubs := func(r desc) bool {
+                count := 0
+                for i := 0; i < int(rule.NumTokens); i++ {
+                    tok := g.bodies[int(rule.BodyIdx) + i]
+                    _, st := decodeTokenType(tok.Type)
+                    if body.SubstType(st) != body.SubstTypeNone {
+                        count++
+                    }
+                }
+                return count == 2
+            }
+
+            // base value is an even multiple?
+            baseValueIsEvenMultiple := (rule.Base % rule.Divisor) == 0
+            numberIsEvenMultuple := (v % rule.Divisor) == 0
+            if hasTwoSubs(rule) && (!baseValueIsEvenMultiple) && numberIsEvenMultuple {
+                rule = g.descriptors[previousIdx]
+            }
+        }
+        return g.applyIntegerRule(sb, rs, rule, v, isRegular)
+    }
+
+    /*
+    If the rule set is a fraction rule set, do the following:
+
+    Ignore negative-number and fraction rules.
+
+    For each rule in the list, multiply the number being formatted (which will
+    always be between 0 and 1) by the rule's base value. Keep track of the distance
+    between the result the nearest integer.
+
+    Use the rule that produced the result closest to zero in the above calculation.
+    In the event of a tie or a direct hit, use the first matching rule encountered.
+    (The idea here is to try each rule's base value as a possible denominator of a
+    fraction. Whichever denominator produces the fraction closest in value to the
+    number being formatted wins.) If the rule following the matching rule has the
+    same base value, use it if the numerator of the fraction is anything other than
+    1; if the numerator is 1, use the original matching rule. (This is to allow
+    singular and plural forms of the rule text without a lot of extra hassle.)
+    */
+    return nil
+}
+
+func divisor_int_log10(v int64) int64 {
+    if v == 0 { return 1 }
+    digits := int(math.Log10(float64(v))) // e.g. 900 => 2.95 => 2
+    return int64(0.5 + math.Pow10(digits)) // e.g. 2 => 10^2 => 100
+}
+
+func isNormalRule(rule desc) bool {
+    return operator.In(descriptor.Type(rule.Type),
+        descriptor.TypeBaseValue, descriptor.TypeBaseValueAndRadix)
+}
+
+func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v int64, isRegular bool) error {
+    isOptional := false
+
+    for i := 0; i < int(rule.NumTokens); i++ {
+        tok := g.bodies[int(rule.BodyIdx) + i]
+
+        ty, _ := decodeTokenType(tok.Type)
+        if ty == body.TypeOptionalEnd {
+            isOptional = false
+            continue
+        } else if isOptional {
+            switch descriptor.Type(rule.Type) {
+                case descriptor.TypeBaseValue:
+                    // Omit the optional text if the number is
+                    // an even multiple of the rule's divisor
+                    d := divisor_int_log10(v)
+                    if (v % d) == 0 { continue }
+                case descriptor.TypeBaseValueAndRadix:
+                    // Omit the optional text if the number is
+                    // an even multiple of the rule's divisor
+                    return ErrNotImplemented
+                case descriptor.TypeNegativeNumber:
+                    return ErrInvalidState
+                case descriptor.TypeProperFraction:
+                    return ErrInvalidState
+                case descriptor.TypeDefault:
+                    // Omit the optional text if the number is an integer (same
+                    // as specifying both an x.x rule and an x.0 rule)
+                    continue
+                case descriptor.TypeImproperFraction:
+                    // Omit the optional text if the number is between 0 and 1
+                    // (same as specifying both an x.x rule and a 0.x rule)
+                    if (v == 0) || (v == 1) { continue }
+                default:
+                    if !isRegular {
+                        // Omit the optional text if multiplying the number by
+                        // the rule's base value yields 1.
+                        if rule.Base * v == 1 { continue }
+                    }
+            }
+        }
+
+        switch ty {
+            case body.TypeOptionalStart:
+                isOptional = true
+            case body.TypeLiteral:
+                sb.WriteString(g.getString(tok))
+
+            case body.TypeSubstLeftArrow:
+                if !isRegular {
+                    // Multiply the number by the rule's base value and
+                    // format the result.
+                    n, ok := integer.Int64.Mul(v, rule.Base)
+                    if !ok { return ErrRange }
+                    err := g.formatInteger(sb, rs, n, isRegular)
+                    if err != nil { return err }
+                }
+                switch descriptor.Type(rule.Type) {
+                    case descriptor.TypeBaseValue:
+                        // Divide the number by the rule's divisor and format
+                        // the quotient
+                        n := v / divisor_int_log10(v)
+                        // todo subst type select ruleset
+                        err := g.formatInteger(sb, rs, n, isRegular)
+                        if err != nil { return err }
+
+                    case descriptor.TypeBaseValueAndRadix:
+                        // Divide the number by the rule's divisor and format the remainder
+                        // The rule's divisor is the highest power of rad less than or equal to the base value.
+                        return ErrNotImplemented
+                    case descriptor.TypeNegativeNumber:
+                        return ErrInvalidState
+                    case descriptor.TypeDefault: fallthrough
+                    case descriptor.TypeProperFraction: fallthrough
+                    case descriptor.TypeImproperFraction:
+                        // Isolate the number's integral part and format it.
+                        // Here its already integer part.
+                        return ErrInvalidState
+                    default:
+                        return ErrInvalidState
+                }
+
+            case body.TypeSubstRightArrow:
+                switch descriptor.Type(rule.Type) {
+                    case descriptor.TypeBaseValue:
+                        // Divide the number by the rule's divisor and format the remainder
+                        // The rule's divisor is the highest power of 10 less than or equal to the base value.
+                        n := v % divisor_int_log10(v)
+                        // todo subst type select ruleset
+                        err := g.formatInteger(sb, rs, n, isRegular)
+                        if err != nil { return err }
+
+                    case descriptor.TypeBaseValueAndRadix:
+                        // Divide the number by the rule's divisor and format the remainder
+                        // The rule's divisor is the highest power of rad less than or equal to the base value.
+                        return ErrNotImplemented
+
+                    case descriptor.TypeNegativeNumber:
+                        abs, ok := integer.Int64.Abs(v)
+                        if !ok { return ErrRange }
+                        // todo subst type select ruleset
+                        err := g.formatInteger(sb, rs, abs, isRegular)
+                        if err != nil { return err }
+
+                    case descriptor.TypeDefault: fallthrough
+                    case descriptor.TypeProperFraction:
+                        // Isolate the number's fractional part and format it.
+                        return ErrNotImplemented
+
+                    // in rule in fraction rule set: Not allowed.
+
+                    // other???
+                    default: return ErrInvalidState
+                }
+
+            // other???
+            default:
+                return ErrNotImplemented
+        }
+    }
+
+    return nil
+}

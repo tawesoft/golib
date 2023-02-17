@@ -1,19 +1,14 @@
-package rbnf
+package rbnf_test
 
 import (
-    "testing"
+    "fmt"
 
     "github.com/tawesoft/golib/v2/must"
+    "github.com/tawesoft/golib/v2/text/number/rbnf"
 )
 
-func TestNew(t *testing.T) {
-    // from CLDR 41.0 rbnf/en.xml
-    must.Result(New(nil, `
-        %spellout-numbering:
-            -x: minus →→;
-            Inf: infinity;
-            NaN: not a number;
-            0: =%spellout-cardinal=;
+func ExampleGroup_FormatInteger() {
+    g := must.Result(rbnf.New(nil, `
         %spellout-cardinal:
             -x: minus →→;
             x.x: ←← point →→;
@@ -54,29 +49,24 @@ func TestNew(t *testing.T) {
             1000000000000: ←← trillion[ →→];
             1000000000000000: ←← quadrillion[ →→];
             1000000000000000000: =#,##0=;
-        %%and:
-            1: and =%spellout-cardinal-verbose=;
-            100: =%spellout-cardinal-verbose=;
-        %%commas:
-            1: and =%spellout-cardinal-verbose=;
-            100: =%spellout-cardinal-verbose=;
-            1000: ←%spellout-cardinal-verbose← thousand[→%%commas→];
-            1000000: =%spellout-cardinal-verbose=;
-        %spellout-cardinal-verbose:
-            -x: minus →→;
-            x.x: ←← point →→;
-            Inf: infinite;
-            NaN: not a number;
-            0: =%spellout-numbering=;
-            100: ←← hundred[→%%and→];
-            1000: ←← thousand[→%%and→];
-            100000/1000: ←← thousand[→%%commas→];
-            1000000: ←← million[→%%commas→];
-            1000000000: ←← billion[→%%commas→];
-            1000000000000: ←← trillion[→%%commas→];
-            1000000000000000: ←← quadrillion[→%%commas→];
-            1000000000000000000: =#,##0=;
     `))
 
+    spellout := func(x int64) {
+        fmt.Printf("spellout(%d): %s\n", x,
+            must.Result(g.FormatInteger("%spellout-cardinal", x)))
+    }
+
+    spellout(0)
+    spellout(1)
+    spellout(2)
+    spellout(-5)
+    spellout(25)
+    spellout(325)
+
     // Output:
+    // spellout(0): zero
+    // spellout(1): one
+    // spellout(2): two
+    // spellout(-5): minus five
+    // spellout(325): three hundred twenty five
 }
