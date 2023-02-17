@@ -305,15 +305,66 @@ func (g *Group) formatInteger(sb *strings.Builder, rs *ruleset, v int64, isRegul
     return nil
 }
 
-func divisor_int_log10(v int64) int64 {
-    if v == 0 { return 1 }
-    digits := int(math.Log10(float64(v))) // e.g. 900 => 2.95 => 2
-    return int64(0.5 + math.Pow10(digits)) // e.g. 2 => 10^2 => 100
-}
-
 func isNormalRule(rule desc) bool {
     return operator.In(descriptor.Type(rule.Type),
         descriptor.TypeBaseValue, descriptor.TypeBaseValueAndRadix)
+}
+
+func divisor(rule desc, v int64) int64 {
+    for {
+        switch descriptor.Type(rule.Type) {
+            case descriptor.TypeBaseValue:
+                // The rule's divisor is the highest power of 10 less than or equal to the base value.
+                if v == 0 { return 1 }
+                digits := int(math.Log10(float64(v))) // e.g. 900 => 2.95 => 2
+                return int64(0.5 + math.Pow10(digits)) // e.g. 2 => 10^2 => 100
+            case descriptor.TypeBaseValueAndRadix:
+                // The rule's divisor is the highest power of rad less than or equal to the base value.
+                if v == 0 { return 1 }
+                n := rule.Divisor
+                highest := n
+                for {
+                    if x, ok := integer.Int64.Mul(n, n); ok {
+                        n = x
+                    } else {
+                        return highest
+                    }
+                    if n >= rule.Base {
+                        return highest
+                    }
+                    highest = n
+                }
+                return highest
+            default:
+                must.Never()
+        }
+    }
+}
+
+func (g *Group) selectRuleset(t token, current *ruleset) (*ruleset, error) {
+    ty, sty := decodeTokenType(t.Type)
+    switch sty {
+        case body.SubstTypeEmpty:
+            // You can't have an empty substitution descriptor with a == substitution.
+            if ty == body.TypeSubstEqualsSign {
+                return nil, ErrInvalidState
+            }
+            /*
+            Perform the mathematical operation on the number, and format the result using the rule set containing the current rule, except:
+            TODO
+            If you omit the substitution descriptor in a >> substitution in a fraction rule, format the result one digit at a time using the rule set containing the current rule.
+            If you omit the substitution descriptor in a << substitution in a rule in a fraction rule set, format the result using the default rule set for this formatter.
+             */
+            return current, nil
+        case body.SubstTypeNone:
+            return current, nil
+        case body.SubstTypeDecimalFormat:
+            return nil, ErrNotImplemented
+        case body.SubstTypeRulesetName:
+            return &(g.rulesets[int(t.Len)]), nil
+        default:
+            return nil, ErrInvalidState
+    }
 }
 
 func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v int64, isRegular bool) error {
@@ -328,15 +379,12 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
             continue
         } else if isOptional {
             switch descriptor.Type(rule.Type) {
-                case descriptor.TypeBaseValue:
-                    // Omit the optional text if the number is
-                    // an even multiple of the rule's divisor
-                    d := divisor_int_log10(v)
-                    if (v % d) == 0 { continue }
+                case descriptor.TypeBaseValue: fallthrough
                 case descriptor.TypeBaseValueAndRadix:
                     // Omit the optional text if the number is
                     // an even multiple of the rule's divisor
-                    return ErrNotImplemented
+                    d := divisor(rule, v)
+                    if (v % d) == 0 { continue }
                 case descriptor.TypeNegativeNumber:
                     return ErrInvalidState
                 case descriptor.TypeProperFraction:
@@ -374,18 +422,16 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
                     if err != nil { return err }
                 }
                 switch descriptor.Type(rule.Type) {
-                    case descriptor.TypeBaseValue:
+                    case descriptor.TypeBaseValue: fallthrough
+                    case descriptor.TypeBaseValueAndRadix:
                         // Divide the number by the rule's divisor and format
                         // the quotient
-                        n := v / divisor_int_log10(v)
-                        // todo subst type select ruleset
-                        err := g.formatInteger(sb, rs, n, isRegular)
+                        n := v / divisor(rule, v)
+                        nrs, err := g.selectRuleset(tok, rs)
+                        if err != nil { return err }
+                        err = g.formatInteger(sb, nrs, n, isRegular)
                         if err != nil { return err }
 
-                    case descriptor.TypeBaseValueAndRadix:
-                        // Divide the number by the rule's divisor and format the remainder
-                        // The rule's divisor is the highest power of rad less than or equal to the base value.
-                        return ErrNotImplemented
                     case descriptor.TypeNegativeNumber:
                         return ErrInvalidState
                     case descriptor.TypeDefault: fallthrough
@@ -400,24 +446,23 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
 
             case body.TypeSubstRightArrow:
                 switch descriptor.Type(rule.Type) {
-                    case descriptor.TypeBaseValue:
-                        // Divide the number by the rule's divisor and format the remainder
-                        // The rule's divisor is the highest power of 10 less than or equal to the base value.
-                        n := v % divisor_int_log10(v)
-                        // todo subst type select ruleset
-                        err := g.formatInteger(sb, rs, n, isRegular)
-                        if err != nil { return err }
+                    case descriptor.TypeBaseValue: fallthrough
 
                     case descriptor.TypeBaseValueAndRadix:
-                        // Divide the number by the rule's divisor and format the remainder
-                        // The rule's divisor is the highest power of rad less than or equal to the base value.
-                        return ErrNotImplemented
+                        // Divide the number by the rule's divisor and format
+                        // the remainder
+                        n := v % divisor(rule, v)
+                        nrs, err := g.selectRuleset(tok, rs)
+                        if err != nil { return err }
+                        err = g.formatInteger(sb, nrs, n, isRegular)
+                        if err != nil { return err }
 
                     case descriptor.TypeNegativeNumber:
                         abs, ok := integer.Int64.Abs(v)
                         if !ok { return ErrRange }
-                        // todo subst type select ruleset
-                        err := g.formatInteger(sb, rs, abs, isRegular)
+                        nrs, err := g.selectRuleset(tok, rs)
+                        if err != nil { return err }
+                        err = g.formatInteger(sb, nrs, abs, isRegular)
                         if err != nil { return err }
 
                     case descriptor.TypeDefault: fallthrough
@@ -430,6 +475,13 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
                     // other???
                     default: return ErrInvalidState
                 }
+
+            case body.TypeSubstEqualsSign:
+                // Format the number unchanged
+                nrs, err := g.selectRuleset(tok, rs)
+                if err != nil { return err }
+                err = g.formatInteger(sb, nrs, v, isRegular)
+                if err != nil { return err }
 
             // other???
             default:
