@@ -43,4 +43,5 @@ func Example_rulesetNames() {
     // > hebrew-item; תתתלד
     // > roman-lower; mccxxxiv
     // > roman-upper; MCCXXXIV
+    // > tamil; ௲௨௱௩௰௪
 }
