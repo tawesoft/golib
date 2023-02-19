@@ -72,6 +72,40 @@ type Ldml struct {
     Region                  String `xml:"identity>territory"`
     Variant                 String `xml:"identity>variant"`
     RbnfRulesetGroupings    []RbnfRulesetGrouping `xml:"rbnf>rulesetGrouping"`
+    Numbers                 Numbers `xml:"numbers"`
+}
+
+type Numbers struct {
+    Symbols                 []Symbols `xml:"symbols"`
+    DecimalFormats          TODO
+    ScientificFormats       TODO
+    PercentFormats          TODO
+    CurrencyFormats         TODO
+    Currencies              TODO
+}
+
+type Alias struct {
+    Source                  string `xml:"source,attr"`
+    Path                    string `xml:"path,attr"`
+}
+
+type Symbols struct {
+    Alias                   Alias  `xml:"alias"`
+    NumberSystem            string `xml:"numberSystem,attr"`
+    Decimal                 string `xml:"decimal"`
+    Group                   string `xml:"group"`
+    List                    string `xml:"list"`
+    PercentSign             string `xml:"percentSign"`
+    PlusSign                string `xml:"plusSign"`
+    MinusSign               string `xml:"minusSign"`
+    ApproximatelySign       string `xml:"approximatelySign"`
+    Exponential             string `xml:"exponential"`
+    SuperscriptingExponent  string `xml:"superscriptingExponent"`
+    PerMille                string `xml:"perMille"`
+    Infinity                string `xml:"infinity"`
+    NaN                     string `xml:"nan"`
+    CurrencyDecimal         string `xml:"currencyDecimal"`
+    CurrencyGroup           string `xml:"currencyGroup"`
 }
 
 type RbnfRulesetGrouping struct {

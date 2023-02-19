@@ -439,6 +439,14 @@ func InsertToMap[X comparable, Y any](
     }
 }
 
+func Keys[X comparable, Y any](xs It[Pair[X, Y]]) It[X] {
+    return Map(func(i Pair[X, Y]) X { return i.Key }, xs)
+}
+
+func Values[X comparable, Y any](xs It[Pair[X, Y]]) It[Y] {
+    return Map(func(i Pair[X, Y]) Y { return i.Value }, xs)
+}
+
 // Map returns an iterator that consumes an input iterator (of type X) and
 // produces values (of type Y) for each input value, according to some mapping
 // function f(x X) => y Y.

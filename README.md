@@ -21,26 +21,27 @@ support, are additionally covered by compatible [MIT-like licences](/LICENSE-PAR
 
 ### General Packages
 
-|          Name           |  Stable   |  Latest   | Description                                               |
-|:-----------------------:|:---------:|:---------:|:----------------------------------------------------------|
-|      css/tokenizer      |     -     | [v2][c01] | CSS tokenizer for [CSS Syntax Module Level 3][css1]       |
-|         dialog          | [v2][d01] |     -     | cross-platform message boxes & file pickers               |
-|         digraph         |     -     | [v2][d02] | *(unstable)* directed graphs (including DAGs)             |
-|          drop           |     -     |     -     | *(TODO)* drop process privileges and inherit handles      |
-|        fun/maybe        | [v2][f01] |     -     | "Maybe" sum type                                          |
-|       fun/partial       | [v2][f02] |     -     | partial function application                              |
-|       fun/result        | [v2][f03] |     -     | "Result" sum type                                         |
-|       fun/slices        | [v2][f04] |     -     | higher-order functions for slices                         |
-|          grace          |     -     |     -     | *(TODO)* start and gracefully shutdown processes          |
-|        humanize         |     -     |     -     | *(TODO)* locale-aware numbers &amp; quantities            |
-|          iter           | [v2][i01] |     -     | composable lazy iteration                                 |
-|           ks            |     -     | [v2][k01] | *(unstable)* "kitchen sink" of extras                     |
-|         loader          |     -     |     -     | *(TODO)* concurrent dependency graph solver               |
-|   html/meta/opengraph   | [v2][m01] |     -     | HTML meta tags for Facebook's Open Graph protocol         |
-|  html/meta/twittercard  | [v2][m02] |     -     | HTML meta tags for Twitter Cards                          |
-|          must           | [v2][m03] |     -     | assertions                                                |
-|        operator         | [v2][o01] |     -     | operators as functions                                    |
-|          view           | [v2][v01] |     -     | dynamic views over collections                            |
+|         Name          |  Stable   |  Latest   | Description                                          |
+|:---------------------:|:---------:|:---------:|:-----------------------------------------------------|
+|     css/tokenizer     |     -     | [v2][c01] | CSS tokenizer for [CSS Syntax Module Level 3][css1]  |
+|        dialog         | [v2][d01] |     -     | cross-platform message boxes & file pickers          |
+|        digraph        |     -     | [v2][d02] | *(unstable)* directed graphs (including DAGs)        |
+|         drop          |     -     |     -     | *(TODO)* drop process privileges and inherit handles |
+|       fun/maybe       | [v2][f01] |     -     | "Maybe" sum type                                     |
+|      fun/partial      | [v2][f02] |     -     | partial function application                         |
+|      fun/result       | [v2][f03] |     -     | "Result" sum type                                    |
+|      fun/slices       | [v2][f04] |     -     | higher-order functions for slices                    |
+|         grace         |     -     |     -     | *(TODO)* start and gracefully shutdown processes     |
+|       humanize        |     -     |     -     | *(TODO)* locale-aware numbers &amp; quantities       |
+|         iter          | [v2][i01] |     -     | composable lazy iteration                            |
+|          ks           |     -     | [v2][k01] | *(unstable)* "kitchen sink" of extras                |
+|        loader         |     -     |     -     | *(TODO)* concurrent dependency graph solver          |
+|  html/meta/opengraph  | [v2][m01] |     -     | HTML meta tags for Facebook's Open Graph protocol    |
+| html/meta/twittercard | [v2][m02] |     -     | HTML meta tags for Twitter Cards                     |
+|         must          | [v2][m03] |     -     | assertions                                           |
+|       operator        | [v2][o01] |     -     | operators as functions                               |
+|         tuple         | [v2][p01] |     -     | convert to/from tuples                               |
+|         view          | [v2][v01] |     -     | dynamic views over collections                       |
 
 **Note:** Additional v2/legacy packages exist for users migrating from
 `tawesoft.co.uk/go`. See [MIGRATIONS.md](/MIGRATIONS.md).
@@ -59,9 +60,10 @@ expected for a Go package of v2 or higher. "Latest" packages, or
 |      text/fallback      |     -     | [v2][t03] | Unicode Character Fallback Substitutions                  | 
 |        text/fold        |     -     | [v2][t04] | Unicode text folding                                      |
 |         text/np         |     -     | [v2][t05] | Unicode numeric properties                                |
-|       text/runeio       |     -     | [v2][t06] | *(unstable)* Unicode streams with lookahead &amp; rewind  |
 | text/number/algorithmic | [v2][t07] |     -     | CLDR algorithmic (non-decimal) numbering systems          |
 |    text/number/rbnf     |     -     | [v2][t08] | CLDR Rule-Based Number Formats                            |
+|   text/number/symbols   |     -     | [v2][t09] | CLDR locale-appropriate Number Symbols                    |
+|       text/runeio       |     -     | [v2][t06] | *(unstable)* Unicode streams with lookahead &amp; rewind  |
 
 **Note:** "Stable" packages have the
 [normal stability guarantees](https://go.dev/doc/modules/version-numbers)
@@ -82,6 +84,7 @@ expected for a Go package of v2 or higher. "Latest" packages, or
 [m02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/meta/twittercard
 [m03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/must
 [o01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/operator
+[p01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/tuple
 [t01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/ccc
 [t02]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/dm
 [t03]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/fallback
@@ -90,6 +93,7 @@ expected for a Go package of v2 or higher. "Latest" packages, or
 [t06]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/runeio
 [t07]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/number/algorithmic
 [t08]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/number/rbnf
+[t09]: https://pkg.go.dev/github.com/tawesoft/golib/v2/text/number/symbols
 [v01]: https://pkg.go.dev/github.com/tawesoft/golib/v2/view
 
 

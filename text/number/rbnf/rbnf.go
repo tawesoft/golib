@@ -67,6 +67,41 @@ type Group struct {
     bodies []token
 }
 
+// RulesetNames returns a slice of the names of the public rulesets in a group,
+// excluding the leading "%".
+func (g *Group) RulesetNames() []string {
+    result := make([]string, 0, len(g.rulesetNames))
+    for k, _ := range g.rulesetNames {
+        isPrivate := strings.HasPrefix(k, "%%")
+        if isPrivate { continue }
+        if !strings.HasPrefix(k, "%") { continue }
+        result = append(result, k[1:])
+    }
+    return result
+}
+
+type Formatter struct {
+    rs *ruleset
+    g *Group
+}
+
+// Formatter returns a Formatter that uses a specific named ruleset from
+// a group to format numbers.
+func (g *Group) Formatter(name string) (Formatter, bool) {
+    rs, ok := g.getPublicRuleset(name)
+    if !ok {
+        return Formatter{}, false
+    }
+    return Formatter{
+        rs: rs,
+        g: g,
+    }, true
+}
+
+func (f Formatter) FormatInteger(v int64) (string, error) {
+    return f.g.formatIntegerUsingRuleset(f.rs, v)
+}
+
 type ruleset struct {
     descriptors []desc
 }
@@ -131,6 +166,11 @@ func New(p plurals.Rules, rules string) (*Group, error) {
         return nil, fmt.Errorf("error parsing rbnf ruleset group: %w", err)
     }
     return g, nil
+}
+
+func (g *Group) getPublicRuleset(target string) (*ruleset, bool) {
+    if strings.HasPrefix(target, "%%") { return nil, false }
+    return g.getRuleset(target)
 }
 
 func (g *Group) getRuleset(target string) (*ruleset, bool) {
@@ -202,8 +242,12 @@ var (
 )
 
 func (g *Group) FormatInteger(rulesetName string, v int64) (string, error) {
+    rs := must.Ok(g.getPublicRuleset(rulesetName))
+    return g.formatIntegerUsingRuleset(rs, v)
+}
+
+func (g *Group) formatIntegerUsingRuleset(rs *ruleset, v int64) (string, error) {
     var sb strings.Builder
-    rs := must.Ok(g.getRuleset(rulesetName))
     if err := g.formatInteger(&sb, rs, v, true); err == nil {
         return sb.String(), nil
     } else {

@@ -75,12 +75,6 @@ func Example_spelloutCardinal() {
 // Example using custom time factors from the Battlestar Galactica 1978 TV
 // series.
 func Example_fictional() {
-    /*
-            168000: ←← secton [ →→];
-            672000: ←← quatron [ →→];
-            80640000: =%%spellout-cardinal-verbose= yahren [ >>];
-    161280000/161280000: ←%%spellout-cardinal-verbose← yahrens[ →→→];
-     */
     g := must.Result(rbnf.New(nil, `
         %%s:
             0: s;
