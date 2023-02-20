@@ -5,6 +5,7 @@
 package symbols
 
 import (
+    "encoding/binary"
     "fmt"
     "strings"
 )
@@ -58,13 +59,35 @@ type Symbols struct {
     CurrencyGroup string
 }
 
-func (s Symbols) update(n symbols) Symbols {
-    str := func(x slice) string {
-        // fmt.Printf("slice %+v = %q\n", x, stringdata[x.left:x.right])
-        return stringdata[x.left:x.right]
+func loadSymbol(idx int) Symbols {
+    data := symbolsdata[idx * symbolsRowSize : (idx + 1) * symbolsRowSize]
+    str := func(x int) string {
+        x *= 3
+        left := int(binary.LittleEndian.Uint16(data[x:x+2]))
+        right := left + int(data[x+2])
+        return stringdata[left:right]
     }
-    f := func(a string, b slice) string {
-        if b.right != 0 { return str(b) }
+    return Symbols{
+        Decimal:                str(0),
+        Group:                  str(1),
+        List:                   str(2),
+        PercentSign:            str(3),
+        PlusSign:               str(4),
+        MinusSign:              str(5),
+        ApproximatelySign:      str(6),
+        Exponential:            str(7),
+        SuperscriptingExponent: str(8),
+        Infinity:               str(9),
+        PerMille:               str(10),
+        NaN:                    str(11),
+        CurrencyDecimal:        str(12),
+        CurrencyGroup:          str(13),
+    }
+}
+
+func (s Symbols) update(n Symbols) Symbols {
+    f := func(a string, b string) string {
+        if len(b) != 0 { return b }
         return a
     }
     return Symbols{
@@ -113,7 +136,7 @@ func Get_(language string, script string, region string, variant string, numberi
     update := func(l, s, r, v, n string) {
         t := makeTag(l, s, r, v, n)
         if idx, ok := indexes[t]; ok {
-            sym = sym.update(symbolsdata[idx])
+            sym = sym.update(loadSymbol(idx))
         }
     }
 

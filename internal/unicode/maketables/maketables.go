@@ -32,6 +32,6 @@ func main() {
         cldr41.MakeNumberingSystemRules(dataDir, dest("text/number/algorithmic/rules-cldr-41.0.txt"))
     })
     timeit("MakeNumberSymbols", func() {
-        cldr41.MakeNumberSymbols(dataDir, dest("text/number/symbols/table.go"))
+        cldr41.MakeNumberSymbols(dataDir, destDir)
     })
 }
