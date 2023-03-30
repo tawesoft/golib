@@ -24,15 +24,16 @@ minor version changes.
 
 ## Updating `github.com/tawesoft/golib`
 
-### Migrating v2.0 → v2.7
+### Migrating v2.0 → v2.8
 
 Fewer breaking changes are expected after this point.
 
 * `meta` packages have been moved to `html/meta`
 * `fun/maybe`, `fun/result`, and `view` packages have been redone
 * `numbers` package removed with much implemented by the new `operator` package
+* `operator/checked/integer` is now just `operator/checked`.
 * some functions removed from `fun/result`, `iter`, `ks` packages
-* some functions removed from `ks` to `operator`
+* some functions moved from `ks` to `operator`
 
 ## Migrating from `tawesoft.co.uk/go`
 
@@ -110,7 +111,7 @@ package.
 ```diff
 - import "tawesoft.co.uk/go/operator"
 + import "github.com/tawesoft/golib/v2/operator"
-+ import "github.com/tawesoft/golib/v2/operator/checked/integer"
++ import "github.com/tawesoft/golib/v2/operator/checked"
 ```
 
 #### Rewrite checked code
@@ -120,14 +121,14 @@ the return value logic is inverted:
 
 ```diff
 - if sum, err := operator.IntChecked.Binary.Add(a, b); err == nil { ...
-+ if sum, ok := integer.Int32.Add(a, b); ok { ...
++ if sum, ok := checked.Int32.Add(a, b); ok { ...
 ```
 
 Or, generically:
 
 ```diff
 func foo[N constraints.Integer](a N, b N) N {
-    limits := integer.Limits[N]()
+    limits := checked.Limits[N]()
     sum, ok := limits.Add(a, b)
     ...
 }
@@ -142,6 +143,6 @@ detected by the Go compiler.
 - operator.Int.Binary.Add(2, 3) // 5
 + operator.Add(2, 5) // 5
 
-- reduce(operator.Int.Binary.Add, []int{1, 2, 3})
-+ reduce(operator.Add[int], []int{1, 2, 3})
+- reduce(operator.Int.Binary.Add, 0, []int{1, 2, 3})
++ reduce(operator.Add[int], 0, []int{1, 2, 3})
 ```

@@ -1,29 +1,29 @@
-package integer_test
+package checked_test
 
 import (
     "math"
     "testing"
 
     "github.com/stretchr/testify/assert"
-    "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "github.com/tawesoft/golib/v2/operator/checked"
     "github.com/tawesoft/golib/v2/tuple"
 )
 
 func TestAdd(t *testing.T) {
-    assert.Equal(t, tuple.ToT2(7,       true),  tuple.ToT2(integer.Int.Add(3, 4)))
-    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(integer.Int8.Add(127, 1)))
-    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(integer.Int8.Add(-128, -1)))
+    assert.Equal(t, tuple.ToT2(7,       true),  tuple.ToT2(checked.Int.Add(3, 4)))
+    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(checked.Int8.Add(127, 1)))
+    assert.Equal(t, tuple.ToT2(int8(0), false), tuple.ToT2(checked.Int8.Add(-128, -1)))
 }
 
 func TestSub(t *testing.T) {
-    assert.Equal(t, tuple.ToT2(7,        true),  tuple.ToT2(integer.Int.Sub(13, 6)))
-    assert.Equal(t, tuple.ToT2(uint8(0), false), tuple.ToT2(integer.Uint8.Sub(0, 1)))
-    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(integer.Int8.Sub(-128, 1)))
+    assert.Equal(t, tuple.ToT2(7,        true),  tuple.ToT2(checked.Int.Sub(13, 6)))
+    assert.Equal(t, tuple.ToT2(uint8(0), false), tuple.ToT2(checked.Uint8.Sub(0, 1)))
+    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(checked.Int8.Sub(-128, 1)))
 }
 
 func TestMul(t *testing.T) {
-    assert.Equal(t, tuple.ToT2(27,        true),  tuple.ToT2(integer.Int.Mul(3, 9)))
-    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(integer.Int8.Mul(64, 3)))
+    assert.Equal(t, tuple.ToT2(27,        true), tuple.ToT2(checked.Int.Mul(3, 9)))
+    assert.Equal(t, tuple.ToT2(int8(0),  false), tuple.ToT2(checked.Int8.Mul(64, 3)))
 }
 
 func FuzzAdd_Int32(f *testing.F) {
@@ -62,7 +62,7 @@ func FuzzAdd_Int32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Add(min, max, a, b)
+        result, resultOk := checked.Add(min, max, a, b)
         expectedResult := int64(a) + int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 
@@ -110,7 +110,7 @@ func FuzzAdd_Uint32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Add(min, max, a, b)
+        result, resultOk := checked.Add(min, max, a, b)
         expectedResult := int64(a) + int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 
@@ -162,7 +162,7 @@ func FuzzSub_Int32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Sub(min, max, a, b)
+        result, resultOk := checked.Sub(min, max, a, b)
         expectedResult := int64(a) - int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 
@@ -212,7 +212,7 @@ func FuzzSub_Uint32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Sub(min, max, a, b)
+        result, resultOk := checked.Sub(min, max, a, b)
         expectedResult := int64(a) - int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 
@@ -264,7 +264,7 @@ func FuzzMul_Int32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Mul(min, max, a, b)
+        result, resultOk := checked.Mul(min, max, a, b)
         expectedResult := int64(a) * int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 
@@ -314,7 +314,7 @@ func FuzzMul_Uint32(f *testing.F) {
             t.SkipNow()
         }
 
-        result, resultOk := integer.Mul(min, max, a, b)
+        result, resultOk := checked.Mul(min, max, a, b)
         expectedResult := int64(a) * int64(b)
         ok := (expectedResult <= int64(max)) && (expectedResult >= int64(min))
 

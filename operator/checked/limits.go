@@ -1,4 +1,4 @@
-package integer
+package checked
 
 import (
     "math"

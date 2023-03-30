@@ -1,6 +1,6 @@
-// Package integer (operator/checked/integer) implements operations on integers
+// Package checked (operator/checked) implements operations on integers
 // that are robust in the event of integer overflow.
-package integer
+package checked
 
 import (
     "golang.org/x/exp/constraints"

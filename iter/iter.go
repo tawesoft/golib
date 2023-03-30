@@ -10,7 +10,7 @@ import (
     "unicode/utf8"
 
     "github.com/tawesoft/golib/v2/operator"
-    "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "github.com/tawesoft/golib/v2/operator/checked"
     "golang.org/x/exp/constraints"
     "golang.org/x/exp/maps"
 )
@@ -170,7 +170,7 @@ func Count[X any](
 // the given number, and increasing by step each time. It terminates at the
 // maximum representable value for the number type.
 func Counter[I constraints.Integer](start I, step I) It[I] {
-    limit := integer.GetLimits[I]()
+    limit := checked.GetLimits[I]()
     done := false
     return func() (I, bool) {
         if done { return 0, false }

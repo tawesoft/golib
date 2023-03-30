@@ -50,7 +50,7 @@ import (
 
     "github.com/tawesoft/golib/v2/must"
     "github.com/tawesoft/golib/v2/operator"
-    "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "github.com/tawesoft/golib/v2/operator/checked"
     "github.com/tawesoft/golib/v2/text/number/plurals"
     "github.com/tawesoft/golib/v2/text/number/rbnf/internal/body"
     "github.com/tawesoft/golib/v2/text/number/rbnf/internal/descriptor"
@@ -368,7 +368,7 @@ func divisor(rule desc, v int64) int64 {
                 n := rule.Divisor
                 highest := n
                 for {
-                    if x, ok := integer.Int64.Mul(n, n); ok {
+                    if x, ok := checked.Int64.Mul(n, n); ok {
                         n = x
                     } else {
                         return highest
@@ -460,7 +460,7 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
                 if !isRegular {
                     // Multiply the number by the rule's base value and
                     // format the result.
-                    n, ok := integer.Int64.Mul(v, rule.Base)
+                    n, ok := checked.Int64.Mul(v, rule.Base)
                     if !ok { return ErrRange }
                     err := g.formatInteger(sb, rs, n, isRegular)
                     if err != nil { return err }
@@ -502,7 +502,7 @@ func (g *Group) applyIntegerRule(sb *strings.Builder, rs *ruleset, rule desc, v 
                         if err != nil { return err }
 
                     case descriptor.TypeNegativeNumber:
-                        abs, ok := integer.Int64.Abs(v)
+                        abs, ok := checked.Int64.Abs(v)
                         if !ok { return ErrRange }
                         nrs, err := g.selectRuleset(tok, rs)
                         if err != nil { return err }

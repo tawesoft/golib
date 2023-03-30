@@ -31,7 +31,7 @@ import (
 
     lazy "github.com/tawesoft/golib/v2/iter"
     "github.com/tawesoft/golib/v2/must"
-    "github.com/tawesoft/golib/v2/operator/checked/integer"
+    "github.com/tawesoft/golib/v2/operator/checked"
     "github.com/tawesoft/golib/v2/text/ccc"
     "golang.org/x/text/unicode/norm"
 )
@@ -171,7 +171,7 @@ func combinations(segVariants []string) (lazy.It[string], error) {
     }
     var nCombinations = 1
     for i := 0; i < nSegments; i++ {
-        n, ok := integer.Int.Mul(nCombinations, nVariants[i])
+        n, ok := checked.Int.Mul(nCombinations, nVariants[i])
         if !ok { return nil, fmt.Errorf("too many combinations") }
         nCombinations = n
     }

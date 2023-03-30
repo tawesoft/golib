@@ -1,5 +1,5 @@
-// Package symbols contains the [CLDR number symbols], e.g. decimal point and
-// the minus sign, for different locales.
+// Package symbols contains the [CLDR number symbols], such as the decimal
+// point and the minus sign, for different locales.
 //
 // [CLDR number symbols]: https://cldr.unicode.org/translation/number-currency-formats/number-symbols
 package symbols
