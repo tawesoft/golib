@@ -50,7 +50,7 @@ func TestParseColor(t *testing.T) {
 
         // strip trailing zeroes
         {
-            input:     "rgb(128 64 10.03500)",
+            input:     "rgb(128 0064 010.03500)",
             specified: "rgb(128, 64, 10.035)",
             computed:  "rgb(128, 64, 10.035)",
             ok: true,
