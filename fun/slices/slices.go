@@ -1,6 +1,18 @@
 // Package slices provides generic higher-order functions over slices of values.
 package slices
 
+// FromArgs returns the slice of the variadic arguments list.
+func FromArgs[X any](xs ... X) []X {
+    return xs
+}
+
+// ForEach applies the void function "f(x)" to each value X of the input slice.
+func ForEach[X any](f func(X), xs []X) {
+    for _, x := range xs {
+        f(x)
+    }
+}
+
 // Filter applies function "f : X => bool" to each value X of the input slice,
 // and returns a new slice containing only each X for which f(X) is true.
 //

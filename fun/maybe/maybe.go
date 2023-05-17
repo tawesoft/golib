@@ -83,6 +83,22 @@ func FlatMap[X any, Y any](
     }
 }
 
+// Collect takes a slice of Maybe[X] and returns a slice of []X and true iff
+// every element contains a value.
+func Collect[X any](
+    xs []M[X],
+) ([]X, bool) {
+    if len(xs) == 0 { return nil, true }
+    for _, x := range xs {
+        if !x.Ok { return nil, false }
+    }
+    result := make([]X, 0, len(xs))
+    for _, x := range xs {
+        result = append(result, x.Value)
+    }
+    return result, true
+}
+
 // Applicator turns function "M[f: X => Y]" into "f: X => M[Y]".
 func Applicator[X any, Y any](
     f M[func(x X) Y],

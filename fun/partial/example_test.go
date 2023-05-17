@@ -2,12 +2,13 @@ package partial_test
 
 import (
     "fmt"
+    "math"
 
     "github.com/tawesoft/golib/v2/fun/maybe"
     "github.com/tawesoft/golib/v2/fun/partial"
 )
 
-func Example() {
+func Example_Line() {
     // The formula for a line can be given by "y = mx + c", where m is the
     // gradient, and c is the offset where the line crosses the x-axis.
     line := func(x int, m int, c int) int { // solves for y
@@ -39,7 +40,7 @@ func Example() {
     // 11
 }
 
-func ExampleMaybe() {
+func Example_Maybe() {
     // divides two numbers, while checking for divide by zero.
     divide := func(x int, y int) (value int, ok bool) {
         if y == 0 { return 0, false }
@@ -50,10 +51,14 @@ func ExampleMaybe() {
     // returns a single [maybe.M].
     maybeDivide := maybe.WrapFunc2(divide)
 
-    // bind y to the divide function, and also convert it back from a function
-    // that returns (value int, ok bool) instead of a [maybe.M].
-    divideByTwo := maybe.UnwrapFunc(partial.Right2(maybeDivide)(2))
-    divideByZero := maybe.UnwrapFunc(partial.Right2(maybeDivide)(0))
+    // we create a function, divider, with one argument, that can be used to
+    // construct new functions that divide by a constant factor.
+    divider := partial.Right2(maybeDivide)
+
+    // bind a constant factor to the divide function, and also convert it back
+    // to a function that returns (value int, ok bool) instead of a [maybe.M].
+    divideByTwo := maybe.UnwrapFunc(divider(2))
+    divideByZero := maybe.UnwrapFunc(divider(0))
 
     {
         result, ok := divideByTwo(10)
@@ -67,4 +72,32 @@ func ExampleMaybe() {
     // Output:
     // divideByTwo(10) = 5, true
     // divideByZero(10) = 0, false
+}
+
+func Example_All() {
+    // Pythagoras theorem for calculating the hypotenuse of a triangle:
+    // a squared + b squared = c squared.
+    hyp := func(a float64, b float64) float64 {
+        return math.Sqrt((a*a) + (b*b))
+    }
+
+    // Suppose we want a function with no arguments that returns the answer
+    // for a specific triangle. Imagine it's an expensive computation, we've
+    // got lots of computations like this, and they're ones we might want to
+    // run asynchronously across multiple workers. This is a simple "promise"
+    // construct.
+    //
+    // Normally we could define it like this:
+    hyp_2_3_verbose := func() float64 { return hyp(2, 3) }
+
+    // But we can use "partial.All*" functions to do this for us (here, 2,
+    // for the two arguments).
+    hyp_2_3_terse := partial.All2(hyp)(2, 3)
+
+    fmt.Printf("hyp_2_3_verbose = %.3f\n", hyp_2_3_verbose())
+    fmt.Printf("hyp_2_3_terse = %.3f\n", hyp_2_3_terse())
+
+    // Output:
+    // hyp_2_3_verbose = 3.606
+    // hyp_2_3_terse = 3.606
 }

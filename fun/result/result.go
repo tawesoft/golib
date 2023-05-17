@@ -111,8 +111,8 @@ func Applicator[X any, Y any](
     return func(x X) R[Y] { return Some(f.Value(x)) }
 }
 
-// WrapFunc converts a function of the form "f: X => (Y, error)" to the form
-// "f: X => R[X].
+// WrapFunc converts a function of the form "f(a) => (a, error)" to the form
+// "f(a) => R[Y]".
 func WrapFunc[X any, Y any](
     f func(x X) (Y, error),
 ) func(x X) R[Y] {
@@ -121,13 +121,13 @@ func WrapFunc[X any, Y any](
     }
 }
 
-// UnwrapFunc converts a function of the form "f: X => R[Y]" to the
-// form "f: X => (Y, error)".
-func UnwrapFunc[X any, Y any](
-    f func(x X) R[Y],
-) func(x X) (Y, error) {
-    return func(x X) (Y, error) {
-        return f(x).Unpack()
+// UnwrapFunc converts a function of the form "f(a) => R[T]" to the
+// form "f(a) => (T, error)".
+func UnwrapFunc[A any, T any](
+    f func(A) R[T],
+) func(A) (T, error) {
+    return func(a A) (T, error) {
+        return f(a).Unpack()
     }
 }
 

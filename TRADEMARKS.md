@@ -32,7 +32,7 @@ Windows is a trade mark of
 [Microsoft Corporation](https://www.microsoft.com/en-gb). 
 
 
-## Disclaimed
+## Not trade marks
 
 The name of this "golib" software is used as a generic descriptive term for a
 [software library](https://en.wikipedia.org/wiki/Library_(computing))
